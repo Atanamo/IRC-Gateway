@@ -1,0 +1,17 @@
+
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Thumbs.db
+*/Thumbs.db
+Icon?
+Desktop.ini
+*/Desktop.ini
+
+# Project settings, etc #
+#########################
+.idea/*
+.openshift/*
+node_modules/*
+
