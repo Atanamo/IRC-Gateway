@@ -15,4 +15,4 @@ This way, on IRC there is only one bot for each game world. The bot represents a
 (Therefor the chat server and its bots are a kind of gateway between IRC and in-game chat.)
 
 
-* Note, that for developing purposes game worlds might be called "galaxies" inside the project, due to the terminology of SGR.
+(*) Note, that for developing purposes game worlds might be called "galaxies" inside the project, due to the terminology of SGR.
