@@ -11,8 +11,8 @@ module.exports.info = (text...) ->
     #gateway_global.db.writeLog()
 
 module.exports.warn = (text, sender='General') ->
-    console.warn '! Warning in #{sender}: #{text}'
+    console.warn "! Warning in #{sender}: #{text}"
 
 module.exports.error = (text, sender='General') ->
-    console.error '! ERROR in #{sender}: #{text}!'
+    console.error "! ERROR in #{sender}: #{text}!"
 

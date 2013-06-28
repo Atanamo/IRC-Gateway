@@ -1,17 +1,16 @@
 
-###
-root = exports ? this       # Define a root compatible to browser or framework scope
-
-root.ChatController = class ChatController
-    # Class definition goes here...
-###
-
+# Controller class to handle communication with server
 class this.ChatController
     constructor: (@serverIP, @serverPort, @instanceData) ->
         @bindGuiEvents()
 
     bindGuiEvents: ->
         $('#chat_form').submit @handleGuiMessageSubmit
+        @updateGuiListeners()
+
+    updateGuiListeners: ->
+        $('.tabsystemHeaders li').click @handleGuiTabClick
+        # Todo: May unbind old listeners
 
 
     start: ->
@@ -20,10 +19,11 @@ class this.ChatController
         @socket.on 'connect', @handleServerConnect      # Build-in event
         @socket.on 'welcome', @handleServerWelcome
         @socket.on 'message', @handleMessageReceive
+        @socket.on 'joined', @handleChannelJoined
 
 
     handleServerConnect: =>
-        $('#messages').html('')
+        #$('#messages').html('')
 
         @guiAddChannelMessage
             msg: 'Connection established!'
@@ -36,24 +36,59 @@ class this.ChatController
     handleMessageReceive: (data) =>
         @guiAddChannelMessage data
 
+    handleChannelJoined: (channel) =>
+        tabID = @_getChannelTabID(channel)
+        tabSkeleton = $('#tabPageSkeleton').clone()
+        tabSkeleton.attr('id', tabID)
 
-    handleGuiMessageSubmit: (e) =>
-        e.preventDefault()
+        htmlTabHeader = "<li data-id=\"#{tabID}\">#{channel}</li>"
+
+        $('#chatsystem .tabsystemViewport').append(tabSkeleton)
+        $('#chatsystem .tabsystemHeaders').append(htmlTabHeader)
+
+        $('#' + tabID + ' .chatMessages').html('CHANNEL JOINED: ' + channel)
+        @updateGuiListeners()
+
+
+    handleGuiMessageSubmit: (event) =>
+        event.preventDefault()
         messageText = $('#chat_input').val().trim()
         channel = 'galaxy_test'     #todo: take channel from current tab
 
         if messageText != ''
             @socket.emit 'message#' + channel, messageText
 
+    handleGuiTabClick: (event) =>
+        tabHeader = $(event.currentTarget)
+
+        # Jump to referenced tab page in viewport
+        window.location = '#' + tabHeader.data('id')
+
+        # Highlight tab header
+        $('.tabsystemHeaders li').removeClass('active')
+        tabHeader.addClass('active')
+
+
     guiAddChannelMessage: ({channel, sender, msg}) ->
-        sender ?= 'SYS'
+        if channel? and sender?
+            tabPage = $('#' + @_getChannelTabID(channel))
+        else
+            tabPage = $('#tabPageServer')
+            sender = 'Server'
 
-        switch sender.toString()
-            when @instanceData.id
-                $('#messages').append('<li style="font-weight:bold;">' + msg + " (#{channel})" + '</li>')
-                $('#chat_input').val('')
-            when 'SYS'
-                $('#messages').append('<li style="font-style:italic;">' + msg + '</li>')
-            else
-                $('#messages').append('<li>' + msg + " (#{channel})" + '</li>')
+        if sender?.toString() == @instanceData.id
+            dataValue = 'own'
+            $('#chat_input').val('')
+        else
+            dataValue = 'external'
 
+        tabPage.find('.chatMessages').append("<li data-item=\"#{dataValue}\">#{sender}: #{msg}</li>")
+
+
+
+    ###
+        Helper methods
+    ###
+
+    _getChannelTabID: (channel) ->
+        'tabPage_' + channel

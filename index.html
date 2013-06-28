@@ -7,23 +7,106 @@
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
     <script type="text/javascript" src="./js/webclient.js"></script>
+
+    <style type="text/css">
+        div {
+            box-sizing: border-box;
+        }
+
+
+        #tabsystem {
+            width: 800px;
+        }
+
+        ul.tabsystemHeaders {
+            list-style: none;
+        }
+
+        ul.tabsystemHeaders li {
+            float: left;
+            background: #ccc;
+            border: 1px #aaa solid;
+            border-bottom: none;
+            margin-right: 10px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        ul.tabsystemHeaders li.active {
+            background-color: #eee;
+            margin-bottom: -1px;
+            padding-bottom: 6px;
+        }
+
+        .tabsystemViewport {
+            clear: both;
+            border: 1px solid #aaa;
+            height: 200px;
+            overflow: hidden;
+            background: #eee;
+        }
+
+        .tabsystemViewport > div {
+            border: solid 0px red;
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+        }
+
+        .chatMessagesContainer,
+        .chatUsersContainer {
+            width: 80%;
+            height: 100%;
+            float: left;
+            overflow-y: scroll;
+        }
+
+        .chatUsersContainer {
+            width: 20%;
+        }
+
+        .chatMessages li[data-item=own] {
+            font-weight: bold;
+        }
+    </style>
 </head>
 
-<body>
+<body id="chatsystem">
 
     <h1>
         Welcome to the Test Gateway!
     </h1>
 
-    <ul id="messages">
-    </ul>
+    <div id="tabsystem">
+        <ul class="tabsystemHeaders">
+            <li data-id="tabPageServer" class="active">Server</li>
+        </ul>
+        <div class="tabsystemViewport">
+            <div id="tabPageServer">
+                <ul class="chatMessages">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
     <form id="chat_form" action="#">
         <input type="text" id="chat_input" />
     </form>
 
-    <div id="status">
+    <div id="tabPageSkeletonContainer" style="display:none;">
+        <div id="tabPageSkeleton">
+            <div class="chatMessagesContainer">
+                <ul class="chatMessages">
 
+                </ul>
+            </div>
+            <div class="chatUsersContainer">
+                <ul class="chatUsers">
+
+                </ul>
+            </div>
+        </div>
     </div>
 
     <script type="text/javascript">
@@ -34,8 +117,11 @@
             name: 'Test-Instanz'
         };
 
-        chatController = new ChatController('http://localhost', 8080, instanceData);
-        chatController.start();
+        $(document).ready(function() {
+            chatController = new ChatController('http://localhost', 8080, instanceData);
+            chatController.start();
+        });
+
     </script>
 
 </body>
