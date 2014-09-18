@@ -1,4 +1,4 @@
 
-node ./src_js/main.js
+node ./src_js/server/main.js
 
 pause

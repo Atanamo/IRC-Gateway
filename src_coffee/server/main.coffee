@@ -49,7 +49,7 @@ class Gateway
             filename = request.params.file
             log.info 'Requested script file: ' + filename
 
-            response.sendfile "./src_js/#{filename}", null, (err) ->
+            response.sendfile "./src_js/webclient/#{filename}", null, (err) ->
                 if err? then response.send 'File not found'
 
         server.on 'close', ->
