@@ -7,6 +7,7 @@ class this.ChatController
     serverIP: ''
     serverPort: 0
     instanceData: {}
+    activeTabPage: null
 
     gui:
         chatForm: '#chat_form'
@@ -25,6 +26,7 @@ class this.ChatController
 
     constructor: (@serverIP, @serverPort, @instanceData) ->
         @_updateGuiBindings()
+        @activeTabPage = @ui.tabPageServer
 
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
@@ -59,16 +61,20 @@ class this.ChatController
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
         messageText = @ui.chatInput.val().trim()
-        channel = 'galaxy_test'     #todo: take channel from current tab
+        channel = @activeTabPage?.data('channel') or ''
 
-        if messageText != ''
+        if messageText isnt '' and channel isnt ''
             @socketHandler.sendMessage(channel, messageText)
 
     _handleGuiTabClick: (event) =>
         tabHeader = $(event.currentTarget)
+        tabID = tabHeader.data('id')
+
+        # Remember active tab
+        @activeTabPage = @_getTabPage(tabID)
 
         # Jump to referenced tab page in viewport
-        window.location = '#' + tabHeader.data('id')
+        window.location = '#' + tabID
 
         # Highlight tab header
         @ui.tabsystemHeaders.removeClass('active')
@@ -85,22 +91,31 @@ class this.ChatController
         @_appendMessageToTab(tabPage, {sender, msg})
 
     handleChannelMessage: ({channel, sender, msg}) ->
-        tabPage = $('#' + @_getChannelTabID(channel))
+        tabPage = @_getChannelTabPage(channel)
         @_appendMessageToTab(tabPage, {sender, msg})
 
     handleChannelJoined: (channel) =>
         tabID = @_getChannelTabID(channel)
-        tabSkeleton = @ui.tabPageSkeleton.clone()
-        tabSkeleton.attr('id', tabID)
+        tabPage = @_getChannelTabPage(channel)
 
-        htmlTabHeader = "<li data-id=\"#{tabID}\">#{channel}</li>"
+        if tabPage?.length is 0
+            # Set up tab parts
+            htmlTabHeader = "<li data-id=\"#{tabID}\">#{channel}</li>"
+            tabSkeleton = @ui.tabPageSkeleton.clone()
+            tabSkeleton.attr('id', tabID)
+            tabSkeleton.attr('data-channel', channel)
 
-        @ui.tabsystemViewport.append(tabSkeleton)
-        @ui.tabsystemHeaderList.append(htmlTabHeader)
-        @_updateGuiBindings()
+            # Add tab to DOM
+            @ui.tabsystemViewport.append(tabSkeleton)
+            @ui.tabsystemHeaderList.append(htmlTabHeader)
+            @_updateGuiBindings()
 
+            # Get new tab
+            tabPage = @_getChannelTabPage(channel)
+
+        # Print join message to tab
         #$('#' + tabID + ' .chatMessages').html('CHANNEL JOINED: ' + channel)
-        @_appendMessageToTab($('#' + tabID), sender: 'CHANNEL JOINED', msg: channel)
+        @_appendMessageToTab(tabPage, sender: 'CHANNEL JOINED', msg: channel)
 
 
     #
@@ -109,6 +124,13 @@ class this.ChatController
 
     _getChannelTabID: (channel) ->
         'tabPage_' + channel
+
+    _getChannelTabPage: (channel) ->
+        tabID = @_getChannelTabID(channel)
+        return @_getTabPage(tabID)
+
+    _getTabPage: (tabID) ->
+        return $('#' + tabID)
 
     _appendMessageToTab: (tabPage, {sender, msg}) ->
         if sender?.toString() == @instanceData.id
