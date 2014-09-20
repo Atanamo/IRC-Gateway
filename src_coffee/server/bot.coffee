@@ -9,7 +9,10 @@ Config = require './config'
 # Bot class
 class SchizoBot
 
-    constructor: (@gameData) ->
+    gameData: null
+    botChannel: null
+
+    constructor: (@botChannel, @gameData) ->
         console.log 'Constructing new Bot...'
 
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
@@ -30,7 +33,7 @@ class SchizoBot
             floodProtection: true           # Protect the bot from beeing kicket, if users are flooding
             floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
 
-        @client.addListener 'message', @handleMessage
+        @client.addListener 'message', @_handleIrcMessage
 
 
     start: (channelList) ->
@@ -41,23 +44,46 @@ class SchizoBot
             callback: ->
                 console.log 'Connected succesfully!'
 
+    getID: ->
+        return @gameData.id
 
-    handleMessage: (from, to, message, isSecondTry=false) =>
+
+    #
+    # IRC event handlers
+    #
+
+    _handleIrcMessage: (from, to, message, isSecondTry=false) =>
         unless isSecondTry                                          ## TODO: why is always isSecondTry = true ?
             console.log 'FIRST TRY'
 
             if message.indexOf(@nickName + ':') > -1                ## TODO: why is the command not recognized?
                 console.log 'HANDLING'
-                return @handleMessageToBot(from, to, message)
+                return @_handleIrcMessageToBot(from, to, message)
 
-        console.log 'DONT HANDLING'
+        console.log 'DONT HANDLING', from, to
         #broudcast...
 
-    handleMessageToBot: (from, to, message) =>
+
+
+
+    _handleIrcMessageToBot: (from, to, message) =>
         if message.indexOf('galaxy?') > -1
             @client.say(to, 'Galaxy: ' + @realName)
         else
-            #@handleMessage(from, to, message, true)
+            #@handleIrcMessage(from, to, message, true)
+
+
+    #
+    # BotChannel handling
+    #
+
+    handleWebClientMessage: (senderData, rawMessage) ->
+        clientNick = senderData.name or 'Anonymous'
+        messageText = "<#{clientNick}>: #{rawMessage}"
+
+        @client.say(Config.IRC_CHANNEL_GLOBAL, messageText)
+
+
 
 
 # Export class

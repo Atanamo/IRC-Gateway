@@ -90,9 +90,10 @@ class this.ChatController
         sender = 'Server'
         @_appendMessageToTab(tabPage, {sender, msg})
 
-    handleChannelMessage: ({channel, sender, msg}) ->
+    handleChannelMessage: (data) ->
+        channel = data.channel
         tabPage = @_getChannelTabPage(channel)
-        @_appendMessageToTab(tabPage, {sender, msg})
+        @_appendMessageToTab(tabPage, data)
 
     handleChannelJoined: (channel) =>
         tabID = @_getChannelTabID(channel)
@@ -132,8 +133,8 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _appendMessageToTab: (tabPage, {sender, msg}) ->
-        if sender?.toString() == @instanceData.id
+    _appendMessageToTab: (tabPage, {sender, msg, isOwn}) ->
+        if isOwn
             dataValue = 'own'
             @ui.chatInput.val('')
         else

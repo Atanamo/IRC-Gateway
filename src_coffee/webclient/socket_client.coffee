@@ -33,6 +33,8 @@ class this.SocketClient
         @chatController.handleServerMessage(text)
 
     _handleMessageReceive: (data) =>
+        data.isOwn = (String(data.sender?.id) == String(@instanceData.id))
+        data.sender = data.sender?.name or data.sender?.id  # Extract nick name from sender data
         @chatController.handleChannelMessage(data)
 
     _handleChannelJoined: (channel) =>

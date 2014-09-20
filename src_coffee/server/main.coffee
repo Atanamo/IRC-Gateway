@@ -37,10 +37,10 @@ GLOBAL.log = log
 ## Main class
 class Gateway
     constructor: ->
-        @bindServerEvents()
-        @bindSocketGlobalEvents()
+        @_bindServerEvents()
+        @_bindSocketGlobalEvents()
 
-    bindServerEvents: ->
+    _bindServerEvents: ->
         ## Register http server events
         app.get '/', (request, response) ->
             response.sendfile "./index.html"
@@ -55,28 +55,26 @@ class Gateway
         server.on 'close', ->
             log.info 'Server shut down'
 
-    bindSocketGlobalEvents: ->
+    _bindSocketGlobalEvents: ->
         ## Register common websocket events
-        io.sockets.on 'connection', @handleClientConnect
+        io.sockets.on 'connection', @_handleClientConnect
 
-    bindSocketClientEvents: (clientSocket) ->
+    _bindSocketClientEvents: (clientSocket) ->
         ## Register client socket events
         #clientSocket.on 'join', (data) => @handleClientJoin(clientSocket, data)
-        clientSocket.on 'disconnect', @handleClientDisconnect
+        clientSocket.on 'disconnect', @_handleClientDisconnect
 
 
-    handleClientDisconnect: (clientSocket) =>
-        log.info 'Client disconnected...'
-
-
-    handleClientConnect: (clientSocket) =>
+    _handleClientConnect: (clientSocket) =>
         log.info 'Client connected...'
 
         # Set client identification data
+        # TODO
         clientSocket.identData =
             id: 42
             name: 'TempName'
             title: 'Temp Title'
+            game_id: 123
 
         # Let client join default channel
         botChannel = BotChannel.getInstance()
@@ -90,10 +88,14 @@ class Gateway
             channel.addClient(clientSocket, true)
 
         # Bind socket events to new client
-        @bindSocketClientEvents(clientSocket)
+        @_bindSocketClientEvents(clientSocket)
 
         # Emit initial events for new client
         clientSocket.emit 'welcome', 'hello out there!'
+
+
+    _handleClientDisconnect: (clientSocket) =>
+        log.info 'Client disconnected...'
 
 
     start: ->
@@ -107,13 +109,23 @@ class Gateway
         log.info 'Start listening...'
         server.listen(8080)
 
-        ###
-        bot = new Bot
+        # Create and connect the bots
+        @_setupBots()
+
+
+    _setupBots: ->
+        botChannel = BotChannel.getInstance()
+
+        # TODO: Multiple bots, each for one galaxy. Singleton-Concept?
+        bot = new Bot botChannel,
             id: 123
             name: 'Eine Testgalaxie'
 
         bot.start()
-        ###
+
+        # Add bots to botChannel
+        botChannel.addBot(bot)
+
 
 
 

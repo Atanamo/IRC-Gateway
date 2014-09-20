@@ -20,8 +20,10 @@ class Database
         # db.select("Select channel from channels, client_channels where client = '#{clientIdent}'")
 
         tempdata = [
+                #id: 123
                 name: 'galaxy_test'
             ,
+                #id: 124
                 name: 'galaxy_test_group01'
         ]
 

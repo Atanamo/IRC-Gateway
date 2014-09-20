@@ -1,16 +1,16 @@
 
 ## Include app modules
-Config = require './config'
+#Config = require './config'
 
 
 ## Class definition
 class Channel
     @_instances: {}
 
-    _isPublic = false
-    _title = 'New Channel'
-    _eventNameMsg = 'message#unnamed'
-    _eventNameLeave = 'leave#unnamed'
+    _isPublic: false
+    _title: 'New Channel'
+    _eventNameMsg: 'message#unnamed'
+    _eventNameLeave: 'leave#unnamed'
 
     constructor: (@name) ->
         log.info 'Instance of new channel ' + @name
@@ -25,6 +25,11 @@ class Channel
         unless @_instances[name]?
             @_instances[name] = new Channel(name)
         return @_instances[name]
+
+
+    #
+    # Client management
+    #
 
     addClient: (clientSocket, isRejoin=false) ->
         clientSocket.emit 'joined', @name       # Notice client for channel join
@@ -46,7 +51,6 @@ class Channel
         unless isRejoin
             db.addClientToChannel(clientSocket, @name)
 
-
     removeClient: (clientSocket, isDisconnect=false) ->
         # Unregister events for this channel
         clientSocket.removeAllListeners @_eventNameMsg
@@ -67,6 +71,10 @@ class Channel
             db.removeClientFromChannel(clientSocket, @name)
 
 
+    #
+    # Sending routines
+    #
+
     _sendClientList: (clientSocket) ->
         clientSocketList = io.sockets.clients(@name)
         #clientSocket.emit 'channel_clients', clientList
@@ -83,20 +91,25 @@ class Channel
         io.sockets.in(@name).emit(eventName, data)
 
 
+    #
+    # Client event handlers
+    #
+
+    # @protected
     _handleClientMessage: (clientSocket, messageText) =>
         log.info 'Client message:', messageText
         messageText = messageText?.trim()
 
-        return unless messageText != ''
+        return if messageText is ''
 
         @_sendToRoom 'message',
             channel: @name
-            sender: clientSocket.identData.id
+            sender: clientSocket.identData
             msg: messageText
 
 
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
-        log.warn 'TODO: Client left'
+        @removeClient(clientSocket, isDisconnect)
 
 
 ## Export class
