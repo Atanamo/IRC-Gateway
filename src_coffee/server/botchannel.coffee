@@ -2,6 +2,7 @@
 ## Include app modules
 Config = require './config'
 Channel = require './channel'
+ClientIdentity = require './clientidentity'
 
 
 ## Class definition
@@ -35,7 +36,7 @@ class BotChannel extends Channel
 
     # @override
     _handleClientMessage: (clientSocket, messageText) =>
-        botID = clientSocket.identData.game_id or -1
+        botID = clientSocket.identity.getGameID() or -1
         targetBot = @_botList[botID]
         return unless targetBot?
 
@@ -43,15 +44,17 @@ class BotChannel extends Channel
         super
 
         # Send to IRC channel
-        targetBot.handleWebClientMessage(clientSocket.identData, messageText)
+        targetBot.handleWebClientMessage(clientSocket.identity, messageText)
 
 
     #
     # Bot handling
     #
 
-    handleBotMessage: (sender, msg) ->
-        
+    handleBotMessage: (senderNickName, messageText) ->
+        senderIdentity = ClientIdentity.createFromIrcNick(senderNickName)
+
+        @_sendMessageToRoom(senderIdentity, messageText)
 
 
 

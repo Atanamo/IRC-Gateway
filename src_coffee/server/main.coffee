@@ -15,6 +15,7 @@ socketio = require 'socket.io'
 Config = require './config'
 Logger = require './logger'
 Database = require './database'
+ClientIdentity = require './clientidentity'
 Channel = require './channel'
 BotChannel = require './botchannel'
 Bot = require './bot'
@@ -70,11 +71,7 @@ class Gateway
 
         # Set client identification data
         # TODO
-        clientSocket.identData =
-            id: 42
-            name: 'TempName'
-            title: 'Temp Title'
-            game_id: 123
+        clientSocket.identity = ClientIdentity.createFromDatabase(0, 0)
 
         # Let client join default channel
         botChannel = BotChannel.getInstance()

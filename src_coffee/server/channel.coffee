@@ -44,7 +44,7 @@ class Channel
         unless @_isPublic
             @_sendToRoom 'client_joined',
                 channel: @name
-                cldata: clientSocket.identData
+                cldata: clientSocket.identity
             @_sendClientList(clientSocket)
 
         # Permanently register client for channel
@@ -61,7 +61,7 @@ class Channel
         unless @_isPublic
             @_sendToRoom 'client_left',
                 channel: @name
-                client: clientSocket.identData.id
+                client: clientSocket.identity
 
         clientSocket.leave(@name)               # Remove client from room of channel
         clientSocket.emit 'left', @name         # Notice client for channel leave
@@ -87,6 +87,14 @@ class Channel
             socket.id
         ###
 
+    # @protected
+    _sendMessageToRoom: (senderIdentity, messageText) ->
+        senderIdentData = senderIdentity.toData()
+        @_sendToRoom 'message',
+            channel: @name
+            sender: senderIdentData
+            msg: messageText
+
     _sendToRoom: (eventName, data) ->
         io.sockets.in(@name).emit(eventName, data)
 
@@ -102,14 +110,12 @@ class Channel
 
         return if messageText is ''
 
-        @_sendToRoom 'message',
-            channel: @name
-            sender: clientSocket.identData
-            msg: messageText
+        @_sendMessageToRoom(clientSocket.identity, messageText)
 
 
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
         @removeClient(clientSocket, isDisconnect)
+
 
 
 ## Export class

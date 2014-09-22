@@ -11,6 +11,7 @@ class SchizoBot
 
     gameData: null
     botChannel: null
+    ircChannelName: Config.IRC_CHANNEL_GLOBAL
 
     constructor: (@botChannel, @gameData) ->
         console.log 'Constructing new Bot...'
@@ -24,7 +25,7 @@ class SchizoBot
         # Create client instance (but dont connect)
         @client = new irc.Client Config.IRC_SERVER_IP, @nickName,
             #channels: [Config.IRC_CHANNEL_GLOBAL, Config.IRC_CHANNEL_INGAME_PATTERN]
-            channels: [Config.IRC_CHANNEL_GLOBAL]
+            channels: [@ircChannelName]
             port: Config.IRC_SERVER_PORT
             userName: @userName
             realName: @realName
@@ -33,7 +34,9 @@ class SchizoBot
             floodProtection: true           # Protect the bot from beeing kicket, if users are flooding
             floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
 
-        @client.addListener 'message', @_handleIrcMessage
+        # Create listeners
+        @client.addListener "message#{@ircChannelName}", @_handleIrcMessageToChannel
+        @client.addListener 'pm', @_handleIrcMessageToBot
 
 
     start: (channelList) ->
@@ -52,36 +55,57 @@ class SchizoBot
     # IRC event handlers
     #
 
-    _handleIrcMessage: (from, to, message, isSecondTry=false) =>
-        unless isSecondTry                                          ## TODO: why is always isSecondTry = true ?
-            console.log 'FIRST TRY'
+    _handleIrcMessageToBot: (from, message, fullData, isChannelMessage=false) =>
+        # Create responding function
+        respondFunc = (messageText) => @_respondToIrcQuery(from, messageText)
+        if isChannelMessage
+            respondFunc = (messageText) => @_respondToIrcChannel(@ircChannelName, messageText)
 
-            if message.indexOf(@nickName + ':') > -1                ## TODO: why is the command not recognized?
-                console.log 'HANDLING'
-                return @_handleIrcMessageToBot(from, to, message)
-
-        console.log 'DONT HANDLING', from, to
-        #broudcast...
-
-
-
-
-    _handleIrcMessageToBot: (from, to, message) =>
+        # Check for bot command
         if message.indexOf('galaxy?') > -1
-            @client.say(to, 'Galaxy: ' + @realName)
+            respondFunc('Galaxy: ' + @gameData.name)
+            return
+
+        # Fallback response
+        if isChannelMessage
+            respondFunc('Sry, what?')
         else
-            #@handleIrcMessage(from, to, message, true)
+            # TODO: Print help
+            respondFunc('Unknown command')
+
+
+    _handleIrcMessageToChannel: (from, message, fullData) =>
+        if 0 <= message.indexOf("#{@nickName}:") <= 3  # Recognize public talk to
+            @_sendMessageToWebClients(from, message)    # Mirror command to web channel
+            @_handleIrcMessageToBot(from, message, fullData, true)
+        else
+            @_sendMessageToWebClients(from, message)
+
+
+    #
+    # Sending routines
+    #
+
+    _sendMessageToWebClients: (senderNickName, messageText) =>
+        @botChannel.handleBotMessage(senderNickName, messageText)
+
+    _respondToIrcQuery: (receiverNickName, messageText) ->
+        @client.say(receiverNickName, messageText)
+
+    _respondToIrcChannel: (channelName, messageText) ->
+        @client.say(channelName, messageText)
+        @_sendMessageToWebClients(@nickName, messageText)  # Mirror response to web channel
 
 
     #
     # BotChannel handling
     #
 
-    handleWebClientMessage: (senderData, rawMessage) ->
-        clientNick = senderData.name or 'Anonymous'
+    handleWebClientMessage: (senderIdentity, rawMessage) ->
+        clientNick = senderIdentity.getName()
         messageText = "<#{clientNick}>: #{rawMessage}"
 
-        @client.say(Config.IRC_CHANNEL_GLOBAL, messageText)
+        @client.say(@ircChannelName, messageText)
 
 
 
