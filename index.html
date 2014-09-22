@@ -48,6 +48,7 @@
         }
 
         .tabsystemViewport > div {
+            display: flex;
             border: solid 0px red;
             width: 100%;
             height: 200px;
@@ -56,10 +57,12 @@
 
         .chatMessagesContainer,
         .chatUsersContainer {
-            width: 80%;
             height: 100%;
-            float: left;
             overflow-y: scroll;
+        }
+
+        .chatMessagesContainer {
+            flex: 1;
         }
 
         .chatUsersContainer {
@@ -84,9 +87,11 @@
         </ul>
         <div class="tabsystemViewport">
             <div id="tabPageServer">
-                <ul class="chatMessages">
-                    <li>Loading...</li>
-                </ul>
+                <div class="chatMessagesContainer">
+                    <ul class="chatMessages">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
