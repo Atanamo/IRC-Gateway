@@ -14,13 +14,13 @@ class SchizoBot
     ircChannelName: Config.IRC_CHANNEL_GLOBAL
 
     constructor: (@botChannel, @gameData) ->
-        console.log 'Constructing new Bot...'
-
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
         @userName = 'GalaxyBot' + @gameData.id
         @realName = Config.BOT_REALNAME_PATTERN
         @realName = @realName.replace(/<id>/i, @gameData.id)
         @realName = @realName.replace(/<name>/i, @gameData.name)
+
+        log.info "Creating bot '#{@nickName}'..."
 
         # Create client instance (but dont connect)
         @client = new irc.Client Config.IRC_SERVER_IP, @nickName,
@@ -35,13 +35,16 @@ class SchizoBot
             floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
 
         # Create listeners
-        @client.addListener "message#{@ircChannelName}", @_handleIrcMessageToChannel
+        @client.addListener "error", @_handleIrcError
         @client.addListener 'pm', @_handleIrcMessageToBot
+        @client.addListener "message#{@ircChannelName}", @_handleIrcMessageToChannel
+        @client.addListener 'names#{@ircChannelName}', @_handleIrcUserList
+        @client.addListener 'topic', @_handleIrcTopicChange
 
 
     start: (channelList) ->
         # Start 
-        console.log 'Connecting Bot...'
+        log.info "Connecting bot '#{@nickName}'..."
 
         @client.connect
             callback: ->
@@ -54,6 +57,9 @@ class SchizoBot
     #
     # IRC event handlers
     #
+
+    _handleIrcError: (message) ->
+        log.error message, "IRC server (Bot '#{@nickName}')"
 
     _handleIrcMessageToBot: (from, message, fullData, isChannelMessage=false) =>
         # Create responding function
@@ -80,6 +86,14 @@ class SchizoBot
             @_handleIrcMessageToBot(from, message, fullData, true)
         else
             @_sendMessageToWebClients(from, message)
+
+    _handleIrcUserList: (nicks) ->
+        console.log 'NICKS', nicks
+
+    _handleIrcTopicChange: (channel, topic, nick) ->
+        if channel is @ircChannelName
+            console.log 'TOPIC', channel, nick, topic
+            #@botChannel.handleBotEventNotice('channel_topic', topic)
 
 
     #

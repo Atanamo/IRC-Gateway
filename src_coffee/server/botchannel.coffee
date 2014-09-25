@@ -56,6 +56,8 @@ class BotChannel extends Channel
 
         @_sendMessageToRoom(senderIdentity, messageText)
 
+    handleBotEventNotice: (noticeType, noticeData) ->
+        # TODO: Handles noticeType [ nick_rename, client_join, client_part, channel_topic ]
 
 
 

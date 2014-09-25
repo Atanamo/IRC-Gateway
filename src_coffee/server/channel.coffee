@@ -76,16 +76,21 @@ class Channel
     #
 
     _sendClientList: (clientSocket) ->
-        clientSocketList = io.sockets.clients(@name)
-        #clientSocket.emit 'channel_clients', clientList
-        ###
-        console.info '----------------------------'
-        console.info clientSocketList
-        console.info '----------------------------'
+        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
+        clientMetaList = io.sockets.adapter.rooms[@name]
+        clientList = []
 
-        clientList = for socket in clientSocketList
-            socket.id
-        ###
+        for clientID of clientMetaList
+            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+
+            if clientSocket?
+                clientIdentData = clientSocket.identity?.toData()
+                clientList.push(clientIdentData)
+
+            # you can do whatever you need with this
+            #clientSocket.emit('new event', "Updates")
+
+        clientSocket.emit 'channel_clients', @name, clientList
 
     # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->

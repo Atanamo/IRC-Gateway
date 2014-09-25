@@ -20,6 +20,7 @@ class this.SocketClient
         @socket.on 'welcome', @_handleServerWelcome
         @socket.on 'message', @_handleMessageReceive
         @socket.on 'joined', @_handleChannelJoined
+        @socket.on 'channel_clients', @_handleChannelClientList
 
 
     #
@@ -39,6 +40,10 @@ class this.SocketClient
 
     _handleChannelJoined: (channel) =>
         @chatController.handleChannelJoined(channel)
+
+    _handleChannelClientList: (channel, clientList) ->
+        # TODO
+        console.log 'Clients list:', channel, clientList
 
 
     #

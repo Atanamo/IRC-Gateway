@@ -23,9 +23,9 @@
     "npm": ">= 1.0.0"
   },
   "dependencies": {
-    "irc": "~0.3.6",
+    "irc": "~0.3.7",
     "express": "~3.2.6",
-    "socket.io": "~0.9.16"
+    "socket.io": "~1.1.0"
   },
   "devDependencies": {},
   "bundleDependencies": [],
