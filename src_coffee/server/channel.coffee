@@ -63,13 +63,15 @@ class Channel
         clientSocket.removeAllListeners @eventNameLeave
         clientSocket.removeAllListeners 'disconnect'
 
-        # Update visible users in channel
-        unless @_isPublic
-            @_sendToRoom 'client_left',
-                client: clientSocket.identity
-
+        # Update client
         clientSocket.leave(@name)             # Remove client from room of channel
         @_sendToSocket(clientSocket, 'left')  # Notice client for channel leave
+
+        # Update visible users in channel
+        unless @isPublic
+            @_sendToRoom 'client_left',
+                client: clientSocket.identity
+            @_sendClientList(clientSocket)
 
         # Permanently unregister client for channel
         unless isDisconnect
@@ -85,6 +87,7 @@ class Channel
         timestamp = @_getCurrentTimestamp()
         clientSocket.emit(eventName, @name, timestamp, data...)
 
+    # @protected
     _sendClientList: (clientSocket) ->
         clientList = []
         clientsMap = @_getUniqueClientsMap()
@@ -92,7 +95,10 @@ class Channel
         for clientID, clientIdentity of clientsMap
             clientList.push(clientIdentity.toData())
 
-        @_sendToSocket(clientSocket, 'channel_clients', clientList)
+        if clientSocket?
+            @_sendToSocket(clientSocket, 'channel_clients', clientList)
+        else
+            @_sendToRoom('channel_clients', clientList)
 
 
     # @protected
@@ -134,6 +140,7 @@ class Channel
     _getCurrentTimestamp: ->
         return (new Date()).getTime()
 
+    # May be overridden
     # @protected
     _getUniqueClientsMap: ->
         #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x

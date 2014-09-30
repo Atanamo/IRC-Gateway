@@ -36,6 +36,9 @@ class BotChannel extends Channel
     addClient: (clientSocket, isRejoin=false) ->
         super(clientSocket, true)   # true, because: dont do that: db.addClientToChannel(clientSocket, @name)
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
+        # Send list of irc users (if not already sent by super method)
+        if @isPublic
+            @_sendClientList(clientSocket)
 
     addBot: (bot) ->
         # Store bot reference, adressable by game id
@@ -93,16 +96,36 @@ class BotChannel extends Channel
 
     handleBotMessage: (senderNickName, messageText) ->
         senderIdentity = ClientIdentity.createFromIrcNick(senderNickName)
-
         @_sendMessageToRoom(senderIdentity, messageText)
 
     handleBotTopicChange: (newTopic, authorNickName) ->
         @ircChannelTopic = newTopic
         @_sendChannelTopic(null, newTopic, authorNickName)  # Send topic to room
 
-    handleBotEventNotice: (noticeType, noticeData) ->
-        # TODO: Handles noticeType [ nick_rename, client_join, client_part, channel_topic ]
+    handleBotChannelUserList: (nickMap) ->
+        @ircUserList = nickMap
+        @_sendClientList()
 
+    handleBotChannelUserChange: (changeType, reason, nickName, newNickName) ->
+        # TODO: Handles changeType [ nick_rename, client_join, client_part ]
+        # New client mode flags only relevant, if renaming
+
+
+    #
+    # Helpers
+    #
+
+    # @override
+    _getUniqueClientsMap: ->
+        # Determine basic list
+        if @isPublic
+            clientsMap = {}
+        else
+            clientsMap = super
+        # Append irc users to list
+        for nickName, userFlag of @ircUserList
+            clientsMap[nickName] = ClientIdentity.createFromIrcNick('' + userFlag + nickName)
+        return clientsMap
 
 
 ## Export class

@@ -48,6 +48,7 @@ class SchizoBot
 
         @client.addListener 'pm', @_handleIrcMessageToBot
         @client.addListener "message#", @_handleIrcMessageToChannel
+        #TODO: listen for command /me
 
         @client.addListener 'names', @_handleIrcUserList
         @client.addListener 'topic', @_handleIrcTopicChange
@@ -93,12 +94,12 @@ class SchizoBot
                 log.info "Welcome message for bot '#{@nickName}':", welcomeMessage
 
     _handleIrcChannelJoin: (channel, joinedNick) =>
-        infoMessage = "#{joinedNick} has joined #{channel} on IRC"
-        @_sendUserListUpdateToWebChannel(channel, infoMessage)
+        @_sendUserListRequestToIrcChannel(channel) if joinedNick isnt @nickName  # Don't request new user list, if bot joined itself
+        @_sendUserChangeToWebChannel(channel, 'join', 'join', joinedNick)
 
-    _handleIrcChannelPart: (channel, leftNick) =>
-        infoMessage = "#{leftNick} has left #{channel} on IRC"
-        @_sendUserListUpdateToWebChannel(channel, infoMessage)
+    _handleIrcChannelPart: (channel, partedNick) =>
+        @_sendUserListRequestToIrcChannel(channel)
+        @_sendUserChangeToWebChannel(channel, 'part', 'part', partedNick)
 
     _handleIrcMessageToBot: (senderNick, message, fullData, channel=null) =>
         # Create responding function
@@ -131,6 +132,8 @@ class SchizoBot
 
     _handleIrcUserList: (channel, nickList) =>
         console.log 'NICKS', channel, nickList
+
+        @_sendToWebChannel(channel, 'handleBotChannelUserList', nickList)
 
     _handleIrcTopicChange: (channel, topic, nick) =>
         @_sendToWebChannel(channel, 'handleBotTopicChange', topic, nick)
@@ -177,12 +180,14 @@ class SchizoBot
         targetBotChannel = @botChannelList[channelName]
         targetBotChannel?[botChannelHandlingFuncName]?(handlingFuncArgs...)
 
-    _sendUserListUpdateToWebChannel: (channelName, infoMessageText) ->
-        # TODO: Send new user list and send info message
-        targetBotChannel = @botChannelList[channelName]
+    _sendUserChangeToWebChannel: (channelName, args...) ->
+        @_sendToWebChannel(channelName, 'handleBotChannelUserChange', args...)
 
     _sendMessageToWebChannel: (channelName, senderNick, messageText) ->
         @_sendToWebChannel(channelName, 'handleBotMessage', senderNick, messageText)
+
+    _sendUserListRequestToIrcChannel: (channelName) ->
+        @client.send('names', channelName)
 
     _respondToIrcQuery: (receiverNick, messageText) ->
         @client.say(receiverNick, messageText)
