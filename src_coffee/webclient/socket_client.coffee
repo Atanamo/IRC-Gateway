@@ -49,6 +49,7 @@ class this.SocketClient
         console.log 'Clients list:', channel, clientList
 
     _handleChannelTopic: (channel, timestamp, data) =>
+        data.author = data.author?.name
         @chatController.handleChannelTopic(channel, timestamp, data)
 
 

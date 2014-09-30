@@ -113,14 +113,21 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
 
         # Print join message to tab
-        #$('#' + tabID + ' .chatMessages').html('CHANNEL JOINED: ' + channel)
-        @_appendNoticeToTab(tabPage, null, 'initial_join', "Joined #{channel}")
+        @_appendNoticeToTab(tabPage, null, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
 
     handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
+        # TODO: Translated notices
         tabPage = @_getChannelTabPage(channel)
 
         if isInitial
-            @_appendNoticeToTab(tabPage, timestamp, 'topic', topic)
+            @_appendNoticeToTab(tabPage, timestamp, 'topic', "Channel topic: #{topic}")
+        else
+            if author?
+                notice = "#{author} set new channel topic: #{topic}"
+            else
+                notice = "New channel topic: #{topic}"
+
+            @_appendNoticeToTab(tabPage, timestamp, 'topic', notice)
 
 
     #
