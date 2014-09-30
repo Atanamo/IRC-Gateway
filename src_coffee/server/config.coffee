@@ -9,9 +9,9 @@ module.exports =
     IRC_SERVER_IP: 'underworld1.no.quakenet.org'
     IRC_SERVER_PORT: 6667
 
-    IRC_CHANNEL_GLOBAL: '#sgr'
-    IRC_CHANNEL_INGAME_PATTERN: '#sgr_ingame_galaxy_<id>'
-    IRC_CHANNEL_INGAME_PASSWORD: '!This1Is2The3Ultimate4PW5!'
+    IRC_CHANNEL_GLOBAL: '#sgr2'
+    #IRC_CHANNEL_INGAME_PATTERN: '#sgr_ingame_galaxy_<id>'
+    #IRC_CHANNEL_INGAME_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
 
     INTERN_BOT_CHANNEL_NAME: 'irc_channel'

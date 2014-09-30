@@ -3,10 +3,10 @@
 Config = require './config'
 
 
-# TODO: Teils nur Methodenruempfe da.
 ## Class definition - Database:
 ## Wraps the database of choice.
-## Provides ready-to-use methods for all needed read/write operations
+## Provides ready-to-use methods for all needed read/write operations.
+##
 class Database
 
     connect: () ->

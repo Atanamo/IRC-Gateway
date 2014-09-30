@@ -3,23 +3,31 @@
 #Config = require './config'
 
 
-## Class definition
+## Basic abstraction of a socket.io room.
+## If channel is public, it doesn't inform connected clients by a current list of other socket clients.
+##
 class Channel
     @_instances: {}
 
-    _isPublic: false
-    _title: 'New Channel'
-    _eventNameMsg: 'message#unnamed'
-    _eventNameLeave: 'leave#unnamed'
+    name: 'default'
+    isPublic: false
+    title: 'New Channel'
+
+    eventNameMsg: 'message#unnamed'
+    eventNameLeave: 'leave#unnamed'
+
+
 
     constructor: (@name) ->
-        log.info 'Instance of new channel ' + @name
+        log.info 'Creating new channel ' + @name
 
         data = db.getChannelData(@name)
-        @_isPublic = data.is_public
-        @_title = data.title
-        @_eventNameMsg = 'message#' + @name
-        @_eventNameLeave = 'leave#' + @name
+
+        if data?
+            @isPublic = data.is_public
+            @title = data.title
+            @eventNameMsg = 'message#' + @name
+            @eventNameLeave = 'leave#' + @name
 
     @getInstance: (name) ->
         unless @_instances[name]?
@@ -36,12 +44,12 @@ class Channel
         clientSocket.join(@name)                # Join client to room of channel
 
         # Register events for this channel
-        clientSocket.on @_eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
-        clientSocket.on @_eventNameLeave, => @_handleClientLeave(clientSocket)
+        clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
+        clientSocket.on @eventNameLeave, => @_handleClientLeave(clientSocket)
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
         # Update visible users in channel
-        unless @_isPublic
+        unless @isPublic
             @_sendToRoom 'client_joined',
                 channel: @name
                 cldata: clientSocket.identity
@@ -53,8 +61,8 @@ class Channel
 
     removeClient: (clientSocket, isDisconnect=false) ->
         # Unregister events for this channel
-        clientSocket.removeAllListeners @_eventNameMsg
-        clientSocket.removeAllListeners @_eventNameLeave
+        clientSocket.removeAllListeners @eventNameMsg
+        clientSocket.removeAllListeners @eventNameLeave
         clientSocket.removeAllListeners 'disconnect'
 
         # Update visible users in channel
@@ -75,6 +83,10 @@ class Channel
     # Sending routines
     #
 
+    # @protected
+    _sendToSocket: (clientSocket, eventName, data...) ->
+        clientSocket.emit(eventName, @name, data...)
+
     _sendClientList: (clientSocket) ->
         #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
         clientMetaList = io.sockets.adapter.rooms[@name]
@@ -90,7 +102,12 @@ class Channel
             # you can do whatever you need with this
             #clientSocket.emit('new event', "Updates")
 
-        clientSocket.emit 'channel_clients', @name, clientList
+        @_sendToSocket(clientSocket, 'channel_clients', clientList)
+
+
+    # @protected
+    _sendToRoom: (eventName, data...) ->
+        io.sockets.in(@name).emit(eventName, data...)
 
     # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->
@@ -100,14 +117,12 @@ class Channel
             sender: senderIdentData
             msg: messageText
 
-    _sendToRoom: (eventName, data) ->
-        io.sockets.in(@name).emit(eventName, data)
-
 
     #
     # Client event handlers
     #
 
+    # May be overridden
     # @protected
     _handleClientMessage: (clientSocket, messageText) =>
         log.info 'Client message:', messageText

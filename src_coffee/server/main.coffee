@@ -7,9 +7,10 @@
 # - http://middlewaremagic.com/jboss/?p=2305
 
 ## Include libraries
-express = require 'express'
 http = require 'http'
+express = require 'express'
 socketio = require 'socket.io'
+Q = require 'q'
 
 ## Include app modules
 Config = require './config'
@@ -30,6 +31,7 @@ db = new Database()                # Create database wrapper object
 log = Logger
 
 ## Set object to global scope
+GLOBAL.Q = Q
 GLOBAL.io = io
 GLOBAL.db = db
 GLOBAL.log = log
@@ -74,7 +76,7 @@ class Gateway
         clientSocket.identity = ClientIdentity.createFromDatabase(0, 0)
 
         # Let client join default channel
-        botChannel = BotChannel.getInstance()
+        botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
         botChannel.addClient(clientSocket, true)
 
         # Let client join to saved channels
@@ -111,17 +113,18 @@ class Gateway
 
 
     _setupBots: ->
-        botChannel = BotChannel.getInstance()
+        botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
 
         # TODO: Multiple bots, each for one galaxy. Singleton-Concept?
-        bot = new Bot botChannel,
+        bot = new Bot
             id: 123
             name: 'Eine Testgalaxie'
 
-        bot.start()
+        startPromise = bot.start()
 
         # Add bots to botChannel
-        botChannel.addBot(bot)
+        startPromise.then =>
+            botChannel.addBot(bot)
 
 
 
