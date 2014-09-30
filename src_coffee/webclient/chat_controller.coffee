@@ -87,15 +87,13 @@ class this.ChatController
 
     handleServerMessage: (msg) ->
         tabPage = @ui.tabPageServer
-        sender = 'Server'
-        @_appendMessageToTab(tabPage, {sender, msg})
+        @_appendNoticeToTab(tabPage, null, 'log', msg)
 
-    handleChannelMessage: (data) ->
-        channel = data.channel
+    handleChannelMessage: (channel, data) ->
         tabPage = @_getChannelTabPage(channel)
         @_appendMessageToTab(tabPage, data)
 
-    handleChannelJoined: (channel) =>
+    handleChannelJoined: (channel) ->
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
 
@@ -116,7 +114,13 @@ class this.ChatController
 
         # Print join message to tab
         #$('#' + tabID + ' .chatMessages').html('CHANNEL JOINED: ' + channel)
-        @_appendMessageToTab(tabPage, sender: 'CHANNEL JOINED', msg: channel)
+        @_appendNoticeToTab(tabPage, null, 'initial_join', "Joined #{channel}")
+
+    handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
+        tabPage = @_getChannelTabPage(channel)
+
+        if isInitial
+            @_appendNoticeToTab(tabPage, timestamp, 'topic', topic)
 
 
     #
@@ -133,14 +137,45 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _appendMessageToTab: (tabPage, {sender, msg, isOwn}) ->
+    _appendMessageToTab: (tabPage, {timestamp, sender, msg, isOwn}) ->
         if isOwn
             dataValue = 'own'
             @ui.chatInput.val('')
         else
             dataValue = 'external'
 
+        @_appendEntryToTab(tabPage, timestamp, dataValue, msg, sender)
+
+    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
+        @_appendEntryToTab(tabPage, timestamp, "server", noticeText)
+
+    _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
+        unless entryTimestamp?
+            entryTimestamp = (new Date()).getTime()
+            console.warn 'Missing timestamp for new entry:', entryText  # TODO: Remove logging
+        timeString = @_getLocalizedTime(entryTimestamp)
+
+        # Build new list item
+        itemElem = $('<li/>')
+        itemElem.attr('data-item', entryDataValue)
+
+        spanElem = $('<span/>').addClass('time')
+        spanElem.text("[#{timeString}] ")
+        itemElem.append(spanElem)
+
+        if entryAuthor?
+            spanElem = $('<span/>').addClass('name')
+            spanElem.text(entryAuthor + ': ')
+            itemElem.append(spanElem)
+
+        spanElem = $('<span/>').addClass('content')
+        spanElem.text(entryText)
+        itemElem.append(spanElem)
+
+        # Append item to list
         messagesElem = tabPage.find(@gui.tabPagesMessages)
-        messagesElem.append("<li data-item=\"#{dataValue}\">#{sender}: #{msg}</li>")
+        messagesElem.append(itemElem)
 
-
+    _getLocalizedTime: (timestamp) ->
+        date = new Date(timestamp)
+        return date.toLocaleTimeString()

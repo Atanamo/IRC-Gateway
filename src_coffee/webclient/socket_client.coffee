@@ -22,6 +22,8 @@ class this.SocketClient
         @socket.on 'joined', @_handleChannelJoined
         @socket.on 'channel_clients', @_handleChannelClientList
 
+        @socket.on 'channel_topic', @_handleChannelTopic
+
 
     #
     # Socket message handling
@@ -33,17 +35,21 @@ class this.SocketClient
     _handleServerWelcome: (text) =>
         @chatController.handleServerMessage(text)
 
-    _handleMessageReceive: (data) =>
+    _handleMessageReceive: (channel, timestamp, data) =>
+        data.timestamp = timestamp
         data.isOwn = (String(data.sender?.id) == String(@instanceData.id))
         data.sender = data.sender?.name or data.sender?.id  # Extract nick name from sender data
-        @chatController.handleChannelMessage(data)
+        @chatController.handleChannelMessage(channel, data)
 
-    _handleChannelJoined: (channel) =>
+    _handleChannelJoined: (channel, timestamp) =>
         @chatController.handleChannelJoined(channel)
 
-    _handleChannelClientList: (channel, clientList) ->
+    _handleChannelClientList: (channel, timestamp, clientList) =>
         # TODO
         console.log 'Clients list:', channel, clientList
+
+    _handleChannelTopic: (channel, timestamp, data) =>
+        @chatController.handleChannelTopic(channel, timestamp, data)
 
 
     #

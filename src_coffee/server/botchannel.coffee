@@ -35,7 +35,7 @@ class BotChannel extends Channel
     # @override
     addClient: (clientSocket, isRejoin=false) ->
         super(clientSocket, true)   # true, because: dont do that: db.addClientToChannel(clientSocket, @name)
-        @_sendChannelTopic(clientSocket, @ircChannelTopic)
+        @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
 
     addBot: (bot) ->
         # Store bot reference, adressable by game id
@@ -55,11 +55,15 @@ class BotChannel extends Channel
 
     _sendChannelTopic: (clientSocket, topicText, authorNickName) ->
         authorIdentity = ClientIdentity.createFromIrcNick(authorNickName) if authorNickName?
+        data =
+            topic: topicText
+            author: authorIdentity
+            isInitial: clientSocket?
 
         if clientSocket?
-            @_sendToSocket(clientSocket, 'channel_topic', topicText, authorIdentity)
+            @_sendToSocket(clientSocket, 'channel_topic', data)
         else
-            @_sendToRoom('channel_topic', topicText, authorIdentity)
+            @_sendToRoom('channel_topic', data)
 
 
     #

@@ -40,7 +40,7 @@ class Channel
     #
 
     addClient: (clientSocket, isRejoin=false) ->
-        clientSocket.emit 'joined', @name       # Notice client for channel join
+        @_sendToSocket(clientSocket, 'joined')  # Notice client for channel join
         clientSocket.join(@name)                # Join client to room of channel
 
         # Register events for this channel
@@ -51,8 +51,7 @@ class Channel
         # Update visible users in channel
         unless @isPublic
             @_sendToRoom 'client_joined',
-                channel: @name
-                cldata: clientSocket.identity
+                client: clientSocket.identity
             @_sendClientList(clientSocket)
 
         # Permanently register client for channel
@@ -68,11 +67,10 @@ class Channel
         # Update visible users in channel
         unless @_isPublic
             @_sendToRoom 'client_left',
-                channel: @name
                 client: clientSocket.identity
 
-        clientSocket.leave(@name)               # Remove client from room of channel
-        clientSocket.emit 'left', @name         # Notice client for channel leave
+        clientSocket.leave(@name)             # Remove client from room of channel
+        @_sendToSocket(clientSocket, 'left')  # Notice client for channel leave
 
         # Permanently unregister client for channel
         unless isDisconnect
@@ -85,7 +83,8 @@ class Channel
 
     # @protected
     _sendToSocket: (clientSocket, eventName, data...) ->
-        clientSocket.emit(eventName, @name, data...)
+        timestamp = @_getCurrentTimestamp()
+        clientSocket.emit(eventName, @name, timestamp, data...)
 
     _sendClientList: (clientSocket) ->
         #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
@@ -107,13 +106,13 @@ class Channel
 
     # @protected
     _sendToRoom: (eventName, data...) ->
-        io.sockets.in(@name).emit(eventName, data...)
+        timestamp = @_getCurrentTimestamp()
+        io.sockets.in(@name).emit(eventName, @name, timestamp, data...)
 
     # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->
         senderIdentData = senderIdentity.toData()
         @_sendToRoom 'message',
-            channel: @name
             sender: senderIdentData
             msg: messageText
 
@@ -135,6 +134,14 @@ class Channel
 
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
         @removeClient(clientSocket, isDisconnect)
+
+
+    #
+    # Helpers
+    #
+
+    _getCurrentTimestamp: ->
+        return (new Date()).getTime()
 
 
 
