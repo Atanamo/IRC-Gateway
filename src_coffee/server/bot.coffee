@@ -103,14 +103,16 @@ class SchizoBot
     _handleIrcMessageToBot: (senderNick, message, fullData, channel=null) =>
         # Create responding function
         respondFunc = (messageText) => @_respondToIrcQuery(senderNick, messageText)
-
         if channel?
             respondFunc = (messageText) => @_respondToIrcChannel(channel, senderNick, messageText)
 
-        # Check for bot command
-        if message.indexOf('galaxy?') > -1
-            respondFunc('Galaxy = ' + @gameData.name)
-            return
+        # Sanitize message
+        message = message.toLowerCase()
+
+        # Check for a bot command
+        return if @_checkRespondForGalaxyName(message, respondFunc)
+        return if @_checkRespondForNumberOfClients(message, respondFunc)
+        return if @_checkRespondForHelp(message, respondFunc)
 
         # Fallback response
         if channel?
@@ -131,8 +133,40 @@ class SchizoBot
         console.log 'NICKS', channel, nickList
 
     _handleIrcTopicChange: (channel, topic, nick) =>
-        console.log 'TOPIC', channel, nick, topic
         @_sendToWebChannel(channel, 'handleBotTopicChange', topic, nick)
+
+
+    #
+    # Bot command routines
+    #
+
+    _checkRespondForGalaxyName: (message, respondFunc) ->
+        if message.indexOf('galaxy?') > -1
+            respondFunc('Galaxy = ' + @gameData.name)
+            return true
+        return false
+
+    _checkRespondForNumberOfClients: (message, respondFunc) ->
+        if message.indexOf('players?') > -1
+            firstKey = Object.keys(@botChannelList)[0]
+            clientsNum = 0
+            if firstKey?
+                botChannel = @botChannelList[firstKey]
+                clientsNum = botChannel.getNumberOfClients()
+            respondFunc('Players online = ' + clientsNum)
+            return true
+        return false
+
+
+    _checkRespondForHelp: (message, respondFunc) ->
+        if message.indexOf('help') > -1
+            commandsText = ''
+            commandsText += 'galaxy?  ---  What is the name of my galaxy?\n'
+            commandsText += 'players?  ---  How many players of my galaxy are currently online?\n'
+            commandsText += 'help  ---  Prints you this help\n'
+            respondFunc('I understand following commands:\n' + commandsText)
+            return true
+        return false
 
 
     #
@@ -141,7 +175,7 @@ class SchizoBot
 
     _sendToWebChannel: (channelName, botChannelHandlingFuncName, handlingFuncArgs...) ->
         targetBotChannel = @botChannelList[channelName]
-        targetBotChannel[botChannelHandlingFuncName]?(handlingFuncArgs...)
+        targetBotChannel?[botChannelHandlingFuncName]?(handlingFuncArgs...)
 
     _sendUserListUpdateToWebChannel: (channelName, infoMessageText) ->
         # TODO: Send new user list and send info message
@@ -154,7 +188,7 @@ class SchizoBot
         @client.say(receiverNick, messageText)
 
     _respondToIrcChannel: (channelName, receiverNick, messageText) ->
-        fullMessageText = "@#{receiverNick}: #{messageText}"
+        fullMessageText = "@#{receiverNick}:  #{messageText}"
         @client.say(channelName, fullMessageText)
         @_sendMessageToWebChannel(channelName, @nickName, fullMessageText)  # Mirror response to web channel
 

@@ -17,7 +17,6 @@ class Channel
     eventNameLeave: 'leave#unnamed'
 
 
-
     constructor: (@name) ->
         log.info 'Creating new channel ' + @name
 
@@ -87,19 +86,11 @@ class Channel
         clientSocket.emit(eventName, @name, timestamp, data...)
 
     _sendClientList: (clientSocket) ->
-        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
-        clientMetaList = io.sockets.adapter.rooms[@name]
         clientList = []
+        clientsMap = @_getUniqueClientsMap()
 
-        for clientID of clientMetaList
-            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
-
-            if clientSocket?
-                clientIdentData = clientSocket.identity?.toData()
-                clientList.push(clientIdentData)
-
-            # you can do whatever you need with this
-            #clientSocket.emit('new event', "Updates")
+        for clientID, clientIdentity of clientsMap
+            clientList.push(clientIdentity.toData())
 
         @_sendToSocket(clientSocket, 'channel_clients', clientList)
 
@@ -142,6 +133,22 @@ class Channel
 
     _getCurrentTimestamp: ->
         return (new Date()).getTime()
+
+    # @protected
+    _getUniqueClientsMap: ->
+        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
+        clientMetaList = io.sockets.adapter.rooms[@name]
+        clientsMap = {}
+
+        for clientID of clientMetaList
+            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+
+            if clientSocket?
+                clientIdentity = clientSocket.identity
+                clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
+
+        return clientsMap
+
 
 
 

@@ -35,6 +35,9 @@ class ClientIdentity
     getGameID: ->
         return @idGame
 
+    getGlobalID: ->
+        return "#{@idGame}_#{@id}"
+
     toData: ->
         data = {}
         for key, val of this

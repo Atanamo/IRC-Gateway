@@ -48,6 +48,10 @@ class BotChannel extends Channel
     getIrcChannelName: ->
         return @ircChannelName
 
+    getNumberOfClients: ->
+        clientsMap = @_getUniqueClientsMap()
+        return Object.keys(clientsMap).length
+
 
     #
     # Sending routines
