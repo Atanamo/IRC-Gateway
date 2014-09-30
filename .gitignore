@@ -16,3 +16,7 @@ Desktop.ini
 node_modules/*
 src_js/*
 
+
+*.log
+src_coffee/*.js
+src_coffee/*/*.js
