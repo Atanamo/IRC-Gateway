@@ -52,7 +52,7 @@ class BotChannel extends Channel
         return @ircChannelName
 
     getNumberOfClients: ->
-        clientsMap = @_getUniqueClientsMap()
+        clientsMap = @_getUniqueClientsMap(true)
         return Object.keys(clientsMap).length
 
 
@@ -116,7 +116,9 @@ class BotChannel extends Channel
     #
 
     # @override
-    _getUniqueClientsMap: ->
+    _getUniqueClientsMap: (getOnlyWebClients=false) ->
+        return super if getOnlyWebClients  # Don't filter non-public, don't append IRC users
+
         # Determine basic list
         if @isPublic
             clientsMap = {}
@@ -126,6 +128,7 @@ class BotChannel extends Channel
         for nickName, userFlag of @ircUserList
             clientsMap[nickName] = ClientIdentity.createFromIrcNick('' + userFlag + nickName)
         return clientsMap
+
 
 
 ## Export class

@@ -3,12 +3,13 @@ class ClientIdentity
     id: 0
     idGame: 0
     name: 'Unknown'
-    title: 'Unknown'
+    title: null
     isIrcClient: false
 
     constructor: (data) ->
         for key, val of data
             @[key] = val
+        @title = @name unless @title?
 
     @createFromIrcNick: (nickName) ->
         identObj = new ClientIdentity

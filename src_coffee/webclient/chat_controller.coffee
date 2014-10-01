@@ -16,6 +16,7 @@ class this.ChatController
         tabsystemHeaderList: '#chatsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
         tabPagesMessages: '.chatMessages'
+        tabPagesUsers: '.chatUsers'
         tabPageSkeleton: '#tabPageSkeleton'
         tabPageServer: '#tabPageServer'
 
@@ -115,6 +116,13 @@ class this.ChatController
         # Print join message to tab
         @_appendNoticeToTab(tabPage, null, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
 
+    handleChannelClientList: (channel, clientList) ->
+        tabPage = @_getChannelTabPage(channel)
+        tabPage.find(@gui.tabPagesUsers).empty()
+
+        for identityData in clientList
+            @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
+
     handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
         # TODO: Translated notices
         tabPage = @_getChannelTabPage(channel)
@@ -181,6 +189,19 @@ class this.ChatController
 
         # Append item to list
         messagesElem = tabPage.find(@gui.tabPagesMessages)
+        messagesElem.append(itemElem)
+
+    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
+        itemText = shortName
+        itemText += ' [IRC]' if isIrcUser
+
+        # Build new list item
+        itemElem = $('<li/>')
+        itemElem.attr('title', fullName)
+        itemElem.text(itemText)
+
+        # Append item to list
+        messagesElem = tabPage.find(@gui.tabPagesUsers)
         messagesElem.append(itemElem)
 
     _getLocalizedTime: (timestamp) ->

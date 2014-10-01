@@ -131,8 +131,6 @@ class SchizoBot
             @_sendMessageToWebChannel(channel, senderNick, message)
 
     _handleIrcUserList: (channel, nickList) =>
-        console.log 'NICKS', channel, nickList
-
         @_sendToWebChannel(channel, 'handleBotChannelUserList', nickList)
 
     _handleIrcTopicChange: (channel, topic, nick) =>

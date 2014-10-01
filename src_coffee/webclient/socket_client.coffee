@@ -45,8 +45,7 @@ class this.SocketClient
         @chatController.handleChannelJoined(channel)
 
     _handleChannelClientList: (channel, timestamp, clientList) =>
-        # TODO
-        console.log 'Clients list:', channel, clientList
+        @chatController.handleChannelClientList(channel, clientList)
 
     _handleChannelTopic: (channel, timestamp, data) =>
         data.author = data.author?.name
