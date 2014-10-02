@@ -18,7 +18,8 @@ class this.SocketClient
 
         @socket.on 'connect', @_handleServerConnect      # Build-in event
         @socket.on 'welcome', @_handleServerWelcome
-        @socket.on 'message', @_handleMessageReceive
+        @socket.on 'message', @_handleChannelMessage
+        @socket.on 'notice', @_handleChannelNotice
         @socket.on 'joined', @_handleChannelJoined
         @socket.on 'channel_clients', @_handleChannelClientList
 
@@ -35,21 +36,23 @@ class this.SocketClient
     _handleServerWelcome: (text) =>
         @chatController.handleServerMessage(text)
 
-    _handleMessageReceive: (channel, timestamp, data) =>
-        data.timestamp = timestamp
-        data.isOwn = (String(data.sender?.id) == String(@instanceData.id))
-        data.sender = data.sender?.name or data.sender?.id  # Extract nick name from sender data
-        @chatController.handleChannelMessage(channel, data)
-
     _handleChannelJoined: (channel, timestamp) =>
-        @chatController.handleChannelJoined(channel)
+        @chatController.handleChannelJoined(channel, timestamp)
 
     _handleChannelClientList: (channel, timestamp, clientList) =>
         @chatController.handleChannelClientList(channel, clientList)
 
     _handleChannelTopic: (channel, timestamp, data) =>
-        data.author = data.author?.name
+        @simplifyUserIdentityData(data, 'author')
         @chatController.handleChannelTopic(channel, timestamp, data)
+
+    _handleChannelMessage: (channel, timestamp, data) =>
+        @simplifyUserIdentityData(data)
+        @chatController.handleChannelMessage(channel, timestamp, data)
+
+    _handleChannelNotice: (channel, timestamp, data) =>
+        @simplifyUserIdentityData(data)
+        @chatController.handleChannelNotice(channel, timestamp, data)
 
 
     #
@@ -60,4 +63,11 @@ class this.SocketClient
         @socket.emit 'message#' + channel, messageText
 
 
+    #
+    # Helper methods
+    #
+
+    simplifyUserIdentityData: (data, nameProperty='sender') ->
+        data.isOwn = (String(data[nameProperty]?.id) == String(@instanceData.id))
+        data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
 

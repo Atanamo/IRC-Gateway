@@ -10,6 +10,12 @@ module.exports.info = (text...) ->
 
     #gateway_global.db.writeLog()
 
+if Config.DEBUG_ENABLED
+    module.exports.debug = (text...) ->
+        console.debug '=> ', text...
+else
+    module.exports.debug = ->
+
 module.exports.warn = (text, sender='General') ->
     console.warn "! Warning of #{sender}:", text
 

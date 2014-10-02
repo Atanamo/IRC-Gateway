@@ -111,7 +111,7 @@ class Channel
         senderIdentData = senderIdentity.toData()
         @_sendToRoom 'message',
             sender: senderIdentData
-            msg: messageText
+            text: messageText
 
 
     #

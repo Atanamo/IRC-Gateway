@@ -72,6 +72,12 @@ class BotChannel extends Channel
         else
             @_sendToRoom('channel_topic', data)
 
+    _sendNoticeToRoom: (senderIdentity, noticeText) ->
+        senderIdentData = senderIdentity.toData()
+        @_sendToRoom 'notice',
+            sender: senderIdentData
+            text: noticeText
+
 
     #
     # Client event handlers
@@ -97,6 +103,10 @@ class BotChannel extends Channel
     handleBotMessage: (senderNickName, messageText) ->
         senderIdentity = ClientIdentity.createFromIrcNick(senderNickName)
         @_sendMessageToRoom(senderIdentity, messageText)
+
+    handleBotNotice: (senderNickName, noticeText) ->
+        senderIdentity = ClientIdentity.createFromIrcNick(senderNickName)
+        @_sendNoticeToRoom(senderIdentity, noticeText)
 
     handleBotTopicChange: (newTopic, authorNickName) ->
         @ircChannelTopic = newTopic

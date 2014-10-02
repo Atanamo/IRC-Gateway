@@ -46,15 +46,21 @@ class SchizoBot
         @client.addListener 'raw', @_handleIrcRawCommand
         @client.addListener 'registered', @_handleIrcConnectConfirmation
 
-        @client.addListener 'pm', @_handleIrcMessageToBot
-        @client.addListener "message#", @_handleIrcMessageToChannel
-        #TODO: listen for command /me
+        @client.addListener 'join', @_handleIrcChannelJoin
+        @client.addListener 'part', @_handleIrcChannelPart
 
         @client.addListener 'names', @_handleIrcUserList
         @client.addListener 'topic', @_handleIrcTopicChange
 
-        @client.addListener 'join', @_handleIrcChannelJoin
-        @client.addListener 'part', @_handleIrcChannelPart
+        @client.addListener 'pm', @_handleIrcMessageToBot
+        @client.addListener "message#", @_handleIrcMessageToChannel
+        @client.addListener "notice", @_handleIrcNotice
+
+        @client.addListener "ctcp-privmsg", @_handleIrcCommandViaCTCP
+        @client.addListener "ctcp-notice", @_handleIrcCommandReplyViaCTCP
+        @client.addListener "ctcp-version", @_handleIrcVersionRequestViaCTCP
+
+        #TODO: listen for command /me
 
 
     start: (channelList) ->
@@ -78,20 +84,20 @@ class SchizoBot
     # IRC event handlers
     #
 
-    _handleIrcError: (commandData) =>
-        log.error commandData, "IRC server (Bot '#{@nickName}')"
+    _handleIrcError: (rawData) =>
+        log.error rawData, "IRC server (Bot '#{@nickName}')"
 
     _handleIrcRawCommand: (data) =>
         #switch data.command
         #    when 'rpl_luserunknown', 'rpl_umodeis'
         #        log.info 'Unhandled command', data
 
-
-    _handleIrcConnectConfirmation: (commandData) =>
-        if commandData.command = 'rpl_welcome'
-            welcomeMessage = commandData.args?[1]
+    _handleIrcConnectConfirmation: (rawData) =>
+        if rawData.command = 'rpl_welcome'
+            welcomeMessage = rawData.args?[1]
             if welcomeMessage?
                 log.info "Welcome message for bot '#{@nickName}':", welcomeMessage
+
 
     _handleIrcChannelJoin: (channel, joinedNick) =>
         @_sendUserListRequestToIrcChannel(channel) if joinedNick isnt @nickName  # Don't request new user list, if bot joined itself
@@ -101,9 +107,18 @@ class SchizoBot
         @_sendUserListRequestToIrcChannel(channel)
         @_sendUserChangeToWebChannel(channel, 'part', 'part', partedNick)
 
-    _handleIrcMessageToBot: (senderNick, message, fullData, channel=null) =>
+
+    _handleIrcUserList: (channel, nickList) =>
+        @_sendToWebChannel(channel, 'handleBotChannelUserList', nickList)
+
+    _handleIrcTopicChange: (channel, topic, nick) =>
+        @_sendToWebChannel(channel, 'handleBotTopicChange', topic, nick)
+
+
+    _handleIrcMessageToBot: (senderNick, message, rawData, channel=null) =>
         # Create responding function
-        respondFunc = (messageText) => @_respondToIrcQuery(senderNick, messageText)
+        queryRespondFunc = (messageText) => @_respondToIrcQuery(senderNick, messageText)
+        respondFunc = queryRespondFunc
         if channel?
             respondFunc = (messageText) => @_respondToIrcChannel(channel, senderNick, messageText)
 
@@ -111,30 +126,54 @@ class SchizoBot
         message = message.toLowerCase()
 
         # Check for a bot command
+        return if @_checkRespondForHelp(message, queryRespondFunc)  # Always respond to query
         return if @_checkRespondForGalaxyName(message, respondFunc)
         return if @_checkRespondForNumberOfClients(message, respondFunc)
-        return if @_checkRespondForHelp(message, respondFunc)
+        return if @_checkRespondForVersion(message, respondFunc)
 
         # Fallback response
+        defaultResponse = 'Send me "help" for a list of available commands'
         if channel?
             respondFunc('Sry, what?')
         else
-            # TODO: Print help
-            respondFunc('Unknown command')
+            respondFunc("Unknown command '#{message}'. --- #{defaultResponse}")
 
-
-    _handleIrcMessageToChannel: (senderNick, channel, message, commandData) =>
+    _handleIrcMessageToChannel: (senderNick, channel, message, rawData) =>
         if 0 <= message.indexOf("#{@nickName}:") <= 3  # Recognize public talk to
             @_sendMessageToWebChannel(channel, senderNick, message)    # Mirror command to web channel
-            @_handleIrcMessageToBot(senderNick, message, commandData, channel)
+            @_handleIrcMessageToBot(senderNick, message, rawData, channel)
         else
             @_sendMessageToWebChannel(channel, senderNick, message)
 
-    _handleIrcUserList: (channel, nickList) =>
-        @_sendToWebChannel(channel, 'handleBotChannelUserList', nickList)
 
-    _handleIrcTopicChange: (channel, topic, nick) =>
-        @_sendToWebChannel(channel, 'handleBotTopicChange', topic, nick)
+    _handleIrcNotice: (senderNick, targetNickOrChannel, notice) =>
+        return if not senderNick? and targetNickOrChannel.toLowerCase() is 'auth'  # Ignore auth notices from server
+        if targetNickOrChannel is @nick
+            log.debug "Notice by #{senderNick} to #{targetNickOrChannel}: #{notice}"
+        else
+            @_sendToWebChannel(targetNickOrChannel, 'handleBotNotice', senderNick, notice)
+
+
+    _handleIrcCommandViaCTCP: (senderNick, targetNickOrChannel, rawMessage) =>
+        # This handler is triggered, whenever the bot receives a CTCP request or a CTCP command to a channel
+        return unless targetNickOrChannel isnt @nick  # Ignore direct ctcp messages to bot
+        return unless targetNickOrChannel?            # Ignore broken ctcp messages
+        channel = targetNickOrChannel
+        checkMessage = rawMessage.toLowerCase().trim()
+
+        # Handle action command (/me) 
+        if checkMessage.indexOf('action') is 0
+            actionText = rawMessage.replace(/^(action)/i, '').trim()  # Extract action text
+            noticeText = "#{senderNick} #{actionText}"  # Build complete notice
+            @_sendToWebChannel(channel, 'handleBotNotice', senderNick, noticeText)
+
+    _handleIrcCommandReplyViaCTCP: (senderNick, targetNickOrChannel, rawReplyMessage) =>
+        # This handler should only be triggered, if the bot had sent a CTCP request to another IRC client before
+        log.debug "Received CTCP reply from #{senderNick} to #{targetNickOrChannel}: #{rawReplyMessage}"
+
+    _handleIrcVersionRequestViaCTCP: (senderNick, targetNickOrChannel) =>
+        # This handler is specialized to a CTCP version request, but may could also be handled by @_handleIrcCommandViaCTCP()
+        @_respondToIrcViaCTCP(senderNick, 'version', Config.BOT_VERSION_STRING)
 
 
     #
@@ -158,13 +197,19 @@ class SchizoBot
             return true
         return false
 
+    _checkRespondForVersion: (message, respondFunc) ->
+        if message.indexOf('version') > -1
+            respondFunc('Version = ' + Config.BOT_VERSION_STRING)
+            return true
+        return false
 
     _checkRespondForHelp: (message, respondFunc) ->
         if message.indexOf('help') > -1
             commandsText = ''
+            commandsText += 'help  ---  Prints you this help (in the query)\n'
             commandsText += 'galaxy?  ---  What is the name of my galaxy?\n'
             commandsText += 'players?  ---  How many players of my galaxy are currently online?\n'
-            commandsText += 'help  ---  Prints you this help\n'
+            commandsText += 'version  ---  Prints you my version info\n'
             respondFunc('I understand following commands:\n' + commandsText)
             return true
         return false
@@ -184,8 +229,15 @@ class SchizoBot
     _sendMessageToWebChannel: (channelName, senderNick, messageText) ->
         @_sendToWebChannel(channelName, 'handleBotMessage', senderNick, messageText)
 
+    _sendNoticeToWebChannel: (channelName, senderNick, noticeText) ->
+        @_sendToWebChannel(channelName, 'handleBotNotice', senderNick, noticeText)
+
     _sendUserListRequestToIrcChannel: (channelName) ->
         @client.send('names', channelName)
+
+    _respondToIrcViaCTCP: (receiverNick, ctcpCommand, responseText) ->
+        ctcpText = "#{ctcpCommand} #{responseText}"
+        @client.ctcp(receiverNick, 'notice', ctcpText)  # Send notice for a reply to command
 
     _respondToIrcQuery: (receiverNick, messageText) ->
         @client.say(receiverNick, messageText)

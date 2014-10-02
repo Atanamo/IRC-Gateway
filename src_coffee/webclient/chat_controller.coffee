@@ -90,11 +90,15 @@ class this.ChatController
         tabPage = @ui.tabPageServer
         @_appendNoticeToTab(tabPage, null, 'log', msg)
 
-    handleChannelMessage: (channel, data) ->
+    handleChannelMessage: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
-        @_appendMessageToTab(tabPage, data)
+        @_appendMessageToTab(tabPage, timestamp, data)
 
-    handleChannelJoined: (channel) ->
+    handleChannelNotice: (channel, timestamp, data) ->
+        tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text)
+
+    handleChannelJoined: (channel, timestamp) ->
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
 
@@ -114,7 +118,7 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
 
         # Print join message to tab
-        @_appendNoticeToTab(tabPage, null, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
+        @_appendNoticeToTab(tabPage, timestamp, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
 
     handleChannelClientList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
@@ -152,16 +156,30 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _appendMessageToTab: (tabPage, {timestamp, sender, msg, isOwn}) ->
+    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
+        itemText = shortName
+        itemText += ' [IRC]' if isIrcUser
+
+        # Build new list item
+        itemElem = $('<li/>')
+        itemElem.attr('title', fullName)
+        itemElem.text(itemText)
+
+        # Append item to list
+        messagesElem = tabPage.find(@gui.tabPagesUsers)
+        messagesElem.append(itemElem)
+
+    _appendMessageToTab: (tabPage, timestamp, {sender, text, isOwn}) ->
         if isOwn
             dataValue = 'own'
             @ui.chatInput.val('')
         else
             dataValue = 'external'
 
-        @_appendEntryToTab(tabPage, timestamp, dataValue, msg, sender)
+        @_appendEntryToTab(tabPage, timestamp, dataValue, text, sender)
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
+        noticeText = "* #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         @_appendEntryToTab(tabPage, timestamp, "server", noticeText)
 
     _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
@@ -189,19 +207,6 @@ class this.ChatController
 
         # Append item to list
         messagesElem = tabPage.find(@gui.tabPagesMessages)
-        messagesElem.append(itemElem)
-
-    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
-        itemText = shortName
-        itemText += ' [IRC]' if isIrcUser
-
-        # Build new list item
-        itemElem = $('<li/>')
-        itemElem.attr('title', fullName)
-        itemElem.text(itemText)
-
-        # Append item to list
-        messagesElem = tabPage.find(@gui.tabPagesUsers)
         messagesElem.append(itemElem)
 
     _getLocalizedTime: (timestamp) ->
