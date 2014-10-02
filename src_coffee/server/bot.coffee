@@ -48,6 +48,13 @@ class SchizoBot
 
         @client.addListener 'join', @_handleIrcChannelJoin
         @client.addListener 'part', @_handleIrcChannelPart
+        @client.addListener 'kick', @_handleIrcChannelKick
+        @client.addListener 'quit', @_handleIrcChannelQuit
+        @client.addListener 'kill', @_handleIrcUserKill
+
+        @client.addListener 'nick', @_handleIrcUserNickChange
+        @client.addListener '+mode', @_handleIrcModeAdd
+        @client.addListener '-mode', @_handleIrcModeRemove
 
         @client.addListener 'names', @_handleIrcUserList
         @client.addListener 'topic', @_handleIrcTopicChange
@@ -59,8 +66,6 @@ class SchizoBot
         @client.addListener "ctcp-privmsg", @_handleIrcCommandViaCTCP
         @client.addListener "ctcp-notice", @_handleIrcCommandReplyViaCTCP
         @client.addListener "ctcp-version", @_handleIrcVersionRequestViaCTCP
-
-        #TODO: listen for command /me
 
 
     start: (channelList) ->
@@ -99,13 +104,46 @@ class SchizoBot
                 log.info "Welcome message for bot '#{@nickName}':", welcomeMessage
 
 
-    _handleIrcChannelJoin: (channel, joinedNick) =>
-        @_sendUserListRequestToIrcChannel(channel) if joinedNick isnt @nickName  # Don't request new user list, if bot joined itself
-        @_sendUserChangeToWebChannel(channel, 'join', 'join', joinedNick)
+    _handleIrcChannelJoin: (channel, nick) =>
+        @_sendUserListRequestToIrcChannel(channel) if nick isnt @nickName  # Don't request new user list, if bot joined itself
+        @_sendToWebChannel(channel, 'handleBotChannelUserJoin', nick)
 
-    _handleIrcChannelPart: (channel, partedNick) =>
+    _handleIrcChannelPart: (channel, nick, reason) =>
         @_sendUserListRequestToIrcChannel(channel)
-        @_sendUserChangeToWebChannel(channel, 'part', 'part', partedNick)
+        @_sendToWebChannel(channel, 'handleBotChannelUserPart', nick, reason)
+
+    _handleIrcChannelKick: (channel, nick, actorNick, reason) =>
+        # TODO: Specially handle own kick
+        @_sendUserListRequestToIrcChannel(channel)
+        @_sendToWebChannel(channel, 'handleBotChannelUserKick', nick, actorNick, reason)
+
+    _handleIrcChannelQuit: (nick, reason, channels) =>
+        # TODO: Specially handle own quit
+        for channel in channels
+            @_sendUserListRequestToIrcChannel(channel)
+            @_sendToWebChannel(channel, 'handleBotChannelUserQuit', nick, reason)
+
+    _handleIrcUserKill: (nick, reason, channels) =>
+        # TODO: Specially handle own kill
+        for channel in channels
+            @_sendUserListRequestToIrcChannel(channel)
+            @_sendToWebChannel(channel, 'handleBotChannelUserKill', nick, reason)
+
+    _handleIrcUserNickChange: (oldNick, newNick, channels) =>
+        for channel in channels
+            @_sendUserListRequestToIrcChannel(channel)
+            @_sendToWebChannel(channel, 'handleBotChannelUserRename', oldNick, newNick)
+
+
+    _handleIrcModeAdd: (channel, actorNick, mode, argument) =>
+        @_handleIrcModeChange(channel, actorNick, mode, true, argument)
+
+    _handleIrcModeRemove: (channel, actorNick, mode, argument) =>
+        @_handleIrcModeChange(channel, actorNick, mode, false, argument)
+
+    _handleIrcModeChange: (channel, actorNick, mode, isEnabled, argument) =>
+        @_sendUserListRequestToIrcChannel(channel) unless mode is 'b'  # Only if mode is not ban
+        @_sendToWebChannel(channel, 'handleBotChannelModeUpdate', actorNick, mode, isEnabled, argument)
 
 
     _handleIrcUserList: (channel, nickList) =>
@@ -222,9 +260,6 @@ class SchizoBot
     _sendToWebChannel: (channelName, botChannelHandlingFuncName, handlingFuncArgs...) ->
         targetBotChannel = @botChannelList[channelName]
         targetBotChannel?[botChannelHandlingFuncName]?(handlingFuncArgs...)
-
-    _sendUserChangeToWebChannel: (channelName, args...) ->
-        @_sendToWebChannel(channelName, 'handleBotChannelUserChange', args...)
 
     _sendMessageToWebChannel: (channelName, senderNick, messageText) ->
         @_sendToWebChannel(channelName, 'handleBotMessage', senderNick, messageText)

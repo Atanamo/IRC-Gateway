@@ -51,7 +51,7 @@ class Channel
         unless @isPublic
             @_sendToRoom 'client_joined',
                 client: clientSocket.identity
-            @_sendClientList(clientSocket)
+            @_sendUserList(clientSocket)
 
         # Permanently register client for channel
         unless isRejoin
@@ -71,7 +71,7 @@ class Channel
         unless @isPublic
             @_sendToRoom 'client_left',
                 client: clientSocket.identity
-            @_sendClientList(clientSocket)
+            @_sendUserList(clientSocket)
 
         # Permanently unregister client for channel
         unless isDisconnect
@@ -88,17 +88,17 @@ class Channel
         clientSocket.emit(eventName, @name, timestamp, data...)
 
     # @protected
-    _sendClientList: (clientSocket) ->
-        clientList = []
+    _sendUserList: (clientSocket) ->
+        userList = []
         clientsMap = @_getUniqueClientsMap()
 
         for clientID, clientIdentity of clientsMap
-            clientList.push(clientIdentity.toData())
+            userList.push(clientIdentity.toData())
 
         if clientSocket?
-            @_sendToSocket(clientSocket, 'channel_clients', clientList)
+            @_sendToSocket(clientSocket, 'channel_clients', userList)
         else
-            @_sendToRoom('channel_clients', clientList)
+            @_sendToRoom('channel_clients', userList)
 
 
     # @protected

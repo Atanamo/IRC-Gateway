@@ -38,7 +38,7 @@ class BotChannel extends Channel
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
-            @_sendClientList(clientSocket)
+            @_sendUserList(clientSocket)
 
     addBot: (bot) ->
         # Store bot reference, adressable by game id
@@ -78,6 +78,22 @@ class BotChannel extends Channel
             sender: senderIdentData
             text: noticeText
 
+    _sendUserChangeToRoom: (type, action, userIdentity, additionalData) ->
+        userIdentData = userIdentity.toData()
+        @_sendToRoom 'user_change',
+            type: type
+            action: action
+            user: userIdentData
+            details: additionalData
+
+    _sendModeChangeToRoom: (actorIdentity, mode, isEnabled, modeArgument) ->
+        actorIdentData = actorIdentity.toData()
+        @_sendToRoom 'mode_change',
+            actor: actorIdentData
+            mode: mode
+            enabled: isEnabled
+            argument: modeArgument
+
 
     #
     # Client event handlers
@@ -114,11 +130,41 @@ class BotChannel extends Channel
 
     handleBotChannelUserList: (nickMap) ->
         @ircUserList = nickMap
-        @_sendClientList()
+        @_sendUserList()
 
-    handleBotChannelUserChange: (changeType, reason, nickName, newNickName) ->
-        # TODO: Handles changeType [ nick_rename, client_join, client_part ]
-        # New client mode flags only relevant, if renaming
+
+    handleBotChannelUserJoin: (nickName) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('add', 'join', userIdentity)
+
+    handleBotChannelUserPart: (nickName, reasonText) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('remove', 'part', userIdentity, reason: reasonText)
+
+    handleBotChannelUserQuit: (nickName, reasonText) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('remove', 'quit', userIdentity, reason: reasonText)
+
+    handleBotChannelUserKick: (nickName, actorNickName, reasonText) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('remove', 'kick', userIdentity, {reason: reasonText, actor: actorNickName})
+
+    handleBotChannelUserKill: (nickName, reasonText) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('remove', 'kill', userIdentity, reason: reasonText)
+
+    handleBotChannelUserRename: (nickName, newNickName) ->
+        userIdentity = ClientIdentity.createFromIrcNick(nickName)
+        @_sendUserChangeToRoom('update', 'rename', userIdentity, newName: newNickName)
+
+
+    #handleBotChannelUserModeUpdate: (nickName, actorNickName, mode, isEnabled) ->
+    #    actorIdentity = ClientIdentity.createFromIrcNick(actorNickName)
+    #    @_sendModeChangeToRoom(actorIdentity, mode, isEnabled, nickName)
+
+    handleBotChannelModeUpdate: (actorNickName, mode, isEnabled, modeArgument) ->
+        actorIdentity = ClientIdentity.createFromIrcNick(actorNickName)
+        @_sendModeChangeToRoom(actorIdentity, mode, isEnabled, modeArgument)
 
 
     #

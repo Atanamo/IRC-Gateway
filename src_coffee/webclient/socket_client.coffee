@@ -21,9 +21,10 @@ class this.SocketClient
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
         @socket.on 'joined', @_handleChannelJoined
-        @socket.on 'channel_clients', @_handleChannelClientList
-
         @socket.on 'channel_topic', @_handleChannelTopic
+        @socket.on 'channel_clients', @_handleChannelUserList
+        @socket.on 'user_change', @_handleChannelUserChange
+        @socket.on 'mode_change', @_handleChannelModeChange
 
 
     #
@@ -39,12 +40,19 @@ class this.SocketClient
     _handleChannelJoined: (channel, timestamp) =>
         @chatController.handleChannelJoined(channel, timestamp)
 
-    _handleChannelClientList: (channel, timestamp, clientList) =>
-        @chatController.handleChannelClientList(channel, clientList)
-
     _handleChannelTopic: (channel, timestamp, data) =>
         @simplifyUserIdentityData(data, 'author')
         @chatController.handleChannelTopic(channel, timestamp, data)
+
+    _handleChannelUserList: (channel, timestamp, clientList) =>
+        @chatController.handleChannelUserList(channel, clientList)
+
+    _handleChannelUserChange: (channel, timestamp, data) =>
+        console.log 'USER CHANGE', channel, timestamp, data
+
+    _handleChannelModeChange: (channel, timestamp, data) =>
+        console.log 'MODE CHANGE', channel, timestamp, data
+        #modeText = if isEnabled then "+#{mode}" else "-#{mode}"
 
     _handleChannelMessage: (channel, timestamp, data) =>
         @simplifyUserIdentityData(data)

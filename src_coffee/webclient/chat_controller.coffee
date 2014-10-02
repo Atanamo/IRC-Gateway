@@ -120,7 +120,7 @@ class this.ChatController
         # Print join message to tab
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
 
-    handleChannelClientList: (channel, clientList) ->
+    handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
         tabPage.find(@gui.tabPagesUsers).empty()
 
