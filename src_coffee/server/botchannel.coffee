@@ -41,7 +41,7 @@ class BotChannel extends Channel
             @_sendUserList(clientSocket)
 
     addBot: (bot) ->
-        # Store bot reference, adressable by game id
+        # Store bot reference, addressable by game id
         botID = bot.getID()
         @botList[botID] = bot
 

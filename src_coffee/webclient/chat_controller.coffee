@@ -118,7 +118,8 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
 
         # Print join message to tab
-        @_appendNoticeToTab(tabPage, timestamp, 'initial_join', "Joined #{channel}")  # TODO: Translated notice
+        noticeText = Translation.get('msg.channel_joined', channel: channel)
+        @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
 
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
@@ -128,18 +129,18 @@ class this.ChatController
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
 
     handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
-        # TODO: Translated notices
         tabPage = @_getChannelTabPage(channel)
 
         if isInitial
-            @_appendNoticeToTab(tabPage, timestamp, 'topic', "Channel topic: #{topic}")
+            noticeText = Translation.get('msg.initial_channel_topic', topic: topic)
+            @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
         else
             if author?
-                notice = "#{author} set new channel topic: #{topic}"
+                noticeText = Translation.get("msg.new_channel_topic.authored", topic: topic, author: author)
             else
-                notice = "New channel topic: #{topic}"
+                noticeText = Translation.get("msg.new_channel_topic.authorless", topic: topic)
 
-            @_appendNoticeToTab(tabPage, timestamp, 'topic', notice)
+            @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
 
 
     #
