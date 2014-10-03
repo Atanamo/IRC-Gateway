@@ -7,6 +7,12 @@ class this.Translation
         'msg.initial_channel_topic': 'Channel topic: $topic$'
         'msg.new_channel_topic.authorless': 'New channel topic: $topic$'
         'msg.new_channel_topic.authored': '$author$ set new channel topic: $topic$'
+        'msg.user_changed_name': '$user$ changes his name to $new_name$'
+        'msg.user_joined_channel': '$user$ joined the channel'
+        'msg.user_left_channel.part.reasoned': '$user$ left the channel, reason: $reason$'
+        'msg.user_left_channel.part.reasonless': '$user$ left the channel'
+        'msg.user_left_channel.quit.reasoned': '$user$ has quit, message: $reason$'
+        'msg.user_left_channel.part.reasonless': '$user$ has quit'
     }
 
     # German translated texts
@@ -15,6 +21,12 @@ class this.Translation
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
         'msg.new_channel_topic.authorless': 'Ein neues Channel-Thema wurde gesetzt: $topic$'
         'msg.new_channel_topic.authored': '$author$ hat ein neues Channel-Thema gesetzt: $topic$'
+        'msg.user_changed_name': '$user$ nennt sich nun $new_name$'
+        'msg.user_joined_channel': '$user$ ist dem Channel beigetreten'
+        'msg.user_left_channel.part.reasoned': '$user$ hat den Channel verlassen, Grund: $reason$'
+        'msg.user_left_channel.part.reasonless': '$user$ hat den Channel verlassen'
+        'msg.user_left_channel.quit.reasoned': '$user$ ist offline gegangen: $reason$'
+        'msg.user_left_channel.quit.reasonless': '$user$ ist offline gegangen'
     }
 
     # Currently used translations

@@ -136,11 +136,39 @@ class this.ChatController
             @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
         else
             if author?
-                noticeText = Translation.get("msg.new_channel_topic.authored", topic: topic, author: author)
+                noticeText = Translation.get('msg.new_channel_topic.authored', topic: topic, author: author)
             else
-                noticeText = Translation.get("msg.new_channel_topic.authorless", topic: topic)
+                noticeText = Translation.get('msg.new_channel_topic.authorless', topic: topic)
 
             @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
+
+    handleChannelUserChange: (channel, timestamp, data) ->
+        tabPage = @_getChannelTabPage(channel)
+
+        noticeText = ''
+        data_details = data.details or {}
+        userName = data.user
+
+        switch data.action
+            when 'rename'
+                newName = data_details.newName or '[unknown]'
+                noticeText = Translation.get('msg.user_changed_name', user: userName, new_name: newName)
+
+            when 'join'
+                noticeText = Translation.get('msg.user_joined_channel', user: userName)
+
+            when 'part', 'quit'
+                if data_details.reason?
+                    noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasoned", user: userName, reason: data_details.reason)
+                else
+                    noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasonless", user: userName)
+
+        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
+
+
+    handleChannelModeChange: (channel, timestamp, data) ->
+        console.log 'MODE CHANGE', channel, timestamp, data
+        #modeText = if isEnabled then "+#{mode}" else "-#{mode}"
 
 
     #

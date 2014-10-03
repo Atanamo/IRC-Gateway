@@ -119,6 +119,7 @@ class SchizoBot
 
     _handleIrcChannelQuit: (nick, reason, channels) =>
         # TODO: Specially handle own quit
+        reason = reason.replace(/(^Quit$)|(^Quit: )/, '').trim() or null
         for channel in channels
             @_sendUserListRequestToIrcChannel(channel)
             @_sendToWebChannel(channel, 'handleBotChannelUserQuit', nick, reason)

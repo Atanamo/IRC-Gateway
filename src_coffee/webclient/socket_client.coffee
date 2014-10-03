@@ -50,6 +50,9 @@ class this.SocketClient
     _handleChannelUserChange: (channel, timestamp, data) =>
         console.log 'USER CHANGE', channel, timestamp, data
 
+        @simplifyUserIdentityData(data, 'user')
+        @chatController.handleChannelUserChange(channel, timestamp, data)
+
     _handleChannelModeChange: (channel, timestamp, data) =>
         console.log 'MODE CHANGE', channel, timestamp, data
         #modeText = if isEnabled then "+#{mode}" else "-#{mode}"
