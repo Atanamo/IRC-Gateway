@@ -17,10 +17,13 @@ class this.Translation
         'msg.new_channel_topic.authored': '$author$ hat ein neues Channel-Thema gesetzt: $topic$'
     }
 
+    # Currently used translations
+    localTexts = TEXTS_EN
+
 
     # Returns the translations for a text with given key and replaces placeholders by given data
     @get: (key, data) ->
-        text = localTexts[key]
+        text = localTexts[key] or ''
 
         if data?
             for name, val of data
@@ -32,10 +35,15 @@ class this.Translation
     @getLangCode: ->
         return navigator.language or navigator.userLanguage
 
-
-    # Determine translations to use by browser language
-    localTexts = do =>
+    # Sets up the translations to use by browser language
+    @setup: ->
         langCode = @getLangCode()
+
         if langCode is 'de'
-            return TEXTS_DE
-        return TEXTS_EN
+            localTexts = TEXTS_DE
+        else
+            localTexts = TEXTS_EN
+
+
+# Setup the Translations
+Translation.setup()
