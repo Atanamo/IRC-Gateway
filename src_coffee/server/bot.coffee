@@ -119,13 +119,16 @@ class SchizoBot
 
     _handleIrcChannelQuit: (nick, reason, channels) =>
         # TODO: Specially handle own quit
-        reason = reason.replace(/(^Quit$)|(^Quit: )/, '').trim() or null
+        reason = reason.replace(/(^Quit$)|(^Quit: )/, '').trim() or null  # Remove default reason or reason prefix by server
         for channel in channels
             @_sendUserListRequestToIrcChannel(channel)
             @_sendToWebChannel(channel, 'handleBotChannelUserQuit', nick, reason)
 
-    _handleIrcUserKill: (nick, reason, channels) =>
-        # TODO: Specially handle own kill
+    _handleIrcUserKill: (nick, reason, channels, rawData) =>
+        if nick is @nickName
+            # TODO: Specially handle own kill
+            log.info "Bot '#{@nickName}' has been killed from server, reason:", reason
+
         for channel in channels
             @_sendUserListRequestToIrcChannel(channel)
             @_sendToWebChannel(channel, 'handleBotChannelUserKill', nick, reason)

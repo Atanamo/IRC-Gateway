@@ -146,29 +146,50 @@ class this.ChatController
         tabPage = @_getChannelTabPage(channel)
 
         noticeText = ''
-        data_details = data.details or {}
+        detailsData = data.details or {}
         userName = data.user
+        reasonText = detailsData.reason
 
         switch data.action
             when 'rename'
-                newName = data_details.newName or '[unknown]'
+                newName = detailsData.newName
+                newName = "-#{Translation.get('info.unknown')}-" unless newName?
                 noticeText = Translation.get('msg.user_changed_name', user: userName, new_name: newName)
 
             when 'join'
                 noticeText = Translation.get('msg.user_joined_channel', user: userName)
 
             when 'part', 'quit'
-                if data_details.reason?
-                    noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasoned", user: userName, reason: data_details.reason)
+                if reasonText?
+                    noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasoned", user: userName, reason: reasonText)
                 else
                     noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasonless", user: userName)
+
+            when 'kick'
+                actorName = detailsData.actor 
+                actorName = "-#{Translation.get('info.unknown')}-" unless actorName?
+                reasonText = "-#{Translation.get('info.unknown')}-" unless reasonText?
+                noticeText = Translation.get('msg.user_kicked_from_channel', user: userName, actor: actorName, reason: reasonText)
+
+            when 'kill'
+                reasonText = "-#{Translation.get('info.unknown')}-" unless reasonText?
+                noticeText = Translation.get('msg.user_killed_from_server', user: userName, reason: reasonText)
+
+            else
+                userName = "-#{Translation.get('info.unknown')}-" unless userName?
+                noticeText = Translation.get('msg.user_list_changed', user: userName)
 
         @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
 
 
-    handleChannelModeChange: (channel, timestamp, data) ->
-        console.log 'MODE CHANGE', channel, timestamp, data
-        #modeText = if isEnabled then "+#{mode}" else "-#{mode}"
+    handleChannelModeChange: (channel, timestamp, {actor, mode, enabled, argument}) ->
+        actor = "-#{Translation.get('info.unknown')}-" unless actor?
+        modeText = if enabled then "+#{mode}" else "-#{mode}"
+        modeEvent = if argument? then "#{modeText} #{argument}" else modeText
+        noticeText = Translation.get('msg.actor_changed_a_mode', actor: actor, mode_event: modeEvent)
+
+        tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab(tabPage, timestamp, 'mode_change', noticeText)
 
 
     #

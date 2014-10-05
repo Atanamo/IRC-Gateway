@@ -13,6 +13,11 @@ class this.Translation
         'msg.user_left_channel.part.reasonless': '$user$ left the channel'
         'msg.user_left_channel.quit.reasoned': '$user$ has quit, message: $reason$'
         'msg.user_left_channel.part.reasonless': '$user$ has quit'
+        'msg.user_kicked_from_channel': '$user$ has been kicked from channel by $actor$, reason: $reason$'
+        'msg.user_killed_from_server': '$user$ has been kicked from channel by $actor$, reason: $reason$'
+        'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
+        'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
+        'info.unknown': 'unknown'
     }
 
     # German translated texts
@@ -27,6 +32,10 @@ class this.Translation
         'msg.user_left_channel.part.reasonless': '$user$ hat den Channel verlassen'
         'msg.user_left_channel.quit.reasoned': '$user$ ist offline gegangen: $reason$'
         'msg.user_left_channel.quit.reasonless': '$user$ ist offline gegangen'
+        'msg.user_kicked_from_channel': '$user$ wurde von $actor$ aus dem Channel gekickt, Grund: $reason$'
+        'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
+        'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
+        'info.unknown': 'Unbekannt'
     }
 
     # Currently used translations
