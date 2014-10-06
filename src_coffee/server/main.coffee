@@ -1,11 +1,4 @@
 
-# https://www.openshift.com/blogs/building-social-irc-bots-with-nodejs-part-1
-# https://github.com/martynsmith/node-irc
-
-# PROBLEM: Standard IRC port blocked on OpenShift ???
-# - http://www.youtube.com/watch?v=9GySwvpET1s
-# - http://middlewaremagic.com/jboss/?p=2305
-
 ## Include libraries
 http = require 'http'
 express = require 'express'
@@ -16,8 +9,9 @@ Q = require 'q'
 Config = require './config'
 Logger = require './logger'
 Database = require './database'
-ClientIdentity = require './clientidentity'
-Channel = require './channel'
+
+SocketHandler = require './sockethandler'
+
 BotChannel = require './botchannel'
 Bot = require './bot'
 
@@ -39,9 +33,11 @@ GLOBAL.log = log
 
 ## Main class
 class Gateway
+    socketHandler: null
+
     constructor: ->
         @_bindServerEvents()
-        @_bindSocketGlobalEvents()
+        @socketHandler = new SocketHandler()
 
     _bindServerEvents: ->
         ## Register http server events
@@ -58,55 +54,20 @@ class Gateway
         server.on 'close', ->
             log.info 'Server shut down'
 
-    _bindSocketGlobalEvents: ->
-        ## Register common websocket events
-        io.sockets.on 'connection', @_handleClientConnect
-
-    _bindSocketClientEvents: (clientSocket) ->
-        ## Register client socket events
-        #clientSocket.on 'join', (data) => @handleClientJoin(clientSocket, data)
-        clientSocket.on 'disconnect', @_handleClientDisconnect
-
-
-    _handleClientConnect: (clientSocket) =>
-        log.info 'Client connected...'
-
-        # Set client identification data
-        # TODO
-        clientSocket.identity = ClientIdentity.createFromDatabase(0, 0)
-
-        # Let client join default channel
-        botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
-        botChannel.addClient(clientSocket, true)
-
-        # Let client join to saved channels
-        channelList = db.getClientChannels(clientSocket)
-
-        for channelData in channelList
-            channel = Channel.getInstance(channelData.name)
-            channel.addClient(clientSocket, true)
-
-        # Bind socket events to new client
-        @_bindSocketClientEvents(clientSocket)
-
-        # Emit initial events for new client
-        clientSocket.emit 'welcome', 'hello out there!'
-
-
-    _handleClientDisconnect: (clientSocket) =>
-        log.info 'Client disconnected...'
-
 
     start: ->
         ## Start the chat gateway ##
 
-        # Start listening for HTTP requests
+        # Connect database
         log.info 'Connecting database...'
         db.connect()
 
         # Start listening for HTTP requests
         log.info 'Start listening...'
         server.listen(8080)
+
+        # Start listening for socket.io emits
+        @socketHandler.start()
 
         # Create and connect the bots
         @_setupBots()
@@ -125,6 +86,17 @@ class Gateway
         # Add bots to botChannel
         startPromise.then =>
             botChannel.addBot(bot)
+
+
+
+            bot2 = new Bot
+                id: 123
+                name: 'Eine Testgalaxie 2'
+
+            startPromise2 = bot2.start()
+
+            startPromise2.then =>
+                botChannel.addBot(bot2)
 
 
 

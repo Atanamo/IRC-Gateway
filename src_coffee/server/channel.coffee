@@ -157,15 +157,13 @@ class Channel
     # May be overridden
     # @protected
     _handleClientMessage: (clientSocket, messageText) =>
-        log.info 'Client message:', messageText
+        log.debug 'Client message:', messageText
         messageText = messageText?.trim()
-
         return if messageText is ''
-
         @_sendMessageToRoom(clientSocket.identity, messageText)
 
-
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
+        log.debug "Removing client from channel '#{@name}' (by disconnect: #{isDisconnect}):", clientSocket.identity
         @removeClient(clientSocket, isDisconnect)
 
 

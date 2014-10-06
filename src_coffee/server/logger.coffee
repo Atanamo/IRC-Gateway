@@ -12,7 +12,7 @@ module.exports.info = (text...) ->
 
 if Config.DEBUG_ENABLED
     module.exports.debug = (text...) ->
-        console.debug '=> ', text...
+        console.log '=> ', text...
 else
     module.exports.debug = ->
 

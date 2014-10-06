@@ -17,7 +17,10 @@ class this.SocketClient
         @socket = io.connect("#{@serverIP}:#{@serverPort}")
 
         @socket.on 'connect', @_handleServerConnect      # Build-in event
+        @socket.on 'auth_ack', @_handleServerAuthAck
+        @socket.on 'auth_fail', @_handleServerAuthFail
         @socket.on 'welcome', @_handleServerWelcome
+
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
         @socket.on 'joined', @_handleChannelJoined
@@ -34,9 +37,19 @@ class this.SocketClient
 
     _handleServerConnect: =>
         @chatController.handleServerMessage('Connection established!')
+        @chatController.handleServerMessage('Authenticating...')
+        @_sendAuthRequest()
+
+    _handleServerAuthAck: =>
+        @chatController.handleServerMessage('Authentication successful!')
+
+    _handleServerAuthFail: (errorMsg) =>
+        @chatController.handleServerMessage('Authentication failed!')
+        @chatController.handleServerMessage('Reason: ' + errorMsg)
 
     _handleServerWelcome: (text) =>
-        @chatController.handleServerMessage(text)
+        @chatController.handleServerMessage('Welcome message: ' + text)
+
 
     _handleChannelJoined: (channel, timestamp) =>
         @chatController.handleChannelJoined(channel, timestamp)
@@ -70,11 +83,17 @@ class this.SocketClient
 
 
     #
-    # GUI commands
+    # GUI commands / Sending routines
     #
 
     sendMessage: (channel, messageText) ->
         @socket.emit 'message#' + channel, messageText
+
+    _sendAuthRequest: ->
+        authData =
+            id: @instanceData.id
+            game_id: @instanceData.idGame
+        @socket.emit 'auth', authData
 
 
     #

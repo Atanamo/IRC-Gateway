@@ -23,10 +23,10 @@ class ClientIdentity
         # TODO: Get data from database, using given folk id
 
         identObj = new ClientIdentity
-            id: 42
-            name: 'TempName'
+            id: id
+            name: 'TempName' + id
             #title: 'Temp Title'
-            idGame: 123
+            idGame: idGame
 
         return identObj
 
