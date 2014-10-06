@@ -9,6 +9,8 @@
 class Channel
     @_instances: {}
 
+    uniqueClientsMap: null
+
     name: 'default'
     isPublic: false
     title: 'New Channel'
@@ -19,6 +21,8 @@ class Channel
 
     constructor: (@name) ->
         log.info 'Creating new channel ' + @name
+
+        @_updateUniqueClientsMap()  # Initialize map of unique clients
 
         data = db.getChannelData(@name)
 
@@ -38,24 +42,36 @@ class Channel
     # Client management
     #
 
-    addClient: (clientSocket, isRejoin=false) ->
-        @_sendToSocket(clientSocket, 'joined')  # Notice client for channel join
-        clientSocket.join(@name)                # Join client to room of channel
-
-        # Register events for this channel
+    _registerListeners: (clientSocket) ->
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
         clientSocket.on @eventNameLeave, => @_handleClientLeave(clientSocket)
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
-        # Update visible users in channel
-        unless @isPublic
-            @_sendToRoom 'client_joined',
-                client: clientSocket.identity
-            @_sendUserList(clientSocket)
+    addClient: (clientSocket, isRejoin=false) ->
+        isExistingIdentity = @_hasUniqueClient(clientSocket)
 
-        # Permanently register client for channel
-        unless isRejoin
-            db.addClientToChannel(clientSocket, @name)
+        @_sendToSocket(clientSocket, 'joined')  # Notice client for channel join
+        clientSocket.join(@name)                # Join client to room of channel
+
+        # Register events for this channel
+        @_registerListeners(clientSocket)
+
+        # Additional handling, if client's identity was not joined yet
+        if not isExistingIdentity
+            # Update the list of unique identities
+            @_updateUniqueClientsMap()
+
+            # Update visible users for channel (Send to all including client)
+            unless @isPublic
+                @_sendUserChangeToRoom('add', 'join', clientSocket.identity)
+                @_sendUserListToRoom()
+
+            # Permanently register client for channel
+            unless isRejoin
+                db.addClientToChannel(clientSocket, @name)
+        else
+            # Send initial user list to client
+            @_sendUserListToSocket(clientSocket) unless @isPublic
 
     removeClient: (clientSocket, isDisconnect=false) ->
         # Unregister events for this channel
@@ -67,15 +83,20 @@ class Channel
         clientSocket.leave(@name)             # Remove client from room of channel
         @_sendToSocket(clientSocket, 'left')  # Notice client for channel leave
 
-        # Update visible users in channel
-        unless @isPublic
-            @_sendToRoom 'client_left',
-                client: clientSocket.identity
-            @_sendUserList(clientSocket)
+        # Update the list of unique identities (May removes client's identity)
+        @_updateUniqueClientsMap()
 
-        # Permanently unregister client for channel
-        unless isDisconnect
-            db.removeClientFromChannel(clientSocket, @name)
+        # Additional handling, if client's identity is not joined any more
+        unless @_hasUniqueClient(clientSocket)
+            # Update visible users in channel
+            unless @isPublic
+                leaveAction = if isDisconnect then 'quit' else 'part'
+                @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
+                @_sendUserListToRoom()
+
+            # Permanently unregister client for channel
+            unless isDisconnect
+                db.removeClientFromChannel(clientSocket, @name)
 
 
     #
@@ -89,16 +110,17 @@ class Channel
 
     # @protected
     _sendUserList: (clientSocket) ->
-        userList = []
-        clientsMap = @_getUniqueClientsMap()
-
-        for clientID, clientIdentity of clientsMap
-            userList.push(clientIdentity.toData())
+        userList = @_getUserList()
 
         if clientSocket?
             @_sendToSocket(clientSocket, 'channel_clients', userList)
         else
             @_sendToRoom('channel_clients', userList)
+
+    # @protected
+    _sendUserListToSocket: (clientSocket) ->
+        userList = @_getUserList()
+        @_sendToSocket(clientSocket, 'channel_clients', userList)
 
 
     # @protected
@@ -107,11 +129,25 @@ class Channel
         io.sockets.in(@name).emit(eventName, @name, timestamp, data...)
 
     # @protected
+    _sendUserListToRoom: ->
+        userList = @_getUserList()
+        @_sendToRoom('channel_clients', userList)
+
+    # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->
         senderIdentData = senderIdentity.toData()
         @_sendToRoom 'message',
             sender: senderIdentData
             text: messageText
+
+    # @protected
+    _sendUserChangeToRoom: (type, action, userIdentity, additionalData) ->
+        userIdentData = userIdentity.toData()
+        @_sendToRoom 'user_change',
+            type: type
+            action: action
+            user: userIdentData
+            details: additionalData
 
 
     #
@@ -140,21 +176,43 @@ class Channel
     _getCurrentTimestamp: ->
         return (new Date()).getTime()
 
-    # May be overridden
-    # @protected
-    _getUniqueClientsMap: ->
-        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
-        clientMetaList = io.sockets.adapter.rooms[@name]
-        clientsMap = {}
+    _hasUniqueClient: (clientSocket) ->
+        clientIdentity = clientSocket.identity
+        clientsMap = @_getUniqueClientsMap()
+        return clientsMap[clientIdentity.getGlobalID()]?
 
-        for clientID of clientMetaList
-            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+    _updateUniqueClientsMap: ->
+        @uniqueClientsMap = @_getUniqueClientsMap(true)
 
-            if clientSocket?
-                clientIdentity = clientSocket.identity
-                clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
+    _getUniqueClientsMap: (forceUpdate=false) ->
+        if forceUpdate
+            #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
+            clientMetaList = io.sockets.adapter.rooms[@name]
+            clientsMap = {}
+
+            for clientID of clientMetaList
+                clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+
+                if clientSocket?
+                    clientIdentity = clientSocket.identity
+                    clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
+        else
+            clientsMap = @uniqueClientsMap
 
         return clientsMap
+
+    # May be overridden
+    # @protected
+    _getUserList: ->
+        userList = []
+
+        unless @isPublic
+            clientsMap = @_getUniqueClientsMap()
+
+            for clientID, clientIdentity of clientsMap
+                userList.push(clientIdentity.toData())
+
+        return userList
 
 
 

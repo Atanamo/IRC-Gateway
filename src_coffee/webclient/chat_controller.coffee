@@ -121,6 +121,14 @@ class this.ChatController
         noticeText = Translation.get('msg.channel_joined', channel: channel)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
 
+    handleChannelLeft: (channel, timestamp) ->
+        tabID = @_getChannelTabID(channel)
+
+        # Remove tab from DOM
+        @ui.tabsystemViewport.find("##{tabID}").remove()
+        @ui.tabsystemHeaderList.find("[data-id=#{tabID}]").remove()
+        @_updateGuiBindings()
+
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
         tabPage.find(@gui.tabPagesUsers).empty()

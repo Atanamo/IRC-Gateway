@@ -21,6 +21,7 @@ class this.SocketClient
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
         @socket.on 'joined', @_handleChannelJoined
+        @socket.on 'left', @_handleChannelLeft
         @socket.on 'channel_topic', @_handleChannelTopic
         @socket.on 'channel_clients', @_handleChannelUserList
         @socket.on 'user_change', @_handleChannelUserChange
@@ -40,27 +41,31 @@ class this.SocketClient
     _handleChannelJoined: (channel, timestamp) =>
         @chatController.handleChannelJoined(channel, timestamp)
 
+    _handleChannelLeft: (channel, timestamp) =>
+        @chatController.handleChannelLeft(channel, timestamp)
+
     _handleChannelTopic: (channel, timestamp, data) =>
-        @simplifyUserIdentityData(data, 'author')
+        @_simplifyUserIdentityData(data, 'author')
         @chatController.handleChannelTopic(channel, timestamp, data)
 
     _handleChannelUserList: (channel, timestamp, clientList) =>
         @chatController.handleChannelUserList(channel, clientList)
 
     _handleChannelUserChange: (channel, timestamp, data) =>
-        @simplifyUserIdentityData(data, 'user')
-        @chatController.handleChannelUserChange(channel, timestamp, data)
+        unless @_isOwnUser(data, 'user')  # Ignore notices on own channel join/leave
+            @_simplifyUserIdentityData(data, 'user')
+            @chatController.handleChannelUserChange(channel, timestamp, data)
 
     _handleChannelModeChange: (channel, timestamp, data) =>
-        @simplifyUserIdentityData(data, 'actor')
+        @_simplifyUserIdentityData(data, 'actor')
         @chatController.handleChannelModeChange(channel, timestamp, data)
 
     _handleChannelMessage: (channel, timestamp, data) =>
-        @simplifyUserIdentityData(data)
+        @_simplifyUserIdentityData(data)
         @chatController.handleChannelMessage(channel, timestamp, data)
 
     _handleChannelNotice: (channel, timestamp, data) =>
-        @simplifyUserIdentityData(data)
+        @_simplifyUserIdentityData(data)
         @chatController.handleChannelNotice(channel, timestamp, data)
 
 
@@ -76,7 +81,10 @@ class this.SocketClient
     # Helper methods
     #
 
-    simplifyUserIdentityData: (data, nameProperty='sender') ->
-        data.isOwn = (String(data[nameProperty]?.id) == String(@instanceData.id))
+    _simplifyUserIdentityData: (data, nameProperty='sender') ->
+        data.isOwn = @_isOwnUser(data, nameProperty)
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
+
+    _isOwnUser: (data, nameProperty='sender') ->
+        return (String(data[nameProperty]?.id) == String(@instanceData.id))
 

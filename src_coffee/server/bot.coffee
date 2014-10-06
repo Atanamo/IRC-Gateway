@@ -37,7 +37,8 @@ class SchizoBot
             autoRejoin: true
             autoConnect: false              # Dont connect on client instantiation
             debug: true
-            floodProtection: true           # Protect the bot from beeing kicket, if users are flooding
+            showErrors: false
+            floodProtection: true           # Protect the bot from beeing kicked, if users are flooding
             floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
             stripColors: true               # Strip mirc colors
 
@@ -99,10 +100,12 @@ class SchizoBot
 
     _handleIrcConnectConfirmation: (rawData) =>
         if rawData.command = 'rpl_welcome'
+            confirmedNick = rawData.args?[0]
             welcomeMessage = rawData.args?[1]
             if welcomeMessage?
                 log.info "Welcome message for bot '#{@nickName}':", welcomeMessage
-
+            if confirmedNick?
+                @nickName = confirmedNick
 
     _handleIrcChannelJoin: (channel, nick) =>
         @_sendUserListRequestToIrcChannel(channel) if nick isnt @nickName  # Don't request new user list, if bot joined itself

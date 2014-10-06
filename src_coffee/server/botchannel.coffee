@@ -38,7 +38,7 @@ class BotChannel extends Channel
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
-            @_sendUserList(clientSocket)
+            @_sendUserListToSocket(clientSocket)
 
     addBot: (bot) ->
         # Store bot reference, addressable by game id
@@ -52,7 +52,7 @@ class BotChannel extends Channel
         return @ircChannelName
 
     getNumberOfClients: ->
-        clientsMap = @_getUniqueClientsMap(true)
+        clientsMap = @_getUniqueClientsMap()
         return Object.keys(clientsMap).length
 
 
@@ -77,14 +77,6 @@ class BotChannel extends Channel
         @_sendToRoom 'notice',
             sender: senderIdentData
             text: noticeText
-
-    _sendUserChangeToRoom: (type, action, userIdentity, additionalData) ->
-        userIdentData = userIdentity.toData()
-        @_sendToRoom 'user_change',
-            type: type
-            action: action
-            user: userIdentData
-            details: additionalData
 
     _sendModeChangeToRoom: (actorIdentity, mode, isEnabled, modeArgument) ->
         actorIdentData = actorIdentity.toData()
@@ -130,7 +122,7 @@ class BotChannel extends Channel
 
     handleBotChannelUserList: (nickMap) ->
         @ircUserList = nickMap
-        @_sendUserList()
+        @_sendUserListToRoom()
 
 
     handleBotChannelUserJoin: (nickName) ->
@@ -172,18 +164,15 @@ class BotChannel extends Channel
     #
 
     # @override
-    _getUniqueClientsMap: (getOnlyWebClients=false) ->
-        return super if getOnlyWebClients  # Don't filter non-public, don't append IRC users
+    _getUserList: ->
+        userList = super
 
-        # Determine basic list
-        if @isPublic
-            clientsMap = {}
-        else
-            clientsMap = super
         # Append irc users to list
         for nickName, userFlag of @ircUserList
-            clientsMap[nickName] = ClientIdentity.createFromIrcNick('' + userFlag + nickName)
-        return clientsMap
+            clientIdentity = ClientIdentity.createFromIrcNick("#{userFlag}#{nickName}")
+            userList.push(clientIdentity.toData())
+
+        return userList
 
 
 

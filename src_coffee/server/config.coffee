@@ -2,7 +2,7 @@
 ## CONFIG ##
 
 # Bot sub config
-botNickPrefix = '_GalaSubraum'  # Prefix for bot's nick name on IRC
+botNickPrefix = '_Galaxy'       # Prefix for bot's nick name on IRC
 botName = 'SGR GalaxyBot'       # Bot's official name
 botVersion = 'v1.0'             # Bot's version number string
 botLastUpdate = '2014-10-01'    # Update info for bot version
