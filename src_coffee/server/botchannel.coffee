@@ -10,6 +10,7 @@ ClientIdentity = require './clientidentity'
 ##
 ## When a socket client sends a message, it is routed to the bot, that represents the client's game instance.
 ## When a message is triggered on IRC, the respective bot sends it to the associated BotChannel.
+## To prevent multiple triggers when having multiple bots, the channel specifies its first bot as master bot.
 ##
 ## @extends Channel
 class BotChannel extends Channel
@@ -46,7 +47,8 @@ class BotChannel extends Channel
         @botList[botID] = bot
 
         # Let bot join the irc channel
-        bot.handleWebChannelJoin(this)
+        isMasterBot = Object.keys(@botList).length is 1  # First bot is master
+        bot.handleWebChannelJoin(this, isMasterBot)
 
     getIrcChannelName: ->
         return @ircChannelName

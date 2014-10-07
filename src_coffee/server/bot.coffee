@@ -10,16 +10,24 @@ Config = require './config'
 ## The bot is able to join multiple IRC channels, each must be associated with a BotChannel.
 ## Therefor, the bot is mapping each BotChannel to its IRC channel.
 ##
+## When an event on an IRC channel occurs, the bot forwards it to the associated BotChannel (If useful).
+## The bot may also responds to a list of specified commands on an IRC channel or query.
+##
+## For cases, where multiple bots are in the same channel, there is a master bot: 
+## Only the master bot is allowed to forward common IRC events to the BotChannel 
+## (Otherwise the same event would be triggered by each bot).
+##
 class SchizoBot
 
     gameData: null
-    botChannel: null
 
     botChannelList: null
+    masterChannelList: null
     connectionPromise: null
 
     constructor: (@gameData) ->
         @botChannelList = {}
+        @masterChannelList = {}
 
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
         @userName = 'GalaxyBot' + @gameData.id
@@ -108,14 +116,17 @@ class SchizoBot
                 @nickName = confirmedNick
 
     _handleIrcChannelJoin: (channel, nick) =>
+        return unless @_isChannelMaster(channel)
         @_sendUserListRequestToIrcChannel(channel) if nick isnt @nickName  # Don't request new user list, if bot joined itself
         @_sendToWebChannel(channel, 'handleBotChannelUserJoin', nick)
 
     _handleIrcChannelPart: (channel, nick, reason) =>
+        return unless @_isChannelMaster(channel)
         @_sendUserListRequestToIrcChannel(channel)
         @_sendToWebChannel(channel, 'handleBotChannelUserPart', nick, reason)
 
     _handleIrcChannelKick: (channel, nick, actorNick, reason) =>
+        return unless @_isChannelMaster(channel)
         # TODO: Specially handle own kick
         @_sendUserListRequestToIrcChannel(channel)
         @_sendToWebChannel(channel, 'handleBotChannelUserKick', nick, actorNick, reason)
@@ -124,8 +135,9 @@ class SchizoBot
         # TODO: Specially handle own quit
         reason = reason.replace(/(^Quit$)|(^Quit: )/, '').trim() or null  # Remove default reason or reason prefix by server
         for channel in channels
-            @_sendUserListRequestToIrcChannel(channel)
-            @_sendToWebChannel(channel, 'handleBotChannelUserQuit', nick, reason)
+            if @_isChannelMaster(channel)
+                @_sendUserListRequestToIrcChannel(channel)
+                @_sendToWebChannel(channel, 'handleBotChannelUserQuit', nick, reason)
 
     _handleIrcUserKill: (nick, reason, channels, rawData) =>
         if nick is @nickName
@@ -133,19 +145,23 @@ class SchizoBot
             log.info "Bot '#{@nickName}' has been killed from server, reason:", reason
 
         for channel in channels
-            @_sendUserListRequestToIrcChannel(channel)
-            @_sendToWebChannel(channel, 'handleBotChannelUserKill', nick, reason)
+            if @_isChannelMaster(channel)
+                @_sendUserListRequestToIrcChannel(channel)
+                @_sendToWebChannel(channel, 'handleBotChannelUserKill', nick, reason)
 
     _handleIrcUserNickChange: (oldNick, newNick, channels) =>
         for channel in channels
-            @_sendUserListRequestToIrcChannel(channel)
-            @_sendToWebChannel(channel, 'handleBotChannelUserRename', oldNick, newNick)
+            if @_isChannelMaster(channel)
+                @_sendUserListRequestToIrcChannel(channel)
+                @_sendToWebChannel(channel, 'handleBotChannelUserRename', oldNick, newNick)
 
 
     _handleIrcModeAdd: (channel, actorNick, mode, argument) =>
+        return unless @_isChannelMaster(channel)
         @_handleIrcModeChange(channel, actorNick, mode, true, argument)
 
     _handleIrcModeRemove: (channel, actorNick, mode, argument) =>
+        return unless @_isChannelMaster(channel)
         @_handleIrcModeChange(channel, actorNick, mode, false, argument)
 
     _handleIrcModeChange: (channel, actorNick, mode, isEnabled, argument) =>
@@ -154,9 +170,11 @@ class SchizoBot
 
 
     _handleIrcUserList: (channel, nickList) =>
+        return unless @_isChannelMaster(channel)
         @_sendToWebChannel(channel, 'handleBotChannelUserList', nickList)
 
     _handleIrcTopicChange: (channel, topic, nick) =>
+        return unless @_isChannelMaster(channel)
         @_sendToWebChannel(channel, 'handleBotTopicChange', topic, nick)
 
 
@@ -184,23 +202,23 @@ class SchizoBot
             respondFunc("Unknown command '#{message}'. --- #{defaultResponse}")
 
     _handleIrcMessageToChannel: (senderNick, channel, message, rawData) =>
-        if 0 <= message.indexOf("#{@nickName}:") <= 3  # Recognize public talk to
-            @_sendMessageToWebChannel(channel, senderNick, message)    # Mirror command to web channel
-            @_handleIrcMessageToBot(senderNick, message, rawData, channel)
-        else
+        if @_isChannelMaster(channel)
             @_sendMessageToWebChannel(channel, senderNick, message)
-
+        # Check for message to bot
+        if 0 <= message.indexOf("#{@nickName}:") <= 3  # Recognize public talk to
+            @_handleIrcMessageToBot(senderNick, message, rawData, channel)
 
     _handleIrcNotice: (senderNick, targetNickOrChannel, notice) =>
         return if not senderNick? and targetNickOrChannel.toLowerCase() is 'auth'  # Ignore auth notices from server
         if targetNickOrChannel is @nick
             log.debug "Notice by #{senderNick} to #{targetNickOrChannel}: #{notice}"
-        else
+        else if @_isChannelMaster(targetNickOrChannel)
             @_sendToWebChannel(targetNickOrChannel, 'handleBotNotice', senderNick, notice)
 
 
     _handleIrcCommandViaCTCP: (senderNick, targetNickOrChannel, rawMessage) =>
         # This handler is triggered, whenever the bot receives a CTCP request or a CTCP command to a channel
+        return unless @_isChannelMaster(channel)
         return unless targetNickOrChannel isnt @nick  # Ignore direct ctcp messages to bot
         return unless targetNickOrChannel?            # Ignore broken ctcp messages
         channel = targetNickOrChannel
@@ -294,9 +312,10 @@ class SchizoBot
     # BotChannel handling
     #
 
-    handleWebChannelJoin: (botChannel) ->
+    handleWebChannelJoin: (botChannel, isMasterBot) ->
         ircChannelName = botChannel.getIrcChannelName()
         @botChannelList[ircChannelName] = botChannel
+        @masterChannelList[ircChannelName] = isMasterBot
         log.info "Joining bot '#{@nickName}' to channel #{ircChannelName}..."
         @client.join(ircChannelName)
 
@@ -306,6 +325,8 @@ class SchizoBot
 
         @client.say(channelName, messageText)
 
+    _isChannelMaster: (channelName) ->
+        return @masterChannelList[channelName] or false
 
 
 

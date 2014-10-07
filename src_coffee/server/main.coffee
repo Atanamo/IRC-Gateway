@@ -90,7 +90,7 @@ class Gateway
 
 
             bot2 = new Bot
-                id: 123
+                id: 124
                 name: 'Eine Testgalaxie 2'
 
             startPromise2 = bot2.start()
