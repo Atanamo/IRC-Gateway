@@ -1,3 +1,7 @@
 
+:REM Only for globally installed coffeescript
 
-coffee -o "./src_js" -wc "./src_coffee"
+
+cake watch
+
+pause
