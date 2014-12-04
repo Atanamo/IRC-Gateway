@@ -57,21 +57,30 @@ class Gateway
 
     start: ->
         ## Start the chat gateway ##
+        @_setupProcess()
 
         # Connect database
         log.info 'Connecting database...'
-        db.connect()
+        db_promise = db.connect()
+        db_promise.done =>
+            # Start listening for HTTP requests
+            log.info 'Start listening...'
+            server.listen(Config.WEB_SERVER_PORT)
 
-        # Start listening for HTTP requests
-        log.info 'Start listening...'
-        server.listen(8080)
+            # Start listening for socket.io emits
+            @socketHandler.start()
 
-        # Start listening for socket.io emits
-        @socketHandler.start()
+            # Create and connect the bots
+            @_setupBots()
 
-        # Create and connect the bots
-        @_setupBots()
+    _setupProcess: ->
+        process.on 'exit', (code) =>
+            log.info 'Exiting with code:', code
+            @_shutdown()
 
+        process.on 'uncaughtException', (err) =>
+            log.error err, 'process'
+            process.exit(err.code or 99)
 
     _setupBots: ->
         botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
@@ -88,7 +97,6 @@ class Gateway
             botChannel.addBot(bot)
 
 
-
             bot2 = new Bot
                 id: 124
                 name: 'Eine Testgalaxie 2'
@@ -98,6 +106,8 @@ class Gateway
             startPromise2.then =>
                 botChannel.addBot(bot2)
 
+    _shutdown: ->
+        db.disconnect()
 
 
 

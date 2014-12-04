@@ -12,10 +12,21 @@ ircServerIP = 'underworld1.no.quakenet.org'
 ircServerPort = 6667
 ircGlobalChannel = '#sgr2'
 
+# MySQL sub config
+mysqlServerIP = '127.0.0.1'
+mysqlServerPort = 3306
+mysqlUser = 'sgr'
+mysqlPassword = 'SECRET'
+mysqlDatabase = 'irc_gateway'
+
+
 # Main config
 module.exports =
 
-    DEBUG_ENABLED: true  # Set to true, to enable some debug output
+    DEBUG_ENABLED: true   # Set to true, to enable some debug output
+    DEBUG_IRC_COMM: false  # Set to true, to enable debug output from irc communication by bots
+
+    WEB_SERVER_PORT: 8050  # The port of the webserver started by this app
 
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
@@ -32,3 +43,8 @@ module.exports =
 
     INTERN_BOT_CHANNEL_NAME: 'irc_channel'
 
+    SQL_HOST: mysqlServerIP
+    SQL_PORT: mysqlServerPort
+    SQL_USER: mysqlUser
+    SQL_PASSWORD: mysqlPassword
+    SQL_DATABASE: mysqlDatabase

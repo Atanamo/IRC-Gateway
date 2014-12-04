@@ -21,6 +21,7 @@ class ClientIdentity
 
     @createFromDatabase: (id, idGame) ->
         # TODO: Get data from database, using given folk id
+        #db.getClientIdentityData(id, idGame)
 
         identObj = new ClientIdentity
             id: id
@@ -32,6 +33,9 @@ class ClientIdentity
 
     getName: ->
         return @name
+
+    getID: ->
+        return @id
 
     getGameID: ->
         return @idGame

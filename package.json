@@ -30,7 +30,8 @@
     "q": "~1.0.1",
     "express": "~3.2.6",
     "socket.io": "~1.1.0",
-    "irc": "~0.3.7"
+    "irc": "~0.3.7",
+    "mysql": "~2.5.0"
   },
   "devDependencies": {
     "coffee-script": ">= 1.7.0"

@@ -75,7 +75,7 @@ class SocketHandler
         botChannel.addClient(clientSocket, true)
 
         # Let client join to saved channels
-        channelList = db.getClientChannels(clientSocket)
+        channelList = db.getClientChannels(clientSocket.identity)
 
         for channelData in channelList
             channel = Channel.getInstance(channelData.name)

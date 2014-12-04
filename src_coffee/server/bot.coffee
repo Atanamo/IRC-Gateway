@@ -44,8 +44,8 @@ class SchizoBot
             realName: @realName
             autoRejoin: true
             autoConnect: false              # Dont connect on client instantiation
-            debug: true
-            showErrors: false
+            debug: Config.DEBUG_IRC_COMM
+            showErrors: true
             floodProtection: true           # Protect the bot from beeing kicked, if users are flooding
             floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
             stripColors: true               # Strip mirc colors
@@ -111,7 +111,7 @@ class SchizoBot
             confirmedNick = rawData.args?[0]
             welcomeMessage = rawData.args?[1]
             if welcomeMessage?
-                log.info "Welcome message for bot '#{@nickName}':", welcomeMessage
+                log.debug "Welcome message for bot '#{@nickName}':", welcomeMessage
             if confirmedNick?
                 @nickName = confirmedNick
 
@@ -142,7 +142,7 @@ class SchizoBot
     _handleIrcUserKill: (nick, reason, channels, rawData) =>
         if nick is @nickName
             # TODO: Specially handle own kill
-            log.info "Bot '#{@nickName}' has been killed from server, reason:", reason
+            log.warn "Bot has been killed from server, reason: #{reason}", "Bot '#{@nickName}'"
 
         for channel in channels
             if @_isChannelMaster(channel)

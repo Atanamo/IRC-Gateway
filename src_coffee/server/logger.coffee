@@ -17,8 +17,10 @@ else
     module.exports.debug = ->
 
 module.exports.warn = (text, sender='General') ->
-    console.warn "! Warning of #{sender}:", text
+    console.warn "! Warning by #{sender}:", text
 
-module.exports.error = (text, sender='General') ->
-    console.error "! ERROR of #{sender}:", text
+module.exports.error = (textOrError, sender='General') ->
+    if textOrError instanceof Error
+        textOrError = if textOrError.message? then textOrError.message else textOrError.toString?() or textOrError
+    console.error "! ERROR by #{sender}:", textOrError
 
