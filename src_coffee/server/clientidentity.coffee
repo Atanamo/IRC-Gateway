@@ -21,15 +21,15 @@ class ClientIdentity
 
     @createFromDatabase: (id, idGame) ->
         # TODO: Get data from database, using given folk id
-        #db.getClientIdentityData(id, idGame)
+        promise = db.getClientIdentityData(id, idGame)
+        promise = promise.then (data) =>
+            return new ClientIdentity
+                id: data.id
+                name: data.name
+                #title: 'Temp Title'
+                idGame: data.idGame
 
-        identObj = new ClientIdentity
-            id: id
-            name: 'TempName' + id
-            #title: 'Temp Title'
-            idGame: idGame
-
-        return identObj
+        return promise
 
     getName: ->
         return @name

@@ -17,7 +17,8 @@ mysqlServerIP = '127.0.0.1'
 mysqlServerPort = 3306
 mysqlUser = 'sgr'
 mysqlPassword = 'SECRET'
-mysqlDatabase = 'irc_gateway'
+mysqlCommonDatabase = 'irc_gateway'      # The name of the database in which the app stores its own tables and/or core tables of the game
+mysqlGameDatabasePrefix = 'game_world_'  # The name prefix of the database in which tables of a game world can be found (To be appended with a database id)
 
 
 # Main config
@@ -47,4 +48,12 @@ module.exports =
     SQL_PORT: mysqlServerPort
     SQL_USER: mysqlUser
     SQL_PASSWORD: mysqlPassword
-    SQL_DATABASE: mysqlDatabase
+    SQL_DATABASE_COMMON: mysqlCommonDatabase
+    SQL_DATABASE_PREFIX_GAME: mysqlGameDatabasePrefix
+
+    SQL_TABLES:
+        GAMES_LIST: 'game_worlds'         # The name of the table in common db, which contains the list of game worlds
+        PREFIX_GAME_TABLE: 'game_'        # The name prefix of tables in game db, which contain data of a game world's contents
+        POSTFIX_GAME_PLAYERS: '_players'  # The name postfix of the game table, which contains the list of a game world's players
+
+

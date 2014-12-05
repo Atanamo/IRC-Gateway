@@ -44,16 +44,20 @@ class SocketHandler
 
         userID = authData.id
         gameID = authData.game_id
-        isAuthenticated = false
+        authPromise = Q.fcall =>
+            throw new Error('Invalid user data')
 
         # Check auth data
         if userID? and gameID?
-            # TODO
-            clientIdentity = ClientIdentity.createFromDatabase(userID, gameID)
-            isAuthenticated = clientIdentity?  # TODO: Check authData.token or similar
+            # TODO: Check authData.token or similar
+            authPromise = ClientIdentity.createFromDatabase(userID, gameID)
+            authPromise = authPromise.fail (err) =>
+                throw new Error('Unknown user')  # Overwrite error
 
         # Handle auth success/fail
-        if isAuthenticated
+        authPromise.then (clientIdentity) =>
+            log.debug 'Client auth granted'
+
             # Set client identification data
             clientSocket.identity = clientIdentity
 
@@ -64,9 +68,10 @@ class SocketHandler
             # Add client to its channels
             @_acceptNewClient(clientSocket)
 
-        else
+        authPromise.fail (err) =>
+            log.debug 'Client auth rejected:', err.message
             # Emit auth fail
-            clientSocket.emit 'auth_fail', 'Invalid user data'  # TODO: Send notice based on auth error
+            clientSocket.emit 'auth_fail', err.message  # TODO: Send notice based on auth error
 
 
     _acceptNewClient: (clientSocket) ->

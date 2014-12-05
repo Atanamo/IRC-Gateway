@@ -24,7 +24,7 @@ class Database
             port: Config.SQL_PORT
             user: Config.SQL_USER
             password: Config.SQL_PASSWORD
-            database: Config.SQL_DATABASE
+            database: Config.SQL_DATABASE_COMMON
 
         @connection.connect (err) =>
             if err
@@ -52,31 +52,80 @@ class Database
 
         return deferred.promise
 
+    _toQuery: (wildValue) ->
+        return mysql.escape(wildValue)
+
     _sendQuery: (sqlQuery) ->
         deferred = Q.defer()
 
-        @connection.query sqlQuery, (err, rows, fields) ->
+        @connection.query sqlQuery, (err, resultData, fieldsMetaData) ->
             if err
                 log.error(err, 'Database query')
                 deferred.reject(err)
             else
-                deferred.resolve({rows, fields})  # TODO: What is fields? Can we pass 2 arguments to deferred.resolve()?
+                deferred.resolve(resultData)
 
         return deferred.promise
 
+    _readSimpleData: (sqlQuery, rejectIfEmpty=false) ->
+        promise = @_sendQuery(sqlQuery)
+        promise = promise.then (resultRows) =>
+            resultData = resultRows[0]
+            if rejectIfEmpty and not resultData?
+                throw new Error('Result is empty')
+            return resultData
+        return promise
+
+    _readMultipleData: (sqlQuery) ->
+        return @_sendQuery(sqlQuery)
+
+    _get_game_db_name: (gameMetaData) ->
+        return "#{Config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
+
+    _get_game_table_name: (gameMetaData, tablePostfix) ->
+        return "#{Config.SQL_TABLES.PREFIX_GAME_TABLE}#{gameMetaData.game_id}#{tablePostfix}"
 
     # Returns the saved identification data for the given player in the given game.
     # @param idPlayer [int] The id of the player's account or game character.
     # @param idGame [int] The id of the player's game world.
-    # @return [object] A data map with keys `name` (The player's name), `id` (May equals idPlayer) and `idGame` (Equals idGame).
+    # @return [promise] A promise, resolving to a data map with keys 
+    #   `name` (The player's name), `id` (May equals idPlayer) and `idGame` (Equals idGame).
+    #   If the read data set is empty, the promise is rejected. 
     getClientIdentityData: (idPlayer, idGame) ->
-        # TODO: Is idPlayer the FolkID or UserID?
-        # Return at least Folkname (or Username??? -> Can be chosen by user?)
+        # Read (meta) data of given game
+        sql = "
+                SELECT `ID` AS `game_id`, `RealityID` AS `database_id`
+                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                WHERE `ID`=#{@_toQuery(idGame)}
+              "
+        promise = @_readSimpleData(sql, true)
 
+        # Read data of given player in given game
+        promise = promise.then (gameData) =>
+            gameDatabase = @_get_game_db_name(gameData)
+            playersTable = @_get_game_table_name(gameData, Config.SQL_TABLES.POSTFIX_GAME_PLAYERS)
+            sql = "
+                    SELECT `ID` AS `game_player_id`, `Folkname` AS `game_player_name`
+                    FROM `#{gameDatabase}`.`#{playersTable}`
+                    WHERE `UserID`=#{@_toQuery(idPlayer)}
+                  "
+            return @_readSimpleData(sql, true)
+
+        promise = promise.then (playerData) =>
+            unless playerData?
+                throw new Error('Identity not found')
+            return {
+                id: playerData.game_player_id
+                idGame: idGame
+                name: playerData.game_player_name
+            }
+
+        return promise
 
     # Returns a list of channels, which were joined by the given client.
-    # @param clientIdentity [object] The ClientIdentity instance of the client to read the channels for.
-    # @return [Array] A list of objects, each having at least the property `name`, which is the unique name of a channel.
+    # @param clientIdentity [ClientIdentity] The identity of the client to read the channels for.
+    # @return [promise] A promise, resolving to a list of objects, 
+    #   each having at least the property `name`, which is the unique name of a channel.
     getClientChannels: (clientIdentity) ->
         # TODO
         # db.select("Select channel from channels, client_channels where client = '#{clientIdent}'")
