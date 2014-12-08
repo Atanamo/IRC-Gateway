@@ -8,6 +8,7 @@ class this.SocketClient
     serverIP: ''
     serverPort: 0
     instanceData: {}
+    identityData: {}
 
     constructor: (@chatController, @serverIP, @serverPort, @instanceData) ->
 
@@ -40,7 +41,8 @@ class this.SocketClient
         @chatController.handleServerMessage('Authenticating...')
         @_sendAuthRequest()
 
-    _handleServerAuthAck: =>
+    _handleServerAuthAck: (identityData) =>
+        @identityData = identityData
         @chatController.handleServerMessage('Authentication successful!')
 
     _handleServerAuthFail: (errorMsg) =>
@@ -91,8 +93,9 @@ class this.SocketClient
 
     _sendAuthRequest: ->
         authData =
-            id: @instanceData.id
-            game_id: @instanceData.idGame
+            userID: @instanceData.userID or 0
+            gameID: @instanceData.gameID or 0
+            token: @instanceData.token or ''
         @socket.emit 'auth', authData
 
 
@@ -105,5 +108,5 @@ class this.SocketClient
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
 
     _isOwnUser: (data, nameProperty='sender') ->
-        return (String(data[nameProperty]?.id) == String(@instanceData.id))
+        return (String(data[nameProperty]?.id) == String(@identityData.id))
 

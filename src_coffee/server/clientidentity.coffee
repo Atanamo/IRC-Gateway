@@ -5,6 +5,7 @@ class ClientIdentity
     name: 'Unknown'
     title: null
     isIrcClient: false
+    securityToken: ''
 
     constructor: (data) ->
         for key, val of data
@@ -19,15 +20,16 @@ class ClientIdentity
 
         return identObj
 
-    @createFromDatabase: (id, idGame) ->
+    @createFromDatabase: (idUser, idGame) ->
         # TODO: Get data from database, using given folk id
-        promise = db.getClientIdentityData(id, idGame)
+        promise = db.getClientIdentityData(idUser, idGame)
         promise = promise.then (data) =>
             return new ClientIdentity
                 id: data.id
                 name: data.name
                 #title: 'Temp Title'
                 idGame: data.idGame
+                securityToken: data.token
 
         return promise
 

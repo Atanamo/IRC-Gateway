@@ -42,17 +42,21 @@ class SocketHandler
         log.debug 'Client requests auth...'
         return if clientSocket.identity?
 
-        userID = authData.id
-        gameID = authData.game_id
+        userID = authData.userID
+        gameID = authData.gameID
+        securityToken = authData.token
         authPromise = Q.fcall =>
             throw new Error('Invalid user data')
 
         # Check auth data
         if userID? and gameID?
-            # TODO: Check authData.token or similar
             authPromise = ClientIdentity.createFromDatabase(userID, gameID)
             authPromise = authPromise.fail (err) =>
                 throw new Error('Unknown user')  # Overwrite error
+            authPromise = authPromise.then (clientIdentity) =>
+                unless securityToken is clientIdentity.securityToken
+                    throw new Error('Invalid token')
+                return clientIdentity
 
         # Handle auth success/fail
         authPromise.then (clientIdentity) =>
@@ -62,7 +66,7 @@ class SocketHandler
             clientSocket.identity = clientIdentity
 
             # Emit initial events for new client
-            clientSocket.emit 'auth_ack'
+            clientSocket.emit 'auth_ack', clientIdentity.toData()
             clientSocket.emit 'welcome', 'Hello out there!'
 
             # Add client to its channels

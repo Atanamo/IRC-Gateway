@@ -1,6 +1,7 @@
 
 ## Include libraries
 mysql = require 'mysql'
+crypto = require 'crypto'
 
 ## Include app modules
 Config = require './config'
@@ -79,17 +80,26 @@ class Database
     _readMultipleData: (sqlQuery) ->
         return @_sendQuery(sqlQuery)
 
+    _get_hash_value: (original_val) ->
+        hashingStream = crypto.createHash('md5')
+        hashingStream.update(original_val);
+        return hashingStream.digest('hex')
+
     _get_game_db_name: (gameMetaData) ->
         return "#{Config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
 
     _get_game_table_name: (gameMetaData, tablePostfix) ->
         return "#{Config.SQL_TABLES.PREFIX_GAME_TABLE}#{gameMetaData.game_id}#{tablePostfix}"
 
+    # Returns the current security token for the given player. This token must be send on auth request by the client.
+    _get_security_token: (idPlayer, playerData) ->
+        return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idPlayer}_#{playerData.activity_stamp}")
+
     # Returns the saved identification data for the given player in the given game.
     # @param idPlayer [int] The id of the player's account or game character.
     # @param idGame [int] The id of the player's game world.
     # @return [promise] A promise, resolving to a data map with keys 
-    #   `name` (The player's name), `id` (May equals idPlayer) and `idGame` (Equals idGame).
+    #   `name` (The player's name), `id` (May equals idPlayer), `idGame` (Equals idGame) and `token` (The security token for the player).
     #   If the read data set is empty, the promise is rejected. 
     getClientIdentityData: (idPlayer, idGame) ->
         # Read (meta) data of given game
@@ -105,7 +115,7 @@ class Database
             gameDatabase = @_get_game_db_name(gameData)
             playersTable = @_get_game_table_name(gameData, Config.SQL_TABLES.POSTFIX_GAME_PLAYERS)
             sql = "
-                    SELECT `ID` AS `game_player_id`, `Folkname` AS `game_player_name`
+                    SELECT `ID` AS `game_identity_id`, `Folkname` AS `game_identity_name`, `LastActivityStamp` AS `activity_stamp`
                     FROM `#{gameDatabase}`.`#{playersTable}`
                     WHERE `UserID`=#{@_toQuery(idPlayer)}
                   "
@@ -115,9 +125,10 @@ class Database
             unless playerData?
                 throw new Error('Identity not found')
             return {
-                id: playerData.game_player_id
+                id: playerData.game_identity_id
                 idGame: idGame
-                name: playerData.game_player_name
+                name: playerData.game_identity_name
+                token: @_get_security_token(idPlayer, playerData)
             }
 
         return promise
