@@ -32,6 +32,7 @@ module.exports =
     CLIENT_AUTH_SECRET: 'g4t3w4y'  # A secret string to be used as part of the security token (The token needs be sent from a client on login)
 
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
+    BOT_USERNAME_PATTERN: "GalaxyBot<id>"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
     BOT_VERSION_STRING: "#{botName}, #{botVersion} " +        # The version string of the Bot, for requests on IRC
                         "(Last update: #{botLastUpdate}) " +
@@ -40,11 +41,14 @@ module.exports =
     IRC_SERVER_IP: ircServerIP
     IRC_SERVER_PORT: ircServerPort
 
-    IRC_CHANNEL_GLOBAL: ircGlobalChannel
+    IRC_CHANNEL_GLOBAL: ircGlobalChannel  # TODO: rename to IRC_GLOBAL_CHANNEL
     #IRC_CHANNEL_INGAME_PATTERN: '#sgr_ingame_galaxy_<id>'
     #IRC_CHANNEL_INGAME_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
-    INTERN_BOT_CHANNEL_NAME: 'irc_channel'
+    INTERN_GLOBAL_CHANNEL_TITLE: "IRC (#{ircGlobalChannel})"
+    INTERN_GLOBAL_CHANNEL_NAME: 'irc_channel'
+    INTERN_GAME_CHANNEL_PREFIX: 'galaxy_'
+    INTERN_NONGAME_CHANNEL_PREFIX: 'channel_'  # Must differ from INTERN_GAME_CHANNEL_PREFIX
 
     SQL_HOST: mysqlServerIP
     SQL_PORT: mysqlServerPort
@@ -57,5 +61,8 @@ module.exports =
         GAMES_LIST: 'game_worlds'         # The name of the table in common db, which contains the list of game worlds
         PREFIX_GAME_TABLE: 'game_'        # The name prefix of tables in game db, which contain data of a game world's contents
         POSTFIX_GAME_PLAYERS: '_players'  # The name postfix of the game table, which contains the list of a game world's players
+        CHANNEL_LIST: 'chat - channels'
+        CHANNEL_JOININGS: 'chat - channeljoins'
+        CHANNEL_MESSAGES: 'chat - channelmessages'
 
 

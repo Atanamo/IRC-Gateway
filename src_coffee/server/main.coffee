@@ -11,6 +11,7 @@ Logger = require './logger'
 Database = require './database'
 
 SocketHandler = require './sockethandler'
+BotManager = require './botmanager'
 
 BotChannel = require './botchannel'
 Bot = require './bot'
@@ -34,10 +35,12 @@ GLOBAL.log = log
 ## Main class
 class Gateway
     socketHandler: null
+    botManager: null
 
     constructor: ->
         @_bindServerEvents()
         @socketHandler = new SocketHandler()
+        @botManager = new BotManager()
 
     _bindServerEvents: ->
         ## Register http server events
@@ -61,17 +64,21 @@ class Gateway
 
         # Connect database
         log.info 'Connecting database...'
-        db_promise = db.connect()
-        db_promise.done =>
-            # Start listening for HTTP requests
+        dbPromise = db.connect()
+
+        # Start listening for HTTP requests
+        dbPromise.then =>
             log.info 'Start listening...'
             server.listen(Config.WEB_SERVER_PORT)
 
-            # Start listening for socket.io emits
+        # Create and connect the bots
+        botPromise = dbPromise.then =>
+            return @botManager.start()
+
+        # Start listening for socket.io emits
+        botPromise.done =>
             @socketHandler.start()
 
-            # Create and connect the bots
-            @_setupBots()
 
     _setupProcess: ->
         process.on 'exit', (code) =>
@@ -81,30 +88,6 @@ class Gateway
         process.on 'uncaughtException', (err) =>
             log.error err, 'process'
             process.exit(err.code or 99)
-
-    _setupBots: ->
-        botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
-
-        # TODO: Multiple bots, each for one galaxy. Singleton-Concept?
-        bot = new Bot
-            id: 123
-            name: 'Eine Testgalaxie'
-
-        startPromise = bot.start()
-
-        # Add bots to botChannel
-        startPromise.then =>
-            botChannel.addBot(bot)
-
-
-            bot2 = new Bot
-                id: 124
-                name: 'Eine Testgalaxie 2'
-
-            startPromise2 = bot2.start()
-
-            startPromise2.then =>
-                botChannel.addBot(bot2)
 
     _shutdown: ->
         db.disconnect()

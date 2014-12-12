@@ -13,29 +13,32 @@ class Channel
 
     name: 'default'
     isPublic: false
-    title: 'New Channel'
+    title: ''
 
     eventNameMsg: 'message#unnamed'
     eventNameLeave: 'leave#unnamed'
 
 
-    constructor: (@name) ->
-        log.info 'Creating new channel ' + @name
-
+    constructor: (data) ->
         @_updateUniqueClientsMap()  # Initialize map of unique clients
 
-        data = db.getChannelData(@name)
+        @name = data.name or @name
+        @isPublic = data.is_public or @isPublic
+        @title = data.title or @name
 
-        if data?
-            @isPublic = data.is_public
-            @title = data.title
-            @eventNameMsg = 'message#' + @name
-            @eventNameLeave = 'leave#' + @name
+        log.info 'Creating new channel ' + @name
 
-    @getInstance: (name) ->
+        @eventNameMsg = 'message#' + @name
+        @eventNameLeave = 'leave#' + @name
+
+    @getInstance: (channelData) ->
+        name = channelData.name
         unless @_instances[name]?
-            @_instances[name] = new Channel(name)
+            @_instances[name] = new Channel(channelData)
         return @_instances[name]
+
+    destroy: ->
+        delete @_instances[@name]
 
 
     #
@@ -97,6 +100,10 @@ class Channel
             # Permanently unregister client for channel
             unless isDisconnect
                 db.removeClientFromChannel(clientSocket, @name)
+
+        # TODO: 
+        # Remove and close instance, if last client left
+        # @destroy()  # To be overridden by BotChannel
 
 
     #

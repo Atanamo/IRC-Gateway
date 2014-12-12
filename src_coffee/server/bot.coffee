@@ -24,16 +24,19 @@ class SchizoBot
     botChannelList: null
     masterChannelList: null
     connectionPromise: null
+    connectionDeferred: null
 
     constructor: (@gameData) ->
         @botChannelList = {}
         @masterChannelList = {}
+        @connectionDeferred = Q.defer()
+        @connectionPromise = @connectionDeferred.promise
 
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
-        @userName = 'GalaxyBot' + @gameData.id
+        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, @gameData.id)
         @realName = Config.BOT_REALNAME_PATTERN
         @realName = @realName.replace(/<id>/i, @gameData.id)
-        @realName = @realName.replace(/<name>/i, @gameData.name)
+        @realName = @realName.replace(/<name>/i, @gameData.title)
 
         log.info "Creating bot '#{@nickName}'..."
 
@@ -47,7 +50,7 @@ class SchizoBot
             debug: Config.DEBUG_IRC_COMM
             showErrors: true
             floodProtection: true           # Protect the bot from beeing kicked, if users are flooding
-            floodProtectionDelay: 10        # Delay messages with 10ms to avoid flooding
+            floodProtectionDelay: 50        # Delay messages with 10ms to avoid flooding
             stripColors: true               # Strip mirc colors
 
         # Create listeners
@@ -80,14 +83,14 @@ class SchizoBot
     start: (channelList) ->
         # Start 
         log.info "Connecting bot '#{@nickName}'..."
-        deferred = Q.defer()
 
         @client.connect (data) =>
             log.info "Bot '#{@nickName}' connected succesfully!"
-            deferred.resolve()
+            #@connectionDeferred.resolve()
 
-        @connectionPromise = deferred.promise
+        return @connectionPromise
 
+    getConnectionPromise: ->
         return @connectionPromise
 
     getID: ->
@@ -114,6 +117,7 @@ class SchizoBot
                 log.debug "Welcome message for bot '#{@nickName}':", welcomeMessage
             if confirmedNick?
                 @nickName = confirmedNick
+        @connectionDeferred.resolve()
 
     _handleIrcChannelJoin: (channel, nick) =>
         return unless @_isChannelMaster(channel)
@@ -122,7 +126,7 @@ class SchizoBot
 
     _handleIrcChannelPart: (channel, nick, reason) =>
         return unless @_isChannelMaster(channel)
-        @_sendUserListRequestToIrcChannel(channel)
+        @_sendUserListRequestToIrcChannel(channel) if nick isnt @nickName  # Don't request new user list, if bot parted itself
         @_sendToWebChannel(channel, 'handleBotChannelUserPart', nick, reason)
 
     _handleIrcChannelKick: (channel, nick, actorNick, reason) =>
@@ -316,8 +320,24 @@ class SchizoBot
         ircChannelName = botChannel.getIrcChannelName()
         @botChannelList[ircChannelName] = botChannel
         @masterChannelList[ircChannelName] = isMasterBot
-        log.info "Joining bot '#{@nickName}' to channel #{ircChannelName}..."
-        @client.join(ircChannelName)
+        @connectionPromise.then =>
+            log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} (As master: #{isMasterBot})..."
+            @client.join(ircChannelName)
+
+    handleWebChannelLeave: (botChannel) ->
+        ircChannelName = botChannel.getIrcChannelName()
+        wasMasterBot = @_isChannelMaster(ircChannelName)
+        delete @botChannelList[ircChannelName]
+        delete @masterChannelList[ircChannelName]
+        @connectionPromise.then =>
+            log.info "Removing bot '#{@nickName}' from channel #{ircChannelName}..."
+            @client.part(ircChannelName, 'My time has come to leave this world, goodbye!')
+        return wasMasterBot
+
+    handleWebChannelMasterNomination: (botChannel) ->
+        ircChannelName = botChannel.getIrcChannelName()
+        if @botChannelList[ircChannelName]?
+            @masterChannelList[ircChannelName] = true
 
     handleWebClientMessage: (channelName, senderIdentity, rawMessage) ->
         clientNick = senderIdentity.getName()

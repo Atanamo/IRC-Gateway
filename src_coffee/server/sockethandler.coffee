@@ -17,7 +17,6 @@ class SocketHandler
     start: ->
         @_bindSocketGlobalEvents()
 
-
     _bindSocketGlobalEvents: ->
         ## Register common websocket events
         io.sockets.on 'connection', @_handleClientConnect  # Build-in event
@@ -27,6 +26,8 @@ class SocketHandler
         clientSocket.on 'disconnect', => @_handleClientDisconnect(clientSocket)  # Build-in event
         clientSocket.on 'auth', (authData) => @_handleClientAuthRequest(clientSocket, authData)
 
+    _bindSocketClientAuthorizedEvents: (clientSocket) ->
+        clientSocket.on 'join', (channelData) => @_handleClientChannelJoin(clientSocket, channelData)
 
     _handleClientConnect: (clientSocket) =>
         log.debug 'Client connected...'
@@ -36,7 +37,9 @@ class SocketHandler
     _handleClientDisconnect: (clientSocket) =>
         log.debug 'Client disconnected...'
         # Deregister listeners
-        clientSocket.removeAllListeners 'disconnect'
+        clientSocket.isDisconnected = true
+        clientSocket.removeAllListeners()
+        #clientSocket.removeAllListeners 'disconnect'
 
     _handleClientAuthRequest: (clientSocket, authData) =>
         log.debug 'Client requests auth...'
@@ -60,10 +63,13 @@ class SocketHandler
 
         # Handle auth success/fail
         authPromise.then (clientIdentity) =>
+            return if clientSocket.isDisconnected
             log.debug 'Client auth granted'
 
             # Set client identification data
             clientSocket.identity = clientIdentity
+            # Register additional events for client
+            @_bindSocketClientAuthorizedEvents(clientSocket)
 
             # Emit initial events for new client
             clientSocket.emit 'auth_ack', clientIdentity.toData()
@@ -73,23 +79,32 @@ class SocketHandler
             @_acceptNewClient(clientSocket)
 
         authPromise.fail (err) =>
+            return if clientSocket.isDisconnected
             log.debug 'Client auth rejected:', err.message
             # Emit auth fail
             clientSocket.emit 'auth_fail', err.message  # TODO: Send notice based on auth error
 
-
     _acceptNewClient: (clientSocket) ->
         # Let client join default channel
-        botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
-        botChannel.addClient(clientSocket, true)
+        #botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
+        #botChannel.addClient(clientSocket, true)
 
         # Let client join to saved channels
-        channelList = db.getClientChannels(clientSocket.identity)
+        promise = db.getClientChannels(clientSocket.identity)
+        promise.then (channelList) =>
+            #console.log 'LIST', channelList
+            for channelData in channelList
+                channel = Channel.getInstance(channelData)
+                channel.addClient(clientSocket, true)
 
-        for channelData in channelList
-            channel = Channel.getInstance(channelData.name)
-            channel.addClient(clientSocket, true)
 
+    _handleClientChannelJoin: (clientSocket, channelData) =>
+        # TODO
+        # - Check for channel existence in DB
+        # - If it not exist, create it in DB
+        # - Create/Get Channel instance
+        # - Add client to channel instance
+        # - If channel is a bot Channel: Add the bot of client's game
 
 
 ## Export class

@@ -17,21 +17,29 @@ class BotChannel extends Channel
     @_instances: {}
     botList: null
 
+    gameID: 0
     ircChannelName: ''
     ircChannelTopic: null
     ircUserList: null
 
-    constructor: (@name, @ircChannelName) ->
+    constructor: (data) ->
         super
+        @ircChannelName = data.irc_channel or @ircChannelName
+        @gameID = data.game_id or @gameID
         @botList = {}
         @ircUserList = {}
 
     # @override
-    @getInstance: (name, ircChannelName) ->
-        unless @_instances[name]?
-            @_instances[name] = new BotChannel(name, ircChannelName)
-        return @_instances[name]
+    @getInstance: (channelData) ->
+        name = channelData.name
+        unless Channel._instances[name]?
+            Channel._instances[name] = new BotChannel(channelData)
+        return Channel._instances[name]
 
+    # @override
+    destroy: ->
+        if Object.keys(@botList).length is 0
+            super
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
@@ -45,12 +53,30 @@ class BotChannel extends Channel
         # Store bot reference, addressable by game id
         botID = bot.getID()
         @botList[botID] = bot
-
         # Let bot join the irc channel
         isMasterBot = Object.keys(@botList).length is 1  # First bot is master
         bot.handleWebChannelJoin(this, isMasterBot)
 
+    removeBot: (bot) ->
+        botID = bot.getID()
+        if @botList[botID]?
+            # Remove bot reference and let bot part irc channel
+            delete @botList[botID]
+            wasMasterBot = bot.handleWebChannelLeave(this)
+            # Set next bot to be master
+            if wasMasterBot
+                for key, nextMasterBot of @botList
+                    nextMasterBot.handleWebChannelMasterNomination()
+                    break
+            # May destroy instance (if it was the last bot)
+            @destroy()
+            return true
+        return false
+
     getIrcChannelName: ->
+        return @ircChannelName
+
+    getGameID: ->
         return @ircChannelName
 
     getNumberOfClients: ->
@@ -95,12 +121,13 @@ class BotChannel extends Channel
 
     # @override
     _handleClientMessage: (clientSocket, messageText) =>
+        log.debug 'Client message to IRC:', messageText
         botID = clientSocket.identity.getGameID() or -1
         targetBot = @botList[botID]
         return unless targetBot?
 
         # Send to socket channel
-        super
+        super   # TODO: Is triggering the message a second time, if multiple bots in channel (other message is observing message from bot)
 
         # Send to IRC channel
         targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText)

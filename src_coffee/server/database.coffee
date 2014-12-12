@@ -95,20 +95,124 @@ class Database
     _get_security_token: (idPlayer, playerData) ->
         return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idPlayer}_#{playerData.activity_stamp}")
 
-    # Returns the saved identification data for the given player in the given game.
-    # @param idPlayer [int] The id of the player's account or game character.
-    # @param idGame [int] The id of the player's game world.
+    # Returns the data for the given game world.
+    # @param idGame [int] The id of the game world.
     # @return [promise] A promise, resolving to a data map with keys 
-    #   `name` (The player's name), `id` (May equals idPlayer), `idGame` (Equals idGame) and `token` (The security token for the player).
+    #   `game_id` (Should equal idGame), 
+    #   `database_id` (The id of the database, which stores the game tables) and
+    #   `game_title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   If the read data set is empty, the promise is rejected. 
-    getClientIdentityData: (idPlayer, idGame) ->
-        # Read (meta) data of given game
+    _getGameData: (idGame) ->
         sql = "
-                SELECT `ID` AS `game_id`, `RealityID` AS `database_id`
+                SELECT `ID` AS `game_id`, `RealityID` AS `database_id`, `Galaxyname` AS `game_title`
                 FROM `#{Config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID`=#{@_toQuery(idGame)}
               "
-        promise = @_readSimpleData(sql, true)
+        return @_readSimpleData(sql, true)
+
+    # Returns the list of game worlds, which each have a bot to use for bot-channels.
+    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    #   `id` (The unique id of the game world) and
+    #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
+    #   The list may be equal, if there are no games at all.
+    getBotRepresentedGames: ->
+        sql = "
+                SELECT `ID` AS `id`, `Galaxyname` AS `title`
+                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                WHERE `Status`>=0
+                
+                ORDER BY ID DESC
+                LIMIT 1
+              "   # TODO: Remove limit and order by!
+
+        return @_readMultipleData(sql)
+
+    # Returns a list of channels, which should be mirrored to IRC - each by only one bot. This excludes the global channel.
+    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    #   `game_id` (The id of the game, the bot to be used belongs to),
+    #   `name` (The unique name of a channel - used internally),
+    #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
+    #   `irc_channel` (The exact name of the IRC channel to mirror) and
+    #   `is_public` (TRUE, if the channel is meant to be public and therefor joined player's have to be hidden; else FALSE).
+    #   The list may be equal, if no appropriate channels exist.
+    getSingleBotChannels: ->
+        sql = "
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
+                       `C`.`Title` AS `title`, `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
+                WHERE `C`.`IrcChannel` IS NOT NULL
+              "
+        return @_readMultipleData(sql)
+
+    # TODO: docs
+    getGlobalChannelData: ->
+        promise = Q.fcall =>
+            return {
+                name: Config.INTERN_GLOBAL_CHANNEL_NAME
+                title: Config.INTERN_GLOBAL_CHANNEL_TITLE
+                irc_channel: Config.IRC_CHANNEL_GLOBAL
+                is_public: true
+            }
+        return promise
+
+    # Returns a list of channels, which were joined by the given client.
+    # @param clientIdentity [ClientIdentity] The identity of the client to read the channels for.
+    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    #   `name` (The unique name of a channel - used internally),
+    #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
+    #   `irc_channel` (Optional: The exact name of an IRC channel to mirror) and
+    #   `is_public` (TRUE, if the channel is meant to be public and therefor joined player's have to be hidden; else FALSE).
+    #   The list may be equal, if no channels are joined by the client.
+    getClientChannels: (clientIdentity) ->
+        # Read data of client's game as default channel
+        idGame = clientIdentity.getGameID()
+        gamePromise = @_getGameData(idGame)
+        gamePromise = gamePromise.then (gameData) =>
+            return {
+                name: "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameData.game_id}"
+                title: gameData.game_title
+                is_public: true
+            }
+
+        # Read non-default channels
+        idUser = clientIdentity.getUserID()
+        sql = "
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
+                       `C`.`Title` AS `title`, `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
+                JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
+                  ON `CJ`.`ChannelID`=`C`.`ID`
+                WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
+              "
+        channelsPromise = @_readMultipleData(sql)
+
+        # Read data of default channel
+        globalChannelPromise = @getGlobalChannelData()
+
+        # Merge promise results to one array
+        resultPromise = channelsPromise.then (channelListData) =>
+            list = channelListData
+            return gamePromise.then (gameChannelData) =>
+                list.push(gameChannelData) if gameChannelData?
+                return globalChannelPromise.then (defaultChannelData) =>
+                    list.push(defaultChannelData)
+                    return list
+
+        return resultPromise
+
+    # Returns the saved identification data for the given player in the given game.
+    # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
+    # @param idGame [int] The id of the player's game world as given by a client on logon.
+    # @return [promise] A promise, resolving to a data map with keys 
+    #   `name` (The player's name for the chat), 
+    #   `id` (The id of the player for the chat), 
+    #   `idGame` (Should equal idGame), 
+    #   `idUser` (The id of the player's account) and 
+    #   `token` (The security token for the player).
+    #   If the read data set is empty, the promise is rejected.
+    getClientIdentityData: (idUser, idGame) ->
+        # Read (meta) data of given game
+        promise = @_getGameData(idGame)
 
         # Read data of given player in given game
         promise = promise.then (gameData) =>
@@ -117,41 +221,36 @@ class Database
             sql = "
                     SELECT `ID` AS `game_identity_id`, `Folkname` AS `game_identity_name`, `LastActivityStamp` AS `activity_stamp`
                     FROM `#{gameDatabase}`.`#{playersTable}`
-                    WHERE `UserID`=#{@_toQuery(idPlayer)}
+                    WHERE `UserID`=#{@_toQuery(idUser)}
                   "
             return @_readSimpleData(sql, true)
 
         promise = promise.then (playerData) =>
-            unless playerData?
-                throw new Error('Identity not found')
             return {
                 id: playerData.game_identity_id
                 idGame: idGame
+                idUser: idUser
                 name: playerData.game_identity_name
-                token: @_get_security_token(idPlayer, playerData)
+                token: @_get_security_token(idUser, playerData)
             }
 
         return promise
 
-    # Returns a list of channels, which were joined by the given client.
-    # @param clientIdentity [ClientIdentity] The identity of the client to read the channels for.
-    # @return [promise] A promise, resolving to a list of objects, 
-    #   each having at least the property `name`, which is the unique name of a channel.
-    getClientChannels: (clientIdentity) ->
-        # TODO
-        # db.select("Select channel from channels, client_channels where client = '#{clientIdent}'")
 
-        tempdata = [
-                #id: 123
-                name: 'galaxy_test'
-            ,
-                #id: 124
-                name: 'galaxy_test_group01'
-        ]
-
-        return tempdata
-
+    # OLD: TO BE removed
     getChannelData: (channelIdent) ->
+        # TODO
+        sql = "
+                SELECT `C`.`ID` AS `channel_id`, `C`.`Title` AS `channel_title`, 
+                       `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
+                JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
+                  ON `CJ`.`ChannelID`=`C`.`ID`
+                WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
+
+              "
+
+        # TODO: TEMP
         tempdata = {
             'galaxy_test':
                 title: 'Test-Galaxie'
@@ -166,6 +265,7 @@ class Database
             is_public: true
 
         return tempdata[channelIdent]
+
 
     addClientToChannel: (client, channelIdent) ->
         # TODO
