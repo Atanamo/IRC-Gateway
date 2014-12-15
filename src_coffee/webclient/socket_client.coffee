@@ -108,5 +108,13 @@ class this.SocketClient
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
 
     _isOwnUser: (data, nameProperty='sender') ->
-        return (String(data[nameProperty]?.id) == String(@identityData.id))
+        ownIdentityData = @identityData or {}
+        identData = data[nameProperty] or {}
+
+        if identData.isIrcClient
+            isFromOwnGame = (String(identData.idGame) == String(ownIdentityData.idGame))
+            isFromOwnName = (String(data?.text).indexOf("<#{ownIdentityData.name}>") is 0)
+            return (isFromOwnGame and isFromOwnName)
+
+        return (String(identData.id) == String(ownIdentityData.id))
 

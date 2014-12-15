@@ -96,6 +96,9 @@ class SchizoBot
     getID: ->
         return @gameData.id
 
+    getNickName: ->
+        return @nickName
+
 
     #
     # IRC event handlers
@@ -342,8 +345,9 @@ class SchizoBot
     handleWebClientMessage: (channelName, senderIdentity, rawMessage) ->
         clientNick = senderIdentity.getName()
         messageText = "<#{clientNick}>: #{rawMessage}"
-
         @client.say(channelName, messageText)
+        # Mirror to web channel, if no other bot (the master) is triggering the message though observing
+        @_sendMessageToWebChannel(channelName, @nickName, messageText) if @_isChannelMaster(channelName)
 
     _isChannelMaster: (channelName) ->
         return @masterChannelList[channelName] or false

@@ -126,9 +126,6 @@ class BotChannel extends Channel
         targetBot = @botList[botID]
         return unless targetBot?
 
-        # Send to socket channel
-        super   # TODO: Is triggering the message a second time, if multiple bots in channel (other message is observing message from bot)
-
         # Send to IRC channel
         targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText)
 
@@ -138,7 +135,13 @@ class BotChannel extends Channel
     #
 
     handleBotMessage: (senderNickName, messageText) ->
-        senderIdentity = ClientIdentity.createFromIrcNick(senderNickName)
+        # Try to find bot (if message has been sent by one) and set its game id for additional information to clients
+        botGameID = null
+        for botID, bot of @botList
+            if bot.getNickName() is senderNickName.replace(/^[@+]/, '')
+                botGameID = botID
+        # Create sender identity and distribute message
+        senderIdentity = ClientIdentity.createFromIrcNick(senderNickName, botGameID)
         @_sendMessageToRoom(senderIdentity, messageText)
 
     handleBotNotice: (senderNickName, noticeText) ->

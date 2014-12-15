@@ -13,10 +13,11 @@ class ClientIdentity
             @[key] = val
         @title = @name unless @title?
 
-    @createFromIrcNick: (nickName) ->
+    @createFromIrcNick: (nickName, idGame=null) ->
         identObj = new ClientIdentity
             name: nickName
             title: "#{nickName} (IRC)"
+            idGame: idGame
             isIrcClient: true
         return identObj
 
@@ -50,6 +51,7 @@ class ClientIdentity
         # Filter idUser and securityToken, because these must be secret to clients
         return {
             @id
+            @idGame
             @name
             @title
             @isIrcClient
