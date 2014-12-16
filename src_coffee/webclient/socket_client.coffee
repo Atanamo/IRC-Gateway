@@ -51,8 +51,7 @@ class this.SocketClient
             console.error 'Connection error:', errorMsg
         else
             @chatController.handleServerMessage('Connection lost! Server may quit')
-
-        # TODO: Set userlists of channels empty, print info to channels, too
+        @chatController.handleServerDisconnect()
 
     _handleServerAuthAck: (identityData) =>
         @identityData = identityData

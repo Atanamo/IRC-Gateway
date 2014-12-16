@@ -3,6 +3,7 @@ class this.Translation
 
     # English translated texts
     TEXTS_EN = {
+        'msg.server_connection_lost': 'Error: Lost connection to server! Waiting for reconnect...'
         'msg.channel_joined': 'Joined $channel$'
         'msg.initial_channel_topic': 'Channel topic: $topic$'
         'msg.new_channel_topic.authorless': 'New channel topic: $topic$'
@@ -12,9 +13,9 @@ class this.Translation
         'msg.user_left_channel.part.reasoned': '$user$ left the channel, reason: $reason$'
         'msg.user_left_channel.part.reasonless': '$user$ left the channel'
         'msg.user_left_channel.quit.reasoned': '$user$ has quit, message: $reason$'
-        'msg.user_left_channel.part.reasonless': '$user$ has quit'
+        'msg.user_left_channel.quit.reasonless': '$user$ has quit'
         'msg.user_kicked_from_channel': '$user$ has been kicked from channel by $actor$, reason: $reason$'
-        'msg.user_killed_from_server': '$user$ has been kicked from channel by $actor$, reason: $reason$'
+        'msg.user_killed_from_server': '$user$ has been kicked from server by $actor$, reason: $reason$'
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
         'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
         'info.unknown': 'unknown'
@@ -22,6 +23,7 @@ class this.Translation
 
     # German translated texts
     TEXTS_DE = {
+        'msg.server_connection_lost': 'Fehler: Verbindung zum Server verloren! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
         'msg.new_channel_topic.authorless': 'Ein neues Channel-Thema wurde gesetzt: $topic$'
@@ -33,6 +35,7 @@ class this.Translation
         'msg.user_left_channel.quit.reasoned': '$user$ ist offline gegangen: $reason$'
         'msg.user_left_channel.quit.reasonless': '$user$ ist offline gegangen'
         'msg.user_kicked_from_channel': '$user$ wurde von $actor$ aus dem Channel gekickt, Grund: $reason$'
+        'msg.user_killed_from_server': '$user$ wurde von $actor$ vom Server geworfen, Grund: $reason$'
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
         'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
         'info.unknown': 'Unbekannt'

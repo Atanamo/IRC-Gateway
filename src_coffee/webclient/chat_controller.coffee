@@ -12,14 +12,15 @@ class this.ChatController
     gui:
         chatForm: '#chat_form'
         chatInput: '#chat_input'
-        tabsystemViewport: '#chatsystem .tabsystemViewport'
-        tabsystemHeaderList: '#chatsystem .tabsystemHeaders'
+        tabsystemViewport: '#tabsystem .tabsystemViewport'
+        tabsystemHeaderList: '#tabsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
         tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
         tabPagesUsers: '.chatUsers'
-        tabPageSkeleton: '#tabPageSkeleton'
+        tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
+        tabPageSkeleton: '#tabPageSkeleton'
 
     events:
         'chatForm submit': '_handleGuiMessageSubmit'
@@ -87,6 +88,14 @@ class this.ChatController
     # Socket client handling
     #
 
+    handleServerDisconnect: ->
+        # Inform all channel tabs and clear user lists
+        informText = Translation.get('msg.server_connection_lost')
+        @ui.tabPagesOfChannels.each (idx, domNode) =>
+            tabPage = $(domNode)
+            @_appendNoticeToTab(tabPage, null, 'error', informText)
+            @_clearUserListOfTab(tabPage)
+
     handleServerMessage: (msg) ->
         tabPage = @ui.tabPageServer
         @_appendNoticeToTab(tabPage, null, 'log', msg)
@@ -132,8 +141,7 @@ class this.ChatController
 
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
-        tabPage.find(@gui.tabPagesUsers).empty()
-
+        @_clearUserListOfTab(tabPage)
         for identityData in clientList
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
 
@@ -215,6 +223,9 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
+    _clearUserListOfTab: (tabPage) ->
+        tabPage.find(@gui.tabPagesUsers).empty()
+
     _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
         itemText = shortName
         itemText += ' [IRC]' if isIrcUser
@@ -240,7 +251,7 @@ class this.ChatController
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
         noticeText = "* #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
-        @_appendEntryToTab(tabPage, timestamp, "server", noticeText)
+        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText)
         @_scrollToBottomOfTab(tabPage)
 
     _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
