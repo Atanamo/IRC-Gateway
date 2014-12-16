@@ -15,6 +15,7 @@ class this.ChatController
         tabsystemViewport: '#chatsystem .tabsystemViewport'
         tabsystemHeaderList: '#chatsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
+        tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
         tabPagesUsers: '.chatUsers'
         tabPageSkeleton: '#tabPageSkeleton'
@@ -235,10 +236,12 @@ class this.ChatController
             dataValue = 'external'
 
         @_appendEntryToTab(tabPage, timestamp, dataValue, text, sender)
+        @_scrollToBottomOfTab(tabPage)
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
         noticeText = "* #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         @_appendEntryToTab(tabPage, timestamp, "server", noticeText)
+        @_scrollToBottomOfTab(tabPage)
 
     _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
         unless entryTimestamp?
@@ -266,6 +269,11 @@ class this.ChatController
         # Append item to list
         messagesElem = tabPage.find(@gui.tabPagesMessages)
         messagesElem.append(itemElem)
+
+    _scrollToBottomOfTab: (tabPage) ->
+        pageElem = tabPage.find(@gui.tabPagesMessagesPage)
+        scrollOffset = pageElem.prop('scrollHeight')
+        pageElem.scrollTop(scrollOffset)
 
     _getLocalizedTime: (timestamp) ->
         date = new Date(timestamp)
