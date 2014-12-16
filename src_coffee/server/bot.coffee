@@ -323,12 +323,15 @@ class SchizoBot
     #
 
     handleWebChannelJoin: (botChannel, isMasterBot) ->
+        joinDeferred = Q.defer()
         ircChannelName = botChannel.getIrcChannelName()
         @botChannelList[ircChannelName] = botChannel
         @masterChannelList[ircChannelName] = isMasterBot
         @connectionPromise.then =>
             log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} (As master: #{isMasterBot})..."
-            @client.join(ircChannelName)
+            @client.join ircChannelName, ->
+                joinDeferred.resolve()
+        return joinDeferred.promise
 
     handleWebChannelLeave: (botChannel) ->
         ircChannelName = botChannel.getIrcChannelName()

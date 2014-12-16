@@ -84,8 +84,12 @@ class BotManager
 
     _addBotsToGlobalChannel: (globalChannel, botList) ->
         # Add every bot to channel
-        for key, bot of botList
-            @_addBotToChannel(bot, globalChannel)
+        joinPromise = Q()
+        for key, bot of botList 
+            do (bot) =>
+                # Join bot as soon as previous bot has joined (To have clean logging order)
+                joinPromise = joinPromise.then =>
+                    return @_addBotToChannel(bot, globalChannel)
 
     _addBotsToSingleChannels: (singleChannels, botList) ->
         # For each channel, add its appropriate single bot to it
@@ -100,7 +104,7 @@ class BotManager
     _addBotToChannel: (bot, channel) ->
         #connectPromise = bot.getConnectionPromise()
         #connectPromise.then =>
-        channel.addBot(bot)
+        return channel.addBot(bot)
 
 
     _destroyBot: ->

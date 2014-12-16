@@ -55,7 +55,8 @@ class BotChannel extends Channel
         @botList[botID] = bot
         # Let bot join the irc channel
         isMasterBot = Object.keys(@botList).length is 1  # First bot is master
-        bot.handleWebChannelJoin(this, isMasterBot)
+        joinPromise = bot.handleWebChannelJoin(this, isMasterBot)
+        return joinPromise
 
     removeBot: (bot) ->
         botID = bot.getID()
