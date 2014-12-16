@@ -7,8 +7,8 @@ class this.SocketClient
 
     serverIP: ''
     serverPort: 0
-    instanceData: {}
-    identityData: {}
+    instanceData: null
+    identityData: null
 
     constructor: (@chatController, @serverIP, @serverPort, @instanceData) ->
 
@@ -17,7 +17,10 @@ class this.SocketClient
 
         @socket = io.connect("#{@serverIP}:#{@serverPort}")
 
-        @socket.on 'connect', @_handleServerConnect      # Build-in event
+        @socket.on 'connect', @_handleServerConnect         # Build-in event
+        @socket.on 'disconnect', @_handleServerDisconnect   # Build-in event
+        @socket.on 'error', @_handleServerDisconnect        # Build-in event
+
         @socket.on 'auth_ack', @_handleServerAuthAck
         @socket.on 'auth_fail', @_handleServerAuthFail
         @socket.on 'welcome', @_handleServerWelcome
@@ -40,6 +43,16 @@ class this.SocketClient
         @chatController.handleServerMessage('Connection established!')
         @chatController.handleServerMessage('Authenticating...')
         @_sendAuthRequest()
+
+    _handleServerDisconnect: (errorMsg) =>
+        @identityData = null
+        if errorMsg?
+            @chatController.handleServerMessage('Connection error: ' + errorMsg)
+            console.error 'Connection error:', errorMsg
+        else
+            @chatController.handleServerMessage('Connection lost! Server may quit')
+
+        # TODO: Set userlists of channels empty, print info to channels, too
 
     _handleServerAuthAck: (identityData) =>
         @identityData = identityData
