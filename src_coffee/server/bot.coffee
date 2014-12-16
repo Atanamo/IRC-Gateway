@@ -50,7 +50,8 @@ class SchizoBot
             debug: Config.DEBUG_IRC_COMM
             showErrors: true
             floodProtection: true           # Protect the bot from beeing kicked, if users are flooding
-            floodProtectionDelay: 50        # Delay messages with 10ms to avoid flooding
+            floodProtectionDelay: 50        # Delay time for messages to avoid flooding
+            retryDelay: 61000               # Delay time for reconnects
             stripColors: true               # Strip mirc colors
 
         # Create listeners
@@ -108,9 +109,11 @@ class SchizoBot
         log.error rawData, "IRC server (Bot '#{@nickName}')"
 
     _handleIrcRawCommand: (data) =>
-        #switch data.command
-        #    when 'rpl_luserunknown', 'rpl_umodeis'
-        #        log.info 'Unhandled command', data
+        switch data.command
+            when 'ERROR'
+                @_handleIrcError(data)
+            #when 'rpl_luserunknown', 'rpl_umodeis'
+            #    log.info 'Unhandled command', data
 
     _handleIrcConnectConfirmation: (rawData) =>
         if rawData.command = 'rpl_welcome'
