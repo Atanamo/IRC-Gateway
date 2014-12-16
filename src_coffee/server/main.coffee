@@ -62,23 +62,21 @@ class Gateway
         ## Start the chat gateway ##
         @_setupProcess()
 
+        # Register for socket events (But don't start listening)
+        @socketHandler.start()
+
         # Connect database
         log.info 'Connecting database...'
-        dbPromise = db.connect()
+        startupPromise = db.connect()
 
-        # Start listening for HTTP requests
-        dbPromise.then =>
-            log.info 'Start listening...'
-            server.listen(Config.WEB_SERVER_PORT)
-
-        # Create and connect the bots
-        botPromise = dbPromise.then =>
+        # Create the bot channels, also create and connect the bots
+        startupPromise = startupPromise.then =>
             return @botManager.start()
 
-        # Start listening for socket.io emits
-        botPromise.done =>
-            @socketHandler.start()
-
+        # Start listening for socket.io emits and for HTTP requests
+        startupPromise.then =>
+            log.info 'Start listening...'
+            server.listen(Config.WEB_SERVER_PORT)
 
     _setupProcess: ->
         process.on 'exit', (code) =>

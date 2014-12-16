@@ -14,14 +14,27 @@ class BotManager
         @botList = {}
 
     start: ->
-        setupPromise = @_setupBots()
-        setupPromise = setupPromise.then =>
+        # Setup bot channels
+        globalChannelPromise = @_setupGlobalBotChannel()
+        singleChannelsPromise = @_setupSingleBotChannels()
+
+        # Setup the bots
+        botsPromise = @_setupBots()
+        botsPromise = botsPromise.then =>
             return @_startBots()
-        setupPromise = setupPromise.then =>
-            return @_setupGlobalChannel()
-        setupPromise = setupPromise.then =>
-            return @_setupBotChannels()
-        return setupPromise
+
+        # After bots startup: Add them to their channels
+        botsPromise.then =>
+            log.info 'Bots have started, adding them to channels...'
+
+            globalChannelPromise.then (globalChannel) =>
+                @_addBotsToGlobalChannel(globalChannel, @botList)
+
+            singleChannelsPromise.then (singleChannels) =>
+                @_addBotsToSingleChannels(singleChannels, @botList)
+
+        return Q.all([globalChannelPromise, singleChannelsPromise])
+
 
     _setupBots: ->
         promise = db.getBotRepresentedGames()
@@ -33,34 +46,6 @@ class BotManager
                 # Store bot by game id
                 gameID = bot.getID()
                 @botList[gameID] = bot
-
-        return promise
-
-    _setupGlobalChannel: ->
-        promise = db.getGlobalChannelData()
-        promise = promise.then (channelData) =>
-            log.info 'Creating global channel...'
-            channel = BotChannel.getInstance(channelData)
-            # Add every bot to channel
-            for key, bot of @botList
-                @_addBotToChannel(bot, channel)
-        return promise
-
-    _setupBotChannels: ->
-        promise = db.getSingleBotChannels()
-        promise = promise.then (channelList) =>
-            log.info 'Creating additional bot channels...' if channelList?.length
-
-            # Create every bot channel and add the appropriate bot to it
-            for channelData in channelList
-                channel = BotChannel.getInstance(channelData)
-                gameID = channel.getGameID()
-                bot = @botList[gameID]
-
-                if bot?
-                    @_addBotToChannel(bot, channel)
-                else
-                    log.warn "Could not find bot for game ##{gameID}", 'Bot channel creation'
 
         return promise
 
@@ -76,10 +61,47 @@ class BotManager
 
         return startPromise
 
+
+    _setupGlobalBotChannel: ->
+        promise = db.getGlobalChannelData()
+        promise = promise.then (channelData) =>
+            log.info 'Creating global channel...'
+            return BotChannel.getInstance(channelData)
+        return promise
+
+    _setupSingleBotChannels: ->
+        promise = db.getSingleBotChannels()
+        promise = promise.then (channelList) =>
+            log.info 'Creating additional bot channels...' if channelList?.length
+            # Create every bot channel and push to result array
+            channelInstances = []
+            for channelData in channelList
+                channel = BotChannel.getInstance(channelData)
+                channelInstances.push(channel)
+            return channelInstances
+        return promise
+
+
+    _addBotsToGlobalChannel: (globalChannel, botList) ->
+        # Add every bot to channel
+        for key, bot of botList
+            @_addBotToChannel(bot, globalChannel)
+
+    _addBotsToSingleChannels: (singleChannels, botList) ->
+        # For each channel, add its appropriate single bot to it
+        for channel in singleChannels
+            gameID = channel.getGameID()
+            bot = botList[gameID]
+            if bot?
+                @_addBotToChannel(bot, channel)
+            else
+                log.warn "Could not find bot for game ##{gameID}", 'Bot channel creation'
+
     _addBotToChannel: (bot, channel) ->
         #connectPromise = bot.getConnectionPromise()
         #connectPromise.then =>
         channel.addBot(bot)
+
 
     _destroyBot: ->
         # TODO

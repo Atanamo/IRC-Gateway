@@ -64,7 +64,7 @@ class SocketHandler
         # Handle auth success/fail
         authPromise.then (clientIdentity) =>
             return if clientSocket.isDisconnected
-            log.debug 'Client auth granted'
+            log.debug 'Client auth granted:', clientIdentity
 
             # Set client identification data
             clientSocket.identity = clientIdentity
