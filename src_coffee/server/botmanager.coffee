@@ -8,7 +8,9 @@ Bot = require './bot'
 ## Main class
 class BotManager
 
+    watcherTimer: null
     botList: null
+    globalChannel: null
 
     constructor: ->
         @botList = {}
@@ -21,7 +23,7 @@ class BotManager
         # Setup the bots
         botsPromise = @_setupBots()
         botsPromise = botsPromise.then =>
-            return @_startBots()
+            return @_startBots(@botList)
 
         # After bots startup: Add them to their channels
         botsPromise.then =>
@@ -33,8 +35,14 @@ class BotManager
             singleChannelsPromise.then (singleChannels) =>
                 @_addBotsToSingleChannels(singleChannels, @botList)
 
+            @_startGameWatcher()
+
         return Q.all([globalChannelPromise, singleChannelsPromise])
 
+
+    #
+    # Initial setup routines
+    #
 
     _setupBots: ->
         promise = db.getBotRepresentedGames()
@@ -49,24 +57,12 @@ class BotManager
 
         return promise
 
-    _startBots: ->
-        startPromise = Q()
-
-        for key, bot of @botList 
-            # Encapsulate each iteration - for correct binding to promise callback
-            do (bot) =>
-                # Start bot as soon as previous bot has started (To avoid refuses by IRC server)
-                startPromise = startPromise.then =>
-                    return bot.start()
-
-        return startPromise
-
-
     _setupGlobalBotChannel: ->
         promise = db.getGlobalChannelData()
         promise = promise.then (channelData) =>
             log.info 'Creating global channel...'
-            return BotChannel.getInstance(channelData)
+            @globalChannel = BotChannel.getInstance(channelData)
+            return @globalChannel
         return promise
 
     _setupSingleBotChannels: ->
@@ -81,6 +77,67 @@ class BotManager
             return channelInstances
         return promise
 
+
+    #
+    # Watcher routine
+    #
+
+    _startGameWatcher: ->
+        intervalFunc = => 
+            @_doGameWatching()
+        timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
+        @watcherTimer = setInterval(intervalFunc, timerMilliSeconds)
+
+    _doGameWatching: ->
+        newBotsList = {}
+        endBotsList = {}
+
+        # Copy all old bots
+        for key, bot of @botList
+            endBotsList[key] = bot
+
+        # Check games
+        promise = db.getBotRepresentedGames()
+        promise = promise.then (gamesList) =>
+            for gameData in gamesList 
+                gameID = gameData.id
+
+                # Create bot of new game
+                unless @botList[gameID]?
+                    bot = new Bot(gameData)
+                    newBotsList[gameID] = bot
+
+                # Remove bot of existing game from end list
+                delete endBotsList[gameID]
+
+        # Start new bots
+        startPromise = promise.then =>
+            return @_startBots(newBotsList)
+
+        # Join new bots to channels
+        startPromise.then =>
+            @_addBotsToGlobalChannel(@globalChannel, newBotsList)
+
+        # Destroy bots to end
+        promise.then =>
+            @_destroyBots(endBotsList)
+
+
+    #
+    # Helpers
+    #
+
+    _startBots: (botList) ->
+        startPromise = Q()
+
+        for key, bot of botList
+            # Encapsulate each iteration - for correct binding to promise callback
+            do (bot) =>
+                # Start bot as soon as previous bot has started (To avoid refuses by IRC server)
+                startPromise = startPromise.then =>
+                    return bot.start()
+
+        return startPromise
 
     _addBotsToGlobalChannel: (globalChannel, botList) ->
         # Add every bot to channel
@@ -107,10 +164,20 @@ class BotManager
         return channel.addBot(bot)
 
 
-    _destroyBot: ->
+    _destroyBot: (bot) ->
         # TODO
         # - Iterate all BotChannels
         # - For each: channel.removeBot(bot)
+
+    _destroyBots: (botList) ->
+        for key, bot of botList
+            @_destroyBot(bot)
+
+
+    shutdown: ->
+        clearInterval(@watcherTimer) if @watcherTimer?
+        @_destroyBots(@botList)
+
 
 
 ## Export class

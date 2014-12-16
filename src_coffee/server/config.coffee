@@ -31,6 +31,8 @@ module.exports =
 
     CLIENT_AUTH_SECRET: 'g4t3w4y'  # A secret string to be used as part of the security token (The token needs be sent from a client on login)
 
+    GAMES_LOOKUP_INTERVAL: 10     # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_USERNAME_PATTERN: "GalaxyBot<id>"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
