@@ -8,6 +8,7 @@ class this.ChatController
     serverPort: 0
     instanceData: {}
     activeTabPage: null
+    tabClickCallback: null
 
     gui:
         chatForm: '#chat_form'
@@ -30,7 +31,7 @@ class this.ChatController
         'tabsystemHeaders click': '_handleGuiTabClick'
 
 
-    constructor: (@serverIP, @serverPort, @instanceData) ->
+    constructor: (@serverIP, @serverPort, @instanceData, @tabClickCallback) ->
         @_updateGuiBindings()
         @activeTabPage = @ui.tabPageServer
 
@@ -81,10 +82,14 @@ class this.ChatController
 
         # Jump to referenced tab page in viewport
         window.location = '#' + tabID
+        window.location = '#'  # Directly clear anchor
 
         # Highlight tab header
         @ui.tabsystemHeaders.removeClass('active')
         tabHeader.addClass('active')
+
+        # Invoke callback, if existing
+        @tabClickCallback?(@activeTabPage)
 
 
     #
