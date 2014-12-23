@@ -73,7 +73,7 @@ class SocketHandler
 
             # Emit initial events for new client
             clientSocket.emit 'auth_ack', clientIdentity.toData()
-            clientSocket.emit 'welcome', 'Hello out there!'
+            clientSocket.emit 'welcome', "Hello #{clientIdentity.getName()}, you are now online!"
 
             # Add client to its channels
             @_acceptNewClient(clientSocket)
