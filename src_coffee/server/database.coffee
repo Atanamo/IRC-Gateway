@@ -120,10 +120,15 @@ class Database
                 SELECT `ID` AS `id`, `Galaxyname` AS `title`
                 FROM `#{Config.SQL_TABLES.GAMES_LIST}`
                 WHERE `Status`>=0
-                
+
                 ORDER BY ID DESC
-                LIMIT 1
+                LIMIT 2
               "   # TODO: Remove limit and order by!
+
+        # TODO Order clause:
+        # ORDER BY `Status` ASC, `ID` ASC
+        # LIMIT #{Config.MAX_BOTS}
+
 
         return @_readMultipleData(sql)
 
@@ -150,7 +155,7 @@ class Database
             return {
                 name: Config.INTERN_GLOBAL_CHANNEL_NAME
                 title: Config.INTERN_GLOBAL_CHANNEL_TITLE
-                irc_channel: Config.IRC_CHANNEL_GLOBAL
+                irc_channel: Config.IRC_GLOBAL_CHANNEL
                 is_public: true
             }
         return promise

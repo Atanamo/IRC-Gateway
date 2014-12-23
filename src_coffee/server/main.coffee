@@ -78,6 +78,9 @@ class Gateway
             log.info 'Start listening...'
             server.listen(Config.WEB_SERVER_PORT)
 
+        # End chain to observe errors
+        startupPromise.done()
+
     _setupProcess: ->
         process.on 'exit', (code) =>
             log.info 'Exiting with code:', code
@@ -88,6 +91,7 @@ class Gateway
             process.exit(err.code or 99)
 
     _shutdown: ->
+        @botManager.shutdown()
         db.disconnect()
 
 

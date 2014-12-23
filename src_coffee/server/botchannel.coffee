@@ -21,8 +21,9 @@ class BotChannel extends Channel
     ircChannelName: ''
     ircChannelTopic: null
     ircUserList: null
+    isPermanent: false
 
-    constructor: (data) ->
+    constructor: (data, @isPermanent) ->
         super
         @ircChannelName = data.irc_channel or @ircChannelName
         @gameID = data.game_id or @gameID
@@ -30,16 +31,16 @@ class BotChannel extends Channel
         @ircUserList = {}
 
     # @override
-    @getInstance: (channelData) ->
+    @getInstance: (channelData, isPermanent=false) ->
         name = channelData.name
         unless Channel._instances[name]?
-            Channel._instances[name] = new BotChannel(channelData)
+            Channel._instances[name] = new BotChannel(channelData, isPermanent)
         return Channel._instances[name]
 
     # @override
-    destroy: ->
-        if Object.keys(@botList).length is 0
-            super
+    _checkForDestroy: ->
+        if @_getNumberOfBots() is 0
+            super unless @isPermanent
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
@@ -61,28 +62,29 @@ class BotChannel extends Channel
     removeBot: (bot) ->
         botID = bot.getID()
         if @botList[botID]?
-            # Remove bot reference and let bot part irc channel
+            # Remove bot reference before nominating new master
             delete @botList[botID]
-            wasMasterBot = bot.handleWebChannelLeave(this)
             # Set next bot to be master
-            if wasMasterBot
+            if bot.isWebChannelMaster(this)
                 for key, nextMasterBot of @botList
-                    nextMasterBot.handleWebChannelMasterNomination()
+                    nextMasterBot.handleWebChannelMasterNomination(this)
                     break
+            # Let bot part irc channel (This will be recognized by new master bot)
+            partPromise = bot.handleWebChannelLeave(this)
+
             # May destroy instance (if it was the last bot)
-            @destroy()
-            return true
-        return false
+            @_checkForDestroy()
+            return partPromise
+        return Q(false)
 
     getIrcChannelName: ->
         return @ircChannelName
 
     getGameID: ->
-        return @ircChannelName
+        return @gameID
 
-    getNumberOfClients: ->
-        clientsMap = @_getUniqueClientsMap()
-        return Object.keys(clientsMap).length
+    _getNumberOfBots: ->
+        return Object.keys(@botList).length
 
 
     #
@@ -190,6 +192,13 @@ class BotChannel extends Channel
     handleBotChannelModeUpdate: (actorNickName, mode, isEnabled, modeArgument) ->
         actorIdentity = ClientIdentity.createFromIrcNick(actorNickName)
         @_sendModeChangeToRoom(actorIdentity, mode, isEnabled, modeArgument)
+
+    handleBotQuit: (bot, reasonText) ->
+        @removeBot(bot)
+        if @_getNumberOfBots() is 0
+            # Manually send quit notice, because no other bot can observe it
+            @handleBotChannelUserQuit(bot.getNickName(), reasonText)
+            @handleBotChannelUserList([])
 
 
     #

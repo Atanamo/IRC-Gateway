@@ -31,21 +31,26 @@ module.exports =
 
     CLIENT_AUTH_SECRET: 'g4t3w4y'  # A secret string to be used as part of the security token (The token needs be sent from a client on login)
 
-    GAMES_LOOKUP_INTERVAL: 10     # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+    GAMES_LOOKUP_INTERVAL: 10      # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+    MAX_BOTS: 5                    # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
 
+    BOT_RECONNECT_DELAY: 61000     # Delay time in milliseconds, for reconnecting to server, when connection has been refused
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
-    BOT_USERNAME_PATTERN: "GalaxyBot<id>"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
+    BOT_USERNAME_PATTERN: "Galaxy<id>Bot"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
     BOT_VERSION_STRING: "#{botName}, #{botVersion} " +        # The version string of the Bot, for requests on IRC
                         "(Last update: #{botLastUpdate}) " +
                         "-- Created 2014 by Atanamo"
 
+    BOT_LEAVE_MESSAGE: 'Oh, cruel world... My time has come to leave, goodbye!'  # Bot message on channel part
+    BOT_QUIT_MESSAGE: 'Oh, cruel world... My time has come to leave, goodbye!'   # Bot message on server quit
+
     IRC_SERVER_IP: ircServerIP
     IRC_SERVER_PORT: ircServerPort
 
-    IRC_CHANNEL_GLOBAL: ircGlobalChannel  # TODO: rename to IRC_GLOBAL_CHANNEL
-    #IRC_CHANNEL_INGAME_PATTERN: '#sgr_ingame_galaxy_<id>'
-    #IRC_CHANNEL_INGAME_PASSWORD: '!This1Is2The3Ultimate4PW5!'
+    IRC_GLOBAL_CHANNEL: ircGlobalChannel  # TODO: rename to IRC_GLOBAL_CHANNEL
+    #IRC_LOCAL_CHANNEL_PATTERN: '#sgr_ingame_galaxy_<id>'
+    #IRC_LOCAL_CHANNEL_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
     INTERN_GLOBAL_CHANNEL_TITLE: "IRC (#{ircGlobalChannel})"
     INTERN_GLOBAL_CHANNEL_NAME: 'irc_channel'

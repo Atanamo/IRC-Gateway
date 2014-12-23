@@ -7,8 +7,9 @@ Bot = require './bot'
 
 ## Main class
 class BotManager
-
+    isManaging: false
     watcherTimer: null
+
     botList: null
     globalChannel: null
 
@@ -37,6 +38,9 @@ class BotManager
 
             @_startGameWatcher()
 
+        # End chain to observe errors
+        botsPromise.done()
+
         return Q.all([globalChannelPromise, singleChannelsPromise])
 
 
@@ -61,7 +65,7 @@ class BotManager
         promise = db.getGlobalChannelData()
         promise = promise.then (channelData) =>
             log.info 'Creating global channel...'
-            @globalChannel = BotChannel.getInstance(channelData)
+            @globalChannel = BotChannel.getInstance(channelData, true)
             return @globalChannel
         return promise
 
@@ -84,13 +88,17 @@ class BotManager
 
     _startGameWatcher: ->
         intervalFunc = => 
-            @_doGameWatching()
+            @_manageBotsByGames()
         timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
         @watcherTimer = setInterval(intervalFunc, timerMilliSeconds)
 
-    _doGameWatching: ->
+    _manageBotsByGames: ->
         newBotsList = {}
         endBotsList = {}
+
+        return if @isManaging
+        @isManaging = true
+        log.debug 'Starting managing bots...'
 
         # Copy all old bots
         for key, bot of @botList
@@ -106,21 +114,28 @@ class BotManager
                 unless @botList[gameID]?
                     bot = new Bot(gameData)
                     newBotsList[gameID] = bot
+                    @botList[gameID] = bot
 
                 # Remove bot of existing game from end list
                 delete endBotsList[gameID]
+            return
+
+        # Destroy bots to end
+        promise = promise.then =>
+            return @_destroyBots(endBotsList)
 
         # Start new bots
-        startPromise = promise.then =>
+        promise = promise.then =>
             return @_startBots(newBotsList)
 
         # Join new bots to channels
-        startPromise.then =>
+        promise = promise.then =>
             @_addBotsToGlobalChannel(@globalChannel, newBotsList)
+            @isManaging = false
+            log.debug 'Finished managing bots!'
 
-        # Destroy bots to end
-        promise.then =>
-            @_destroyBots(endBotsList)
+        # End chain to observe errors
+        promise.done()
 
 
     #
@@ -164,14 +179,30 @@ class BotManager
         return channel.addBot(bot)
 
 
-    _destroyBot: (bot) ->
-        # TODO
-        # - Iterate all BotChannels
-        # - For each: channel.removeBot(bot)
-
     _destroyBots: (botList) ->
-        for key, bot of botList
+        promises = for key, bot of botList
             @_destroyBot(bot)
+        return Q.all(promises)
+
+    _destroyBot: (bot) ->
+        # Remove bot reference
+        delete @botList[bot.getID()]
+
+        # Remove bot from its channels (This is an optional soft shutdown action: Stopping the bot does the same on quit)
+        promise = Q()
+        #promise = @_removeBotFromChannels(bot)
+
+        # Finally disconnect the bot
+        promise = promise.then =>
+            return bot.stop()
+
+        return promise
+
+    _removeBotFromChannels: (bot) ->
+        channelList = bot.getWebChannelList()
+        promises = for key, channel of channelList
+            channel.removeBot(bot)
+        return Q.all(promises)
 
 
     shutdown: ->

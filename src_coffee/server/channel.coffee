@@ -26,7 +26,7 @@ class Channel
         @isPublic = data.is_public or @isPublic
         @title = data.title or @name
 
-        log.info 'Creating new channel ' + @name
+        log.debug "Creating new channel '#{@name}'"
 
         @eventNameMsg = 'message#' + @name
         @eventNameLeave = 'leave#' + @name
@@ -37,13 +37,25 @@ class Channel
             @_instances[name] = new Channel(channelData)
         return @_instances[name]
 
-    destroy: ->
-        delete @_instances[@name]
+    _destroy: ->
+        log.debug "Destructing channel '#{@name}'"
+        delete Channel._instances[@name]
+        @uniqueClientsMap = null
+
+    # May be overridden
+    # @protected
+    _checkForDestroy: ->
+        if @getNumberOfClients() is 0
+            @_destroy()
 
 
     #
     # Client management
     #
+
+    getNumberOfClients: ->
+        clientsMap = @_getUniqueClientsMap()
+        return Object.keys(clientsMap).length
 
     _registerListeners: (clientSocket) ->
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
@@ -101,9 +113,8 @@ class Channel
             unless isDisconnect
                 db.removeClientFromChannel(clientSocket, @name)
 
-        # TODO: 
         # Remove and close instance, if last client left
-        # @destroy()  # To be overridden by BotChannel
+        @_checkForDestroy()
 
 
     #
