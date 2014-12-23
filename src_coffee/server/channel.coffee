@@ -109,7 +109,9 @@ class Channel
         # Additional handling, if client's identity is not joined any more
         unless @_hasUniqueClient(clientSocket)
             # Update visible users in channel
-            unless @isPublic
+            if @isPublic
+                @_sendUserNumberToRoom()
+            else
                 leaveAction = if isDisconnect then 'quit' else 'part'
                 @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
                 @_sendUserListToRoom()
