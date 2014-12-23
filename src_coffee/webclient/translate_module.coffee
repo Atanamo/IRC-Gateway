@@ -18,6 +18,7 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ has been kicked from server by $actor$, reason: $reason$'
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
         'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
+        'info.current_number_of_players': 'Players online'
         'info.unknown': 'unknown'
     }
 
@@ -38,6 +39,7 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ wurde von $actor$ vom Server geworfen, Grund: $reason$'
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
         'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
+        'info.current_number_of_players': 'Spieler online'
         'info.unknown': 'Unbekannt'
     }
 

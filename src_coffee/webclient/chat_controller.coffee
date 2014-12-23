@@ -18,6 +18,9 @@ class this.ChatController
         tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
         tabPagesUsers: '.chatUsers'
+        tabPagesUsersNumberBox: '.chatUsersCount'
+        tabPagesUsersNumberText: '.chatUsersCount .title'
+        tabPagesUsersNumberValue: '.chatUsersCount .value'
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
         tabPageSkeleton: '#tabPageSkeleton'
@@ -145,6 +148,10 @@ class this.ChatController
         for identityData in clientList
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
 
+    handleChannelUserNumber: (channel, clientsNumber) ->
+        tabPage = @_getChannelTabPage(channel)
+        @_setUserNumberToTab(tabPage, clientsNumber)
+
     handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
         tabPage = @_getChannelTabPage(channel)
 
@@ -226,6 +233,11 @@ class this.ChatController
     _clearUserListOfTab: (tabPage) ->
         tabPage.find(@gui.tabPagesUsers).empty()
 
+    _setUserNumberToTab: (tabPage, userNumber) ->
+        tabPage.find(@gui.tabPagesUsersNumberBox).show()
+        tabPage.find(@gui.tabPagesUsersNumberText).html(Translation.get('info.current_number_of_players'))
+        tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
+
     _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
         itemText = shortName
         itemText += ' [IRC]' if isIrcUser
@@ -257,7 +269,7 @@ class this.ChatController
     _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
         unless entryTimestamp?
             entryTimestamp = (new Date()).getTime()
-            console.warn 'Missing timestamp for new entry:', entryText  # TODO: Remove logging
+            #console.warn 'Missing timestamp for new entry:', entryText
         timeString = @_getLocalizedTime(entryTimestamp)
 
         # Build new list item

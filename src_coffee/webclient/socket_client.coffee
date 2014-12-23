@@ -31,6 +31,7 @@ class this.SocketClient
         @socket.on 'left', @_handleChannelLeft
         @socket.on 'channel_topic', @_handleChannelTopic
         @socket.on 'channel_clients', @_handleChannelUserList
+        @socket.on 'channel_clients_count', @_handleChannelUserNumber
         @socket.on 'user_change', @_handleChannelUserChange
         @socket.on 'mode_change', @_handleChannelModeChange
 
@@ -77,6 +78,9 @@ class this.SocketClient
 
     _handleChannelUserList: (channel, timestamp, clientList) =>
         @chatController.handleChannelUserList(channel, clientList)
+
+    _handleChannelUserNumber: (channel, timestamp, clientsNumber) =>
+        @chatController.handleChannelUserNumber(channel, clientsNumber)
 
     _handleChannelUserChange: (channel, timestamp, data) =>
         unless @_isOwnUser(data, 'user')  # Ignore notices on own channel join/leave

@@ -77,7 +77,9 @@ class Channel
             @_updateUniqueClientsMap()
 
             # Update visible users for channel (Send to all including client)
-            unless @isPublic
+            if @isPublic
+                @_sendUserNumberToRoom()
+            else
                 @_sendUserChangeToRoom('add', 'join', clientSocket.identity)
                 @_sendUserListToRoom()
 
@@ -86,7 +88,10 @@ class Channel
                 db.addClientToChannel(clientSocket, @name)
         else
             # Send initial user list to client
-            @_sendUserListToSocket(clientSocket) unless @isPublic
+            if @isPublic
+                @_sendUserNumberToSocket(clientSocket)
+            else
+                @_sendUserListToSocket(clientSocket)
 
     removeClient: (clientSocket, isDisconnect=false) ->
         # Unregister events for this channel
@@ -140,6 +145,11 @@ class Channel
         userList = @_getUserList()
         @_sendToSocket(clientSocket, 'channel_clients', userList)
 
+    # @protected
+    _sendUserNumberToSocket: (clientSocket) ->
+        clientsNumber = @getNumberOfClients()
+        @_sendToSocket(clientSocket, 'channel_clients_count', clientsNumber)
+
 
     # @protected
     _sendToRoom: (eventName, data...) ->
@@ -150,6 +160,11 @@ class Channel
     _sendUserListToRoom: ->
         userList = @_getUserList()
         @_sendToRoom('channel_clients', userList)
+
+    # @protected
+    _sendUserNumberToRoom: ->
+        clientsNumber = @getNumberOfClients()
+        @_sendToRoom('channel_clients_count', clientsNumber)
 
     # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->
