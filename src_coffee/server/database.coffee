@@ -92,8 +92,8 @@ class Database
         return "#{Config.SQL_TABLES.PREFIX_GAME_TABLE}#{gameMetaData.game_id}#{tablePostfix}"
 
     # Returns the current security token for the given player. This token must be send on auth request by the client.
-    _get_security_token: (idPlayer, playerData) ->
-        return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idPlayer}_#{playerData.activity_stamp}")
+    _get_security_token: (idUser, playerData) ->
+        return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
 
     # Returns the data for the given game world.
     # @param idGame [int] The id of the game world.
@@ -120,16 +120,9 @@ class Database
                 SELECT `ID` AS `id`, `Galaxyname` AS `title`
                 FROM `#{Config.SQL_TABLES.GAMES_LIST}`
                 WHERE `Status`>=0
-
-                ORDER BY ID DESC
-                LIMIT 2
-              "   # TODO: Remove limit and order by!
-
-        # TODO Order clause:
-        # ORDER BY `Status` ASC, `ID` ASC
-        # LIMIT #{Config.MAX_BOTS}
-
-
+                ORDER BY `Status` ASC, `ID` ASC
+                LIMIT #{Config.MAX_BOTS}
+              "
         return @_readMultipleData(sql)
 
     # Returns a list of channels, which should be mirrored to IRC - each by only one bot. This excludes the global channel.
@@ -138,7 +131,7 @@ class Database
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
     #   `irc_channel` (The exact name of the IRC channel to mirror) and
-    #   `is_public` (TRUE, if the channel is meant to be public and therefor joined player's have to be hidden; else FALSE).
+    #   `is_public` (TRUE, if the channel is meant to be public and therefor joined players have to be hidden; else FALSE).
     #   The list may be equal, if no appropriate channels exist.
     getSingleBotChannels: ->
         sql = "
@@ -149,7 +142,12 @@ class Database
               "
         return @_readMultipleData(sql)
 
-    # TODO: docs
+    # Returns the data for the global channel, which should be mirrored to IRC by multiple bots.
+    # @return [promise] A promise, resolving to a data map with keys
+    #   `name` (The unique name of the channel - used internally),
+    #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
+    #   `irc_channel` (The exact name of the IRC channel to mirror) and
+    #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE).
     getGlobalChannelData: ->
         promise = Q.fcall =>
             return {
@@ -240,36 +238,6 @@ class Database
             }
 
         return promise
-
-
-    # OLD: TO BE removed
-    getChannelData: (channelIdent) ->
-        # TODO
-        sql = "
-                SELECT `C`.`ID` AS `channel_id`, `C`.`Title` AS `channel_title`, 
-                       `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
-                JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
-                  ON `CJ`.`ChannelID`=`C`.`ID`
-                WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
-
-              "
-
-        # TODO: TEMP
-        tempdata = {
-            'galaxy_test':
-                title: 'Test-Galaxie'
-                is_public: true
-            'galaxy_test_group01':
-                title: 'Ally 1'
-                is_public: false
-        }
-
-        tempdata[Config.INTERN_BOT_CHANNEL_NAME] =
-            title: 'SGR Support'
-            is_public: true
-
-        return tempdata[channelIdent]
 
 
     addClientToChannel: (client, channelIdent) ->
