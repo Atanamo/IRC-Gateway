@@ -65,8 +65,12 @@ class Channel
     addClient: (clientSocket, isRejoin=false) ->
         isExistingIdentity = @_hasUniqueClient(clientSocket)
 
-        @_sendToSocket(clientSocket, 'joined')  # Notice client for channel join
-        clientSocket.join(@name)                # Join client to room of channel
+        channelInfo =
+            title: @title
+            isPublic: @isPublic
+
+        @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
+        clientSocket.join(@name)                             # Join client to room of channel
 
         # Register events for this channel
         @_registerListeners(clientSocket)

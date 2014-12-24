@@ -66,8 +66,8 @@ class this.SocketClient
         @chatController.handleServerMessage('Welcome message: ' + text)
 
 
-    _handleChannelJoined: (channel, timestamp) =>
-        @chatController.handleChannelJoined(channel, timestamp)
+    _handleChannelJoined: (channel, timestamp, data) =>
+        @chatController.handleChannelJoined(channel, timestamp, data)
 
     _handleChannelLeft: (channel, timestamp) =>
         @chatController.handleChannelLeft(channel, timestamp)

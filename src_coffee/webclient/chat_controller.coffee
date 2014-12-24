@@ -116,13 +116,14 @@ class this.ChatController
         tabPage = @_getChannelTabPage(channel)
         @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text)
 
-    handleChannelJoined: (channel, timestamp) ->
+    handleChannelJoined: (channel, timestamp, data) ->
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
+        channelTitle = data?.title or channel
 
         if tabPage?.length is 0
             # Set up tab parts
-            htmlTabHeader = "<li data-id=\"#{tabID}\">#{channel}</li>"
+            htmlTabHeader = "<li data-id=\"#{tabID}\">#{channelTitle}</li>"
             tabSkeleton = @ui.tabPageSkeleton.clone()
             tabSkeleton.attr('id', tabID)
             tabSkeleton.attr('data-channel', channel)
@@ -136,7 +137,7 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
 
         # Print join message to tab
-        noticeText = Translation.get('msg.channel_joined', channel: channel)
+        noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
 
     handleChannelLeft: (channel, timestamp) ->
