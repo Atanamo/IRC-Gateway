@@ -77,6 +77,10 @@ class this.SocketClient
         @chatController.handleChannelTopic(channel, timestamp, data)
 
     _handleChannelUserList: (channel, timestamp, clientList) =>
+        clientList = clientList.sort (firstData, secondData) =>
+            firstName = firstData.name or firstData
+            secondName = secondData.name or secondData
+            return (firstName > secondName ? 1 : (firstName is secondName ? 0 : -1))
         @chatController.handleChannelUserList(channel, clientList)
 
     _handleChannelUserNumber: (channel, timestamp, clientsNumber) =>
