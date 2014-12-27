@@ -5,7 +5,7 @@
 botNickPrefix = '_Galaxy'       # Prefix for bot's nick name on IRC
 botName = 'SGR GalaxyBot'       # Bot's official name
 botVersion = 'v1.0'             # Bot's version number string
-botLastUpdate = '2014-10-01'    # Update info for bot version
+botLastUpdate = '2014-12-01'    # Update info for bot version
 
 # IRC sub config
 ircServerIP = 'underworld1.no.quakenet.org'
@@ -63,6 +63,7 @@ module.exports =
     SQL_PASSWORD: mysqlPassword
     SQL_DATABASE_COMMON: mysqlCommonDatabase
     SQL_DATABASE_PREFIX_GAME: mysqlGameDatabasePrefix
+    SQL_SOCKET_PATH: '/var/run/mysqld/mysqld.sock'  # Define this path on unix systems. Find out the path using 'mysqladmin variables | grep sock'
 
     SQL_TABLES:
         GAMES_LIST: 'game_worlds'         # The name of the table in common db, which contains the list of game worlds

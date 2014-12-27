@@ -26,6 +26,7 @@ class Database
             user: Config.SQL_USER
             password: Config.SQL_PASSWORD
             database: Config.SQL_DATABASE_COMMON
+            socketPath: Config.SQL_SOCKET_PATH
 
         @connection.connect (err) =>
             if err
