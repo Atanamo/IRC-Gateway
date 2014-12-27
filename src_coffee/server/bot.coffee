@@ -275,7 +275,7 @@ class SchizoBot
 
     _checkRespondForGalaxyName: (message, respondFunc) ->
         if message.indexOf('galaxy?') > -1
-            respondFunc('Galaxy = ' + @gameData.name)
+            respondFunc('Galaxy = ' + @gameData.title)
             return true
         return false
 
