@@ -335,7 +335,8 @@ class SchizoBot
     _respondToIrcChannel: (channelName, receiverNick, messageText) ->
         fullMessageText = "@#{receiverNick}:  #{messageText}"
         @client.say(channelName, fullMessageText)
-        @_sendMessageToWebChannel(channelName, @nickName, fullMessageText)  # Mirror response to web channel
+        # Mirror response to web channel
+        @_sendMessageToWebChannel(channelName, @nickName, fullMessageText) if @_isChannelMaster(channelName)
 
 
     #
