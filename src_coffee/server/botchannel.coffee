@@ -83,6 +83,13 @@ class BotChannel extends Channel
     getGameID: ->
         return @gameID
 
+    getNumberOfBotDependentClients: (botGameID) ->
+        clientsMap = @_getUniqueClientsMap()
+        clientsNum = 0
+        for key, clientIdentity of clientsMap
+            clientsNum++ if clientIdentity.getGameID() is botGameID
+        return clientsNum
+
     _getNumberOfBots: ->
         return Object.keys(@botList).length
 

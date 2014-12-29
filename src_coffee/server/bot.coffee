@@ -221,7 +221,10 @@ class SchizoBot
         # Check for a bot command
         return if @_checkRespondForHelp(message, queryRespondFunc)  # Always respond to query
         return if @_checkRespondForGalaxyName(message, respondFunc)
-        return if @_checkRespondForNumberOfClients(message, respondFunc)
+        return if @_checkRespondForGalaxyStatus(message, respondFunc)
+        return if @_checkRespondForGalaxyRound(message, respondFunc)
+        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc)
+        return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
         return if @_checkRespondForVersion(message, respondFunc)
 
         # Fallback response
@@ -279,14 +282,41 @@ class SchizoBot
             return true
         return false
 
-    _checkRespondForNumberOfClients: (message, respondFunc) ->
+    _checkRespondForGalaxyStatus: (message, respondFunc) ->
+        if message.indexOf('status?') > -1
+            promise = db.getGameStatus(@gameData.id)
+            promise.then (statusText) =>
+                respondFunc("Status (#{@gameData.title}) = #{statusText}")
+            return true
+        return false
+
+    _checkRespondForGalaxyRound: (message, respondFunc) ->
+        if message.indexOf('round?') > -1 or message.indexOf('ticks?') > -1
+            promise = db.getGameRound(@gameData.id)
+            promise.then (roundNum) =>
+                respondFunc("Round (#{@gameData.title}) = #{roundNum}")
+            return true
+        return false
+
+    _checkRespondForNumberOfGalaxyClients: (message, respondFunc) ->
         if message.indexOf('players?') > -1
-            firstKey = Object.keys(@botChannelList)[0]
+            channelName = channelName or Object.keys(@botChannelList)[0]
             clientsNum = 0
-            if firstKey?
-                botChannel = @botChannelList[firstKey]
+            if channelName?
+                botChannel = @botChannelList[channelName]
+                clientsNum = botChannel.getNumberOfBotDependentClients(@gameData.id)
+            respondFunc("Galaxy players in #{channelName} = #{clientsNum}")
+            return true
+        return false
+
+    _checkRespondForNumberOfClients: (message, respondFunc, channelName) ->
+        if message.indexOf('users?') > -1
+            channelName = channelName or Object.keys(@botChannelList)[0]
+            clientsNum = 0
+            if channelName?
+                botChannel = @botChannelList[channelName]
                 clientsNum = botChannel.getNumberOfClients()
-            respondFunc('Players online = ' + clientsNum)
+            respondFunc("Total players in #{channelName} = #{clientsNum}")
             return true
         return false
 
@@ -301,7 +331,11 @@ class SchizoBot
             commandsText = ''
             commandsText += 'help  ---  Prints you this help (in the query)\n'
             commandsText += 'galaxy?  ---  What is the name of my galaxy?\n'
-            commandsText += 'players?  ---  How many players of my galaxy are currently online?\n'
+            commandsText += 'status?  ---  What is the status of my galaxy?\n'
+            commandsText += 'round?  ---  How many rounds did my galaxy run yet?\n'
+            commandsText += 'ticks?  ---  See "round?"\n'
+            commandsText += 'players?  ---  How many players of my galaxy are currently online (on the channel)?\n'
+            commandsText += 'users?  ---  How many players are currently online (on the channel)?\n'
             commandsText += 'version  ---  Prints you my version info\n'
             respondFunc('I understand following commands:\n' + commandsText)
             return true
