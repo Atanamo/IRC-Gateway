@@ -4,8 +4,8 @@
 # Bot sub config
 botNickPrefix = '_Galaxy'       # Prefix for bot's nick name on IRC
 botName = 'SGR GalaxyBot'       # Bot's official name
-botVersion = 'v1.0'             # Bot's version number string
-botLastUpdate = '2014-12-01'    # Update info for bot version
+botVersion = 'v1.1'             # Bot's version number string
+botLastUpdate = '2014-12-28'    # Update info for bot version
 
 # IRC sub config
 ircServerIP = 'underworld1.no.quakenet.org'
@@ -48,7 +48,7 @@ module.exports =
     IRC_SERVER_IP: ircServerIP
     IRC_SERVER_PORT: ircServerPort
 
-    IRC_GLOBAL_CHANNEL: ircGlobalChannel  # TODO: rename to IRC_GLOBAL_CHANNEL
+    IRC_GLOBAL_CHANNEL: ircGlobalChannel
     #IRC_LOCAL_CHANNEL_PATTERN: '#sgr_ingame_galaxy_<id>'
     #IRC_LOCAL_CHANNEL_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 

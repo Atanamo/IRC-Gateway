@@ -28,6 +28,7 @@ class SchizoBot
     botChannelList: null
     masterChannelList: null
     connectionDeferred: null
+    connectDateTime: null
 
     constructor: (@gameData) ->
         @botChannelList = {}
@@ -144,6 +145,7 @@ class SchizoBot
                 log.debug "Welcome message for bot '#{@nickName}':", welcomeMessage
             if confirmedNick?
                 @nickName = confirmedNick
+        @connectDateTime = new Date()
         @connectionDeferred.resolve()
 
     _handleIrcChannelJoin: (channel, nick) =>
@@ -225,6 +227,7 @@ class SchizoBot
         return if @_checkRespondForGalaxyRound(message, respondFunc)
         return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc)
         return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
+        return if @_checkRespondForConnectTime(message, respondFunc)
         return if @_checkRespondForVersion(message, respondFunc)
 
         # Fallback response
@@ -320,6 +323,18 @@ class SchizoBot
             return true
         return false
 
+    _checkRespondForConnectTime: (message, respondFunc) ->
+        if message.indexOf('uptime') > -1
+            currDateTime = new Date()
+            timespanSeconds = (currDateTime.getTime() - @connectDateTime.getTime()) / 1000
+            timespanHours = +((timespanSeconds / 3600).toFixed(2))
+            timespanDays = Math.floor(timespanHours / 24)
+            timespanFractHours = timespanHours - (timespanDays*24)
+            connectDateText = @connectDateTime.toUTCString()
+            respondFunc("Uptime = #{timespanDays} days, #{timespanFractHours} hours  (Since #{connectDateText})")
+            return true
+        return false
+
     _checkRespondForVersion: (message, respondFunc) ->
         if message.indexOf('version') > -1
             respondFunc('Version = ' + Config.BOT_VERSION_STRING)
@@ -329,14 +344,15 @@ class SchizoBot
     _checkRespondForHelp: (message, respondFunc) ->
         if message.indexOf('help') > -1
             commandsText = ''
-            commandsText += 'help  ---  Prints you this help (in the query)\n'
             commandsText += 'galaxy?  ---  What is the name of my galaxy?\n'
             commandsText += 'status?  ---  What is the status of my galaxy?\n'
             commandsText += 'round?  ---  How many rounds did my galaxy run yet?\n'
             commandsText += 'ticks?  ---  See "round?"\n'
             commandsText += 'players?  ---  How many players of my galaxy are currently online (on the channel)?\n'
             commandsText += 'users?  ---  How many players are currently online (on the channel)?\n'
+            commandsText += 'uptime  ---  Prints you my time of operation\n'
             commandsText += 'version  ---  Prints you my version info\n'
+            commandsText += 'help  ---  Prints you this help (in the query)\n'
             respondFunc('I understand following commands:\n' + commandsText)
             return true
         return false
