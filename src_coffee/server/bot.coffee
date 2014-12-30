@@ -254,10 +254,10 @@ class SchizoBot
 
     _handleIrcCommandViaCTCP: (senderNick, targetNickOrChannel, rawMessage) =>
         # This handler is triggered, whenever the bot receives a CTCP request or a CTCP command to a channel
+        channel = targetNickOrChannel
         return unless @_isChannelMaster(channel)
         return unless targetNickOrChannel isnt @nick  # Ignore direct ctcp messages to bot
         return unless targetNickOrChannel?            # Ignore broken ctcp messages
-        channel = targetNickOrChannel
         checkMessage = rawMessage.toLowerCase().trim()
 
         # Handle action command (/me) 
