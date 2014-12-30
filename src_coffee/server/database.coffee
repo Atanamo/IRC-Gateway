@@ -69,6 +69,32 @@ class Database
 
         return deferred.promise
 
+    _doTransaction: (transactionRoutineFunc) ->
+        deferred = Q.defer()
+
+        @connection.beginTransaction (err) ->
+            if err
+                log.error(err, 'Database transaction')
+                deferred.reject(err)
+            else
+                routinePromise = transactionRoutineFunc()
+                deferred.resolve(routinePromise)
+
+        promise = deferred.promise
+        promise = promise.then =>
+            innerDeferred = Q.defer()
+            @connection.commit (err) ->
+                if err
+                    log.error(err, 'Database transaction commit')
+                    innerDeferred.reject(err)
+                else
+                    innerDeferred.resolve()
+            return innerDeferred.promise
+        promise.fail =>
+            @connection.rollback()
+
+        return promise
+
     _readSimpleData: (sqlQuery, rejectIfEmpty=false) ->
         promise = @_sendQuery(sqlQuery)
         promise = promise.then (resultRows) =>
@@ -279,6 +305,121 @@ class Database
             }
 
         return promise
+
+
+    # Returns a list of messages/channel events, which had been logged for the given channel.
+    # @param channelName [string] The internal name of the channel.
+    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    #   `id` (The id of the list entry),
+    #   `event_name` (The name of the logged channel event),
+    #   `event_data` (The logged data for the event, serialized as JSON string - contains values like message text or sender identity) and
+    #   `timestamp` (The timestamp of the log entry/event).
+    #   The list may be equal, if no logs exists for the channel.
+    getLoggedChannelMessages: (channelName) ->
+        sql = "
+                (
+                    SELECT `ChannelLogID` AS `id`, `EventTextID` AS `event_name`, `EventData` AS `event_data`, `Timestamp` AS `timestamp`
+                    FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                    WHERE `ChannelTextID`=#{@_toQuery(channelName)}
+                    ORDER BY `Timestamp` DESC
+                    LIMIT #{Config.MAX_CHANNEL_LOGS_TO_CLIENT}
+                )
+                ORDER BY `Timestamp` ASC
+              "
+        promise = @_readMultipleData(sql)
+        return promise
+
+    # Saves the given message/channel event to the channel logs.
+    # @param channelName [string] The internal name of the channel.
+    # @param timestamp [int] The timestamp of the event (in milliseconds).
+    # @param eventName [string] The name of the channel event.
+    # @param eventData [object] A data map, containing the main data for the event (like message text or sender identity).
+    logChannelMessage: (channelName, timestamp, eventName, eventData) ->
+        channelID = 0
+        if channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
+            channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        serialEventData = JSON.stringify(eventData)
+
+        @_doTransaction =>
+            sql = "
+                    SELECT COALESCE(MAX(`ChannelLogID`), 0) AS `max_id`
+                    FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                    WHERE `ChannelTextID`=#{@_toQuery(channelName)}
+                  "
+            promise = @_readSimpleData(sql, true)
+            promise = promise.then (data) =>
+                maxLogID = data.max_id
+                nextLogID = maxLogID + 1
+                nextBufferID = (maxLogID % Config.MAX_CHANNEL_LOGS) + 1
+                sql = "
+                        REPLACE INTO `#{Config.SQL_TABLES.CHANNEL_LOGS}` SET
+                               `ChannelLogID`=#{@_toQuery(nextLogID)},
+                               `ChannelBufferID`=#{@_toQuery(nextBufferID)},
+                               `ChannelTextID`=#{@_toQuery(channelName)},
+                               `ChannelID`=#{@_toQuery(channelID)},
+                               `EventTextID`=#{@_toQuery(eventName)},
+                               `EventData`=#{@_toQuery(serialEventData)},
+                               `Timestamp`=#{@_toQuery(timestamp)}
+                      "
+                return @_sendQuery(sql)
+            return promise
+
+        ###
+        sql = "
+                REPLACE INTO `#{Config.SQL_TABLES.CHANNEL_LOGS}` SET
+                       `ChannelLogID`=( 
+                            SELECT COALESCE(MAX(`Sub`.`ChannelLogID`), 0) + 1
+                            FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` AS `Sub`
+                            WHERE `Sub`.`ChannelTextID`=#{@_toQuery(channelName)}
+                        ),
+                       `ChannelBufferID`=( 
+                            SELECT COALESCE(MAX(`Sub`.`ChannelLogID`), 0) % #{Config.MAX_CHANNEL_LOGS} + 1
+                            FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` AS `Sub`
+                            WHERE `Sub`.`ChannelTextID`=#{@_toQuery(channelName)}
+                        ),
+                       `ChannelTextID`=#{@_toQuery(channelName)},
+                       `ChannelID`=#{@_toQuery(channelID)},
+                       `EventTextID`=#{@_toQuery(eventName)},
+                       `EventData`=#{@_toQuery(serialEventData)},
+                       `Timestamp`=#{@_toQuery(timestamp)}
+              "
+        @_sendQuery(sql)
+        ###
+
+
+    # Deletes all related data (logs, joinings, etc.) of all channels, which belong to the given game.
+    # @param gameID [int] The id of the game world.
+    deleteChannelsByGame: (gameID) ->
+        internalGameChannel = "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameID}"
+
+        # Delete channel logs
+        sql = "
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` 
+                WHERE `ChannelID` IN (
+                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` 
+                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                )
+                OR `ChannelTextID`=#{@_toQuery(internalGameChannel)}
+              "
+        logsPromise = @_sendQuery(sql)
+
+        # Delete channel joinings
+        sql = "
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}` 
+                WHERE `ChannelID` IN (
+                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` 
+                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                )
+              "
+        joinsPromise = @_sendQuery(sql)
+
+        # Delete channels
+        Q.all([logsPromise, joinsPromise]).then =>
+            sql = "
+                    DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                  "
+            @_sendQuery(sql)
 
 
     addClientToChannel: (client, channelIdent) ->

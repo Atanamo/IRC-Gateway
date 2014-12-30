@@ -25,6 +25,8 @@ class this.SocketClient
         @socket.on 'auth_fail', @_handleServerAuthFail
         @socket.on 'welcome', @_handleServerWelcome
 
+        @socket.on 'history_start', @_handleChannelHistoryStart
+        @socket.on 'history_end', @_handleChannelHistoryEnd
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
         @socket.on 'joined', @_handleChannelJoined
@@ -67,10 +69,21 @@ class this.SocketClient
 
 
     _handleChannelJoined: (channel, timestamp, data) =>
-        @chatController.handleChannelJoined(channel, timestamp, data)
+        isOpeningJoin = @chatController.handleChannelJoined(channel, timestamp, data)
+        @_sendChannelHistoryRequest(channel) if isOpeningJoin  # Only request history, if channel was not already opened
 
     _handleChannelLeft: (channel, timestamp) =>
         @chatController.handleChannelLeft(channel, timestamp)
+
+    _handleChannelHistoryStart: (channel, timestamp, data) =>
+        return if data.count is 0
+        data.isStart = true
+        @chatController.handleChannelHistoryMark(channel, timestamp, data)
+
+    _handleChannelHistoryEnd: (channel, timestamp, data) =>
+        return if data.count is 0
+        data.isStart = false
+        @chatController.handleChannelHistoryMark(channel, timestamp, data)
 
     _handleChannelTopic: (channel, timestamp, data) =>
         @_simplifyUserIdentityData(data, 'author')
@@ -108,15 +121,18 @@ class this.SocketClient
     # GUI commands / Sending routines
     #
 
-    sendMessage: (channel, messageText) ->
-        @socket.emit 'message#' + channel, messageText
-
     _sendAuthRequest: ->
         authData =
             userID: @instanceData.userID or 0
             gameID: @instanceData.gameID or 0
             token: @instanceData.token or ''
         @socket.emit 'auth', authData
+
+    _sendChannelHistoryRequest: (channel) ->
+        @socket.emit 'history#' + channel
+
+    sendMessage: (channel, messageText) ->
+        @socket.emit 'message#' + channel, messageText
 
 
     #

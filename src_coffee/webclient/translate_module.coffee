@@ -19,6 +19,8 @@ class this.Translation
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
         'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
         'info.current_number_of_players': 'Players online'
+        'info.start_of_chat_history': 'Start of chat history ($start$ - $end$)'
+        'info.end_of_chat_history': 'End of chat history ($start$ - $end$)'
         'info.unknown': 'unknown'
     }
 
@@ -40,6 +42,8 @@ class this.Translation
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
         'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
         'info.current_number_of_players': 'Spieler online'
+        'info.start_of_chat_history': 'Beginn des Chatverlaufs ($start$ - $end$)'
+        'info.end_of_chat_history': 'Ende des Chatverlaufs ($start$ - $end$)'
         'info.unknown': 'Unbekannt'
     }
 

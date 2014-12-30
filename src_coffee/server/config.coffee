@@ -31,10 +31,12 @@ module.exports =
 
     CLIENT_AUTH_SECRET: 'g4t3w4y'  # A secret string to be used as part of the security token (The token needs be sent from a client on login)
 
-    GAMES_LOOKUP_INTERVAL: 10      # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
-    MAX_BOTS: 5                    # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
+    GAMES_LOOKUP_INTERVAL: 20       # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+    MAX_CHANNEL_LOGS: 100           # Maximum number of logs per channel in database - This controls the max size of the chat logs table
+    MAX_CHANNEL_LOGS_TO_CLIENT: 50  # Maximum number of channel logs for a client - This controls the max length of a channel's chat history a client can request
+    MAX_BOTS: 5                     # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
 
-    BOT_RECONNECT_DELAY: 61000     # Delay time in milliseconds, for reconnecting to server, when connection has been refused
+    BOT_RECONNECT_DELAY: 61000      # Delay time in milliseconds, for reconnecting to server, when connection has been refused
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_USERNAME_PATTERN: "Galaxy<id>Bot"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
@@ -71,6 +73,4 @@ module.exports =
         POSTFIX_GAME_PLAYERS: '_players'  # The name postfix of the game table, which contains the list of a game world's players
         CHANNEL_LIST: 'chat - channels'
         CHANNEL_JOININGS: 'chat - channeljoins'
-        CHANNEL_MESSAGES: 'chat - channelmessages'
-
-
+        CHANNEL_LOGS: 'chat - channellogs'

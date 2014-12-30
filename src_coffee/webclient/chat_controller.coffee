@@ -116,12 +116,26 @@ class this.ChatController
         tabPage = @_getChannelTabPage(channel)
         @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text)
 
+    handleChannelHistoryMark: (channel, timestamp, data) ->
+        tabPage = @_getChannelTabPage(channel)
+        startTime = @_getLocalizedDateTime(data.start)
+        endTime = @_getLocalizedDateTime(data.end)
+
+        if data.isStart
+            infoText = Translation.get('info.start_of_chat_history', start: startTime, end: endTime)
+        else
+            infoText = Translation.get('info.end_of_chat_history', start: startTime, end: endTime)
+
+        @_appendHistoryMarkerToTab(tabPage, timestamp, infoText)
+        @_movePreHistoryEntriesOfTab(tabPage) unless data.isStart  # Move entries sent before history to position after history
+
     handleChannelJoined: (channel, timestamp, data) ->
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
         channelTitle = data?.title or channel
+        isNewTab = (tabPage?.length is 0)
 
-        if tabPage?.length is 0
+        if isNewTab
             # Set up tab parts
             htmlTabHeader = "<li data-id=\"#{tabID}\">#{channelTitle}</li>"
             tabSkeleton = @ui.tabPageSkeleton.clone()
@@ -140,6 +154,8 @@ class this.ChatController
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
 
+        return isNewTab
+
     handleChannelLeft: (channel, timestamp) ->
         tabID = @_getChannelTabID(channel)
 
@@ -157,6 +173,7 @@ class this.ChatController
     handleChannelUserNumber: (channel, clientsNumber) ->
         tabPage = @_getChannelTabPage(channel)
         @_setUserNumberToTab(tabPage, clientsNumber)
+
 
     handleChannelTopic: (channel, timestamp, {topic, author, isInitial}) ->
         tabPage = @_getChannelTabPage(channel)
@@ -210,7 +227,6 @@ class this.ChatController
                 noticeText = Translation.get('msg.user_list_changed', user: userName)
 
         @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
-
 
     handleChannelModeChange: (channel, timestamp, {actor, mode, enabled, argument}) ->
         actor = "-#{Translation.get('info.unknown')}-" unless actor?
@@ -269,22 +285,27 @@ class this.ChatController
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
         noticeText = "* #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
+        timestamp = (new Date()).getTime() unless timestamp?
         @_appendEntryToTab(tabPage, timestamp, 'server', noticeText)
         @_scrollToBottomOfTab(tabPage)
 
+    _appendHistoryMarkerToTab: (tabPage, timestamp, markerNoticeText) ->
+        markerText = "----- #{markerNoticeText} -----"
+        @_appendEntryToTab(tabPage, null, 'marker', markerText)
+        @_scrollToBottomOfTab(tabPage)
+
     _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
-        unless entryTimestamp?
-            entryTimestamp = (new Date()).getTime()
-            #console.warn 'Missing timestamp for new entry:', entryText
-        timeString = @_getLocalizedTime(entryTimestamp)
+        timeString = null
+        timeString = @_getLocalizedTime(entryTimestamp) if entryTimestamp?
 
         # Build new list item
         itemElem = $('<li/>')
         itemElem.attr('data-item', entryDataValue)
 
-        spanElem = $('<span/>').addClass('time')
-        spanElem.text("[#{timeString}] ")
-        itemElem.append(spanElem)
+        if timeString?
+            spanElem = $('<span/>').addClass('time')
+            spanElem.text("[#{timeString}] ")
+            itemElem.append(spanElem)
 
         if entryAuthor?
             spanElem = $('<span/>').addClass('name')
@@ -299,6 +320,20 @@ class this.ChatController
         messagesElem = tabPage.find(@gui.tabPagesMessages)
         messagesElem.append(itemElem)
 
+    _movePreHistoryEntriesOfTab: (tabPage) ->
+        messagesElem = tabPage.find(@gui.tabPagesMessages)
+
+        # Find entries before history marker
+        entriesElems = messagesElem.find('> *')
+        entriesElems = entriesElems.not('li[data-item="marker"] ~li').not('[data-item="marker"]')
+
+        # Remove entries from DOM
+        entriesElems.remove()
+
+        # Append entries to end of messages list
+        messagesElem.append(entriesElems)
+
+
     _scrollToBottomOfTab: (tabPage) ->
         pageElem = tabPage.find(@gui.tabPagesMessagesPage)
         scrollOffset = pageElem.prop('scrollHeight')
@@ -307,3 +342,7 @@ class this.ChatController
     _getLocalizedTime: (timestamp) ->
         date = new Date(timestamp)
         return date.toLocaleTimeString()
+
+    _getLocalizedDateTime: (timestamp) ->
+        date = new Date(timestamp)
+        return date.toLocaleString()

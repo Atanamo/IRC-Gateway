@@ -17,6 +17,7 @@ class Channel
 
     eventNameMsg: 'message#unnamed'
     eventNameLeave: 'leave#unnamed'
+    eventNameHistory: 'history#unnamed'
 
 
     constructor: (data) ->
@@ -30,6 +31,7 @@ class Channel
 
         @eventNameMsg = 'message#' + @name
         @eventNameLeave = 'leave#' + @name
+        @eventNameHistory = 'history#' + @name
 
     @getInstance: (channelData) ->
         name = channelData.name
@@ -60,6 +62,7 @@ class Channel
     _registerListeners: (clientSocket) ->
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
         clientSocket.on @eventNameLeave, => @_handleClientLeave(clientSocket)
+        clientSocket.on @eventNameHistory, => @_handleClientHistoryRequest(clientSocket)
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
     addClient: (clientSocket, isRejoin=false) ->
@@ -101,6 +104,7 @@ class Channel
         # Unregister events for this channel
         clientSocket.removeAllListeners @eventNameMsg
         clientSocket.removeAllListeners @eventNameLeave
+        clientSocket.removeAllListeners @eventNameHistory
         clientSocket.removeAllListeners 'disconnect'
 
         # Update client
@@ -138,13 +142,21 @@ class Channel
         clientSocket.emit(eventName, @name, timestamp, data...)
 
     # @protected
-    _sendUserList: (clientSocket) ->
-        userList = @_getUserList()
+    _sendHistoryToSocket: (clientSocket) ->
+        promise = db.getLoggedChannelMessages(@name)
+        promise.then (logListData) =>
+            oldestTimestamp = logListData[0]?.timestamp or -1
+            newestTimestamp = logListData[logListData.length - 1]?.timestamp or -1
+            markerData =
+                count: logListData.length
+                start: oldestTimestamp
+                end: newestTimestamp
 
-        if clientSocket?
-            @_sendToSocket(clientSocket, 'channel_clients', userList)
-        else
-            @_sendToRoom('channel_clients', userList)
+            @_sendToSocket(clientSocket, 'history_start', markerData)
+            for logEntry in logListData
+                eventData = JSON.parse(logEntry.event_data)
+                clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
+            @_sendToSocket(clientSocket, 'history_end', markerData)
 
     # @protected
     _sendUserListToSocket: (clientSocket) ->
@@ -158,19 +170,21 @@ class Channel
 
 
     # @protected
-    _sendToRoom: (eventName, data...) ->
+    _sendToRoom: (eventName, eventData, logToDatabase=true) ->
         timestamp = @_getCurrentTimestamp()
-        io.sockets.in(@name).emit(eventName, @name, timestamp, data...)
+        io.sockets.in(@name).emit(eventName, @name, timestamp, eventData)
+        if logToDatabase
+            db.logChannelMessage(@name, timestamp, eventName, eventData)
 
     # @protected
     _sendUserListToRoom: ->
         userList = @_getUserList()
-        @_sendToRoom('channel_clients', userList)
+        @_sendToRoom('channel_clients', userList, false)
 
     # @protected
     _sendUserNumberToRoom: ->
         clientsNumber = @getNumberOfClients()
-        @_sendToRoom('channel_clients_count', clientsNumber)
+        @_sendToRoom('channel_clients_count', clientsNumber, false)
 
     # @protected
     _sendMessageToRoom: (senderIdentity, messageText) ->
@@ -196,7 +210,7 @@ class Channel
     # May be overridden
     # @protected
     _handleClientMessage: (clientSocket, messageText) =>
-        log.debug 'Client message:', messageText
+        log.debug "Client message to '#{@name}':", messageText
         messageText = messageText?.trim()
         return if messageText is ''
         @_sendMessageToRoom(clientSocket.identity, messageText)
@@ -204,6 +218,10 @@ class Channel
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
         log.debug "Removing client from channel '#{@name}' (by disconnect: #{isDisconnect}):", clientSocket.identity
         @removeClient(clientSocket, isDisconnect)
+
+    _handleClientHistoryRequest: (clientSocket) =>
+        log.debug "Client requests chat history for '#{@name}'"
+        @_sendHistoryToSocket(clientSocket)
 
 
     #

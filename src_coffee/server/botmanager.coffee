@@ -180,8 +180,12 @@ class BotManager
 
 
     _destroyBots: (botList) ->
-        promises = for key, bot of botList
-            @_destroyBot(bot)
+        promises = for gameID, bot of botList
+            do (gameID, bot) =>
+                destroy_promise = @_destroyBot(bot)
+                destroy_promise.then =>
+                    db.deleteChannelsByGame(gameID)
+                return destroy_promise
         return Q.all(promises)
 
     _destroyBot: (bot) ->
