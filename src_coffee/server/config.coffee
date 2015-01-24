@@ -24,12 +24,13 @@ mysqlGameDatabasePrefix = 'game_world_'  # The name prefix of the database in wh
 # Main config
 module.exports =
 
-    DEBUG_ENABLED: true   # Set to true, to enable some debug output
+    DEBUG_ENABLED: true    # Set to true, to enable some debug output
     DEBUG_IRC_COMM: false  # Set to true, to enable debug output from irc communication by bots
+    AUTH_ENABLED: false    # Set to true, to enable client authentification by a security token (Otherwise all valid player IDs will be accepted)
 
     WEB_SERVER_PORT: 8050  # The port of the webserver started by this app
 
-    CLIENT_AUTH_SECRET: 'g4t3w4y'  # A secret string to be used as part of the security token (The token needs be sent from a client on login)
+    CLIENT_AUTH_SECRET: 'SECRET_2'  # A secret string to be used as part of the security token (The token needs to be sent from a client on login)
 
     GAMES_LOOKUP_INTERVAL: 20       # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
     MAX_CHANNEL_LOGS: 100           # Maximum number of logs per channel in database - This controls the max size of the chat logs table

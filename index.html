@@ -155,9 +155,9 @@
         var chatController, instanceData;
 
         instanceData = {
-            userID: 1,
-            gameID: 93,
-            token: 'd4daa19f213cb9403ab6f16236efe6ae'
+            userID: 42,     // The id of the player's account or game identity/character - to be passed to Database.getClientIdentityData()
+            gameID: 123,    // The id of the player's game world - to be passed to Database.getClientIdentityData()
+            token: 'z4da9'  // SecurityToken equal to the result of Database._get_security_token()
         };
 
         $(document).ready(function() {

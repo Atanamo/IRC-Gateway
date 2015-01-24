@@ -57,7 +57,7 @@ class SocketHandler
             authPromise = authPromise.fail (err) =>
                 throw new Error('Unknown user')  # Overwrite error
             authPromise = authPromise.then (clientIdentity) =>
-                unless securityToken is clientIdentity.securityToken
+                if Config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
                     throw new Error('Invalid token')
                 return clientIdentity
 
