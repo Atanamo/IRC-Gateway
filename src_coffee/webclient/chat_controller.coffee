@@ -77,16 +77,18 @@ class this.ChatController
         tabHeader = $(event.currentTarget)
         tabID = tabHeader.data('id')
 
+        # Hide last active tab
+        @activeTabPage.hide()
+
         # Remember active tab
         @activeTabPage = @_getTabPage(tabID)
-
-        # Jump to referenced tab page in viewport
-        window.location = '#' + tabID
-        window.location = '#'  # Directly clear anchor
 
         # Highlight tab header
         @ui.tabsystemHeaders.removeClass('active')
         tabHeader.addClass('active')
+
+        # Show new active tab
+        @activeTabPage.show()
 
         # Invoke callback, if existing
         @tabClickCallback?(@activeTabPage)
