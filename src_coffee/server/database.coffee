@@ -267,6 +267,8 @@ class Database
                 return globalChannelPromise.then (defaultChannelData) =>
                     list.push(defaultChannelData)
                     return list
+        resultPromise = resultPromise.then (channelListData) =>
+            return channelListData.reverse()  # Reverse channel order: Default channel first, then galaxy, then individual ones...
 
         return resultPromise
 
