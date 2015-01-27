@@ -100,8 +100,9 @@ class this.SocketClient
         @chatController.handleChannelUserNumber(channel, clientsNumber)
 
     _handleChannelUserChange: (channel, timestamp, data) =>
-        unless @_isOwnUser(data, 'user')  # Ignore notices on own channel join/leave
+        if not @_isOwnUser(data, 'user') or data.action in ['kick', 'kill']  # Ignore notices on own channel join/leave
             @_simplifyUserIdentityData(data, 'user')
+            @_addContentMetaInfo(data, 'user')
             @chatController.handleChannelUserChange(channel, timestamp, data)
 
     _handleChannelModeChange: (channel, timestamp, data) =>
@@ -110,10 +111,12 @@ class this.SocketClient
 
     _handleChannelMessage: (channel, timestamp, data) =>
         @_simplifyUserIdentityData(data)
+        @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelMessage(channel, timestamp, data)
 
     _handleChannelNotice: (channel, timestamp, data) =>
         @_simplifyUserIdentityData(data)
+        @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelNotice(channel, timestamp, data)
 
 
@@ -153,4 +156,18 @@ class this.SocketClient
             return (isFromOwnGame and isFromOwnName)
 
         return (String(identData.id) == String(ownIdentityData.id))
+
+    _addContentMetaInfo: (data, addressTextProperty='text') ->
+        unless data.isOwn
+            data.isMentioningOwn = @_isAddressedToOwnUser(data[addressTextProperty], false)
+            data.isAddressingOwn = @_isAddressedToOwnUser(data[addressTextProperty], true)
+
+    _isAddressedToOwnUser: (addressText, onlyExplicitly) ->
+        searchName = @identityData.name
+        searchName = '@' + searchName if onlyExplicitly
+        searchRegex = new RegExp("(^|[^_a-z0-9])#{searchName}([^_a-z0-9]|$)", 'gim')
+
+        return ((addressText.match(searchRegex)?.length or 0) isnt 0)
+
+
 

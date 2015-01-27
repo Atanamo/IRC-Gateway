@@ -41,6 +41,20 @@
             margin-bottom: -1px;
             padding-bottom: 6px;
         }
+        ul.tabsystemHeaders li.mentioned {
+            font-weight: bold;
+        }
+
+        ul.tabsystemHeaders li .newEntriesCounter {
+            padding-left: 5px;
+        }
+
+        ul.tabsystemHeaders li .newEntriesCounter:before {
+            content: '[';
+        }
+        ul.tabsystemHeaders li .newEntriesCounter:after {
+            content: ']';
+        }
 
         .tabsystemViewport {
             border: 1px solid #aaa;
@@ -153,16 +167,18 @@
     </div>
 
     <script type="text/javascript">
-        var chatController, instanceData;
+        var chatController, instanceData, options;
 
         instanceData = {
             userID: 42,     // The id of the player's account or game identity/character - to be passed to Database.getClientIdentityData()
             gameID: 123,    // The id of the player's game world - to be passed to Database.getClientIdentityData()
             token: 'z4da9'  // SecurityToken equal to the result of Database._get_security_token()
+        options = {
+            tabClickCallback: function(clickedTab) { console.log("Selected tab " + clickedTab.attr('id')); }
         };
 
         $(document).ready(function() {
-            chatController = new ChatController('http://localhost', 8050, instanceData);
+            chatController = new ChatController('http://localhost', 8050, instanceData, options);
             chatController.start();
         });
 

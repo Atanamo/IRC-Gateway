@@ -9,6 +9,7 @@ class this.ChatController
     instanceData: {}
     activeTabPage: null
     tabClickCallback: null
+    isInVisibleContext: true
 
     gui:
         chatForm: '#chat_form'
@@ -25,20 +26,29 @@ class this.ChatController
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
         tabPageSkeleton: '#tabPageSkeleton'
+        unreadTabMarker: '.newEntriesCounter'
+        mentionTabMarker: '.mentioned'
 
     events:
         'chatForm submit': '_handleGuiMessageSubmit'
         'tabsystemHeaders click': '_handleGuiTabClick'
 
 
-    constructor: (@serverIP, @serverPort, @instanceData, @tabClickCallback) ->
+    constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
         @_updateGuiBindings()
         @activeTabPage = @ui.tabPageServer
+        @tabClickCallback = options.tabClickCallback
 
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
         @socketHandler.start()
 
+    # Sets a flag to inform the tab system, that its content is currently (not) visible because of environment constraints.
+    # This info is used to show or reset markers for unread messages.
+    setTabContentVisibilityInfo: (isVisible) ->
+        return if @isInVisibleContext is isVisible
+        @isInVisibleContext = isVisible
+        @_resetNewEntryMarkOfTab(@activeTabPage) if isVisible  # Reset marker for unread messages
 
     _bindGuiElements: ->
         @ui = {}
@@ -90,6 +100,12 @@ class this.ChatController
         # Show new active tab
         @activeTabPage.show()
 
+        # Reset marker for unread messages
+        @_resetNewEntryMarkOfTab(@activeTabPage)
+
+        # Scroll to bottom (Hidden tabs cannot be scrolled)
+        @_scrollToBottomOfTab(@activeTabPage)
+
         # Invoke callback, if existing
         @tabClickCallback?(@activeTabPage)
 
@@ -105,18 +121,22 @@ class this.ChatController
             tabPage = $(domNode)
             @_appendNoticeToTab(tabPage, null, 'error', informText)
             @_clearUserListOfTab(tabPage)
+            @_addNewEntryMarkToTab(tabPage, {force: true}, informText) if idx is 0
 
     handleServerMessage: (msg) ->
         tabPage = @ui.tabPageServer
         @_appendNoticeToTab(tabPage, null, 'log', msg)
+        @_addNewEntryMarkToTab(tabPage)
 
     handleChannelMessage: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
         @_appendMessageToTab(tabPage, timestamp, data)
+        @_addNewEntryMarkToTab(tabPage, data, data.text)
 
     handleChannelNotice: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
         @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text)
+        @_addNewEntryMarkToTab(tabPage, data, data.text)
 
     handleChannelHistoryMark: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
@@ -151,6 +171,7 @@ class this.ChatController
 
             # Get new tab
             tabPage = @_getChannelTabPage(channel)
+            tabPage.hide()
 
         # Print join message to tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
@@ -191,6 +212,8 @@ class this.ChatController
 
             @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
 
+        @_addNewEntryMarkToTab(tabPage)
+
     handleChannelUserChange: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
 
@@ -229,6 +252,7 @@ class this.ChatController
                 noticeText = Translation.get('msg.user_list_changed', user: userName)
 
         @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
+        @_addNewEntryMarkToTab(tabPage, data, noticeText)
 
     handleChannelModeChange: (channel, timestamp, {actor, mode, enabled, argument}) ->
         actor = "-#{Translation.get('info.unknown')}-" unless actor?
@@ -238,6 +262,7 @@ class this.ChatController
 
         tabPage = @_getChannelTabPage(channel)
         @_appendNoticeToTab(tabPage, timestamp, 'mode_change', noticeText)
+        @_addNewEntryMarkToTab(tabPage)
 
 
     #
@@ -335,6 +360,39 @@ class this.ChatController
         # Append entries to end of messages list
         messagesElem.append(entriesElems)
 
+
+    _addNewEntryMarkToTab: (tabPage, notifyData=null, notifyText=null) ->
+        tabID = tabPage.attr('id')
+
+        if not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')
+            tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+            spanElem = tabHeader.find(@gui.unreadTabMarker)
+
+            if spanElem.length is 0
+                spanElem = $('<span/>').addClass(@gui.unreadTabMarker.replace(/\./g, ''))
+                tabHeader.append(spanElem)
+
+            lastText = spanElem.text()
+            lastCount = lastText.replace(/[^0-9]/g, '')
+            lastCount++
+            spanElem.text(lastCount)
+
+        @_checkForNotifyingUser(tabHeader, notifyData, notifyText)
+
+    _resetNewEntryMarkOfTab: (tabPage) ->
+        tabID = tabPage.attr('id')
+        tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+
+        # Remove unread marker
+        spanElem = tabHeader.find(@gui.unreadTabMarker)
+        spanElem.remove()
+
+        # Remove mention marker
+        tabHeader.removeClass(@gui.mentionTabMarker.replace(/\./g, ''))
+
+    _checkForNotifyingUser: (tabHeader, notifyData={}, notifyText='') ->
+        if notifyData.force or notifyData.isMentioningOwn
+            tabHeader.addClass(@gui.mentionTabMarker.replace(/\./g, ''))
 
     _scrollToBottomOfTab: (tabPage) ->
         pageElem = tabPage.find(@gui.tabPagesMessagesPage)
