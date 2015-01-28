@@ -374,7 +374,7 @@ class this.ChatController
         messagesElem.append(entriesElems)
 
 
-    _addNewEntryMarkToTab: (tabPage, notifyData=null, notifyText=null) ->
+    _addNewEntryMarkToTab: (tabPage, notifyData={}, notifyText=null) ->
         tabID = tabPage.attr('id')
 
         if document.hidden or not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')
