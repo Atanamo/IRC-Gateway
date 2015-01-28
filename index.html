@@ -173,7 +173,9 @@
             userID: 42,     // The id of the player's account or game identity/character - to be passed to Database.getClientIdentityData()
             gameID: 123,    // The id of the player's game world - to be passed to Database.getClientIdentityData()
             token: 'z4da9'  // SecurityToken equal to the result of Database._get_security_token()
+
         options = {
+            signalizeMessagesToWindow: true,
             tabClickCallback: function(clickedTab) { console.log("Selected tab " + clickedTab.attr('id')); }
         };
 
