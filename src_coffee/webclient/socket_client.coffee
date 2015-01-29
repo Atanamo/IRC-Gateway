@@ -164,7 +164,7 @@ class this.SocketClient
 
     _isAddressedToOwnUser: (addressText, onlyExplicitly) ->
         searchName = @identityData.name
-        searchName = '@' + searchName if onlyExplicitly
+        searchName = "((@#{searchName})|(#{searchName}:))" if onlyExplicitly  # Nick must be prefixed with "@" or postfixed with a colon
         searchRegex = new RegExp("(^|[^_a-z0-9])#{searchName}([^_a-z0-9]|$)", 'gim')
 
         return ((addressText.match(searchRegex)?.length or 0) isnt 0)

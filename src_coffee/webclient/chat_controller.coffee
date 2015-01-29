@@ -32,6 +32,7 @@ class this.ChatController
         tabPageSkeleton: '#tabPageSkeleton'
         unreadTabMarker: '.newEntriesCounter'
         mentionTabMarker: '.mentioned'
+        addressTabMarker: '.addressed'
 
     events:
         'chatForm submit': '_handleGuiMessageSubmit'
@@ -44,7 +45,7 @@ class this.ChatController
         @tabClickCallback = options.tabClickCallback
         @isSignalizingMessagesToWindow = options.signalizeMessagesToWindow
 
-        @windowTitleBackup = document.title
+        @windowTitleBackup = top.document.title
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
 
     start: ->
@@ -85,7 +86,7 @@ class this.ChatController
 
     _handleWindowVisibilityChange: ->
         clearInterval(@windowSignalTimer) if @windowSignalTimer?
-        document.title = @windowTitleBackup  # Reset window title
+        top.document.title = @windowTitleBackup  # Reset window title
         @_resetNewEntryMarkOfTab(@activeTabPage)  # Reset marker for unread messages
 
     _handleGuiMessageSubmit: (event) =>
@@ -112,6 +113,9 @@ class this.ChatController
 
         # Show new active tab
         @activeTabPage.show()
+
+        # Toggle usability of input form
+        @ui.chatForm.toggleClass('inactive', tabID is @ui.tabPageServer.attr('id'))
 
         # Reset marker for unread messages
         @_resetNewEntryMarkOfTab(@activeTabPage)
@@ -391,9 +395,11 @@ class this.ChatController
             lastCount++
             spanElem.text(lastCount)
 
-            # Add marker for mentioning
+            # Add markers for mentioning and addressing
             if notifyData.force or notifyData.isMentioningOwn
                 tabHeader.addClass(@gui.mentionTabMarker.replace(/\./g, ''))
+            if notifyData.isAddressingOwn
+                tabHeader.addClass(@gui.addressTabMarker.replace(/\./g, ''))
 
         @_checkForSignalizingMessageToWindow(notifyData, notifyText)
 
@@ -405,8 +411,9 @@ class this.ChatController
         spanElem = tabHeader.find(@gui.unreadTabMarker)
         spanElem.remove()
 
-        # Remove mention marker
+        # Remove mention markers
         tabHeader.removeClass(@gui.mentionTabMarker.replace(/\./g, ''))
+        tabHeader.removeClass(@gui.addressTabMarker.replace(/\./g, ''))
 
     _checkForSignalizingMessageToWindow: (notifyData={}, notifyText='') ->
         return unless @isSignalizingMessagesToWindow
@@ -420,14 +427,15 @@ class this.ChatController
             unreadMessagesCount += +($(item).text().replace(/[^0-9]/g, ''))
 
         # Set window title
-        addressMark = if notifyData.isAddressingOwn then '*' else ''
+        addressMarksExists = @ui.tabsystemHeaderList.find(@gui.addressTabMarker).length > 0
+        addressMark = if notifyData.isAddressingOwn or addressMarksExists then '*' else ''
         @windowTitleOverwrite = "[#{addressMark}#{unreadMessagesCount}#{addressMark}] #{@windowTitleBackup}"
-        document.title = @windowTitleOverwrite
+        top.document.title = @windowTitleOverwrite
 
         # May let window title blink
         if notifyData.force or notifyData.isMentioningOwn
             blinkFunc = =>
-                document.title = if document.title is @windowTitleOverwrite then notifyText else @windowTitleOverwrite
+                top.document.title = if top.document.title is @windowTitleOverwrite then "\"#{notifyText}\"" else @windowTitleOverwrite
 
             clearInterval(@windowSignalTimer) if @windowSignalTimer?
             @windowSignalTimer = setInterval(blinkFunc, 800)

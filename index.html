@@ -44,6 +44,9 @@
         ul.tabsystemHeaders li.mentioned {
             font-weight: bold;
         }
+        ul.tabsystemHeaders li.addressed {
+            text-decoration: underline;
+        }
 
         ul.tabsystemHeaders li .newEntriesCounter {
             padding-left: 5px;
@@ -117,6 +120,12 @@
             font-size: 0.9em
         }
 
+        form {
+            margin-top: 7px;
+        }
+        form.inactive {
+            display: none;
+        }
 
     </style>
 </head>
@@ -142,7 +151,7 @@
         </div>
     </div>
 
-    <form id="chat_form" action="#">
+    <form id="chat_form" action="#" class="inactive">
         <input type="text" id="chat_input" />
         <input type="submit" id="chat_submit_btn" />
     </form>
