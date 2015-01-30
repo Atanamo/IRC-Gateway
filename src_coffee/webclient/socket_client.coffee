@@ -110,12 +110,13 @@ class this.SocketClient
         @chatController.handleChannelModeChange(channel, timestamp, data)
 
     _handleChannelMessage: (channel, timestamp, data) =>
-        @_simplifyUserIdentityData(data)
+        @_extractInlineAuthor(data, 'text', 'sender')
+        @_simplifyUserIdentityData(data, 'sender')
         @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelMessage(channel, timestamp, data)
 
     _handleChannelNotice: (channel, timestamp, data) =>
-        @_simplifyUserIdentityData(data)
+        @_simplifyUserIdentityData(data, 'sender')
         @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelNotice(channel, timestamp, data)
 
@@ -142,25 +143,39 @@ class this.SocketClient
     # Helper methods
     #
 
-    _simplifyUserIdentityData: (data, nameProperty='sender') ->
+    _extractInlineAuthor: (data, textProperty, nameProperty) ->
+        ownIdentityData = @identityData or {}
+        identData = data[nameProperty] or {}
+
+        if identData.isIrcClient and identData.idGame
+            fullText = data[textProperty]
+            matchData = fullText.match(/<([^> ]+)>[: ]/)
+
+            if matchData?.length
+                inlineText = matchData[0]
+                extractedName = matchData[1].trim()
+                data[textProperty] = fullText.replace(inlineText, '').trim()
+                data.inlineAuthor = extractedName
+
+    _simplifyUserIdentityData: (data, nameProperty='sender', extractInlineAuthor=false) ->
         data.isOwn = @_isOwnUser(data, nameProperty)
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
+
+    _addContentMetaInfo: (data, addressTextProperty='text') ->
+        unless data.isOwn
+            data.isMentioningOwn = @_isAddressedToOwnUser(data[addressTextProperty], false)
+            data.isAddressingOwn = @_isAddressedToOwnUser(data[addressTextProperty], true)
 
     _isOwnUser: (data, nameProperty='sender') ->
         ownIdentityData = @identityData or {}
         identData = data[nameProperty] or {}
 
         if identData.isIrcClient
-            isFromOwnGame = (String(identData.idGame) == String(ownIdentityData.idGame))
-            isFromOwnName = (String(data?.text).indexOf("<#{ownIdentityData.name}>") is 0)
+            isFromOwnGame = (String(identData.idGame) is String(ownIdentityData.idGame))
+            isFromOwnName = (data.inlineAuthor is ownIdentityData.name)
             return (isFromOwnGame and isFromOwnName)
 
-        return (String(identData.id) == String(ownIdentityData.id))
-
-    _addContentMetaInfo: (data, addressTextProperty='text') ->
-        unless data.isOwn
-            data.isMentioningOwn = @_isAddressedToOwnUser(data[addressTextProperty], false)
-            data.isAddressingOwn = @_isAddressedToOwnUser(data[addressTextProperty], true)
+        return (String(identData.id) is String(ownIdentityData.id))
 
     _isAddressedToOwnUser: (addressText, onlyExplicitly) ->
         searchName = @identityData.name

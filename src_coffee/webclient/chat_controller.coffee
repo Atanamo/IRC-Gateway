@@ -165,6 +165,7 @@ class this.ChatController
         else
             infoText = Translation.get('info.end_of_chat_history', start: startTime, end: endTime)
 
+        tabPage.toggleClass('receiving-history', data.isStart)     # Set class while adding history entries
         @_appendHistoryMarkerToTab(tabPage, timestamp, infoText)
         @_movePreHistoryEntriesOfTab(tabPage) unless data.isStart  # Move entries sent before history to position after history
 
@@ -317,44 +318,68 @@ class this.ChatController
         messagesElem = tabPage.find(@gui.tabPagesUsers)
         messagesElem.append(itemElem)
 
-    _appendMessageToTab: (tabPage, timestamp, {sender, text, isOwn}) ->
+    _appendMessageToTab: (tabPage, timestamp, {text, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn}) ->
+        styleClasses = 'message'
+
         if isOwn
-            dataValue = 'own'
+            styleClasses += ' own'
             @ui.chatInput.val('')
         else
-            dataValue = 'external'
+            styleClasses += ' external'
 
-        @_appendEntryToTab(tabPage, timestamp, dataValue, text, sender)
+        if isAddressingOwn
+            styleClasses += ' addressing'
+        else if isMentioningOwn
+            styleClasses += ' mentioning'
+
+        options =
+            styleClasses: styleClasses
+            mainAuthor: sender
+            inlineAuthor: inlineAuthor
+
+        @_appendEntryToTab(tabPage, timestamp, 'message', text, options)
         @_scrollToBottomOfTab(tabPage)
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
-        noticeText = "* #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
+        noticeText = "** #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
-        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText)
+
+        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: 'notice')
         @_scrollToBottomOfTab(tabPage)
 
     _appendHistoryMarkerToTab: (tabPage, timestamp, markerNoticeText) ->
         markerText = "----- #{markerNoticeText} -----"
-        @_appendEntryToTab(tabPage, null, 'marker', markerText)
+        @_appendEntryToTab(tabPage, null, 'marker', markerText, styleClasses: 'marker')
         @_scrollToBottomOfTab(tabPage)
 
-    _appendEntryToTab: (tabPage, entryTimestamp, entryDataValue, entryText, entryAuthor) ->
+    _appendEntryToTab: (tabPage, entryTimestamp, entryType, entryText, options) ->
         timeString = null
         timeString = @_getLocalizedTime(entryTimestamp) if entryTimestamp?
 
         # Build new list item
         itemElem = $('<li/>')
-        itemElem.attr('data-item', entryDataValue)
+        itemElem.attr('data-item', entryType)
+        itemElem.addClass(options.styleClasses)
+        itemElem.addClass('historical') if entryType isnt 'marker' and tabPage.hasClass('receiving-history')
 
         if timeString?
             spanElem = $('<span/>').addClass('time')
-            spanElem.text("[#{timeString}] ")
+            spanElem.text("[#{timeString}]")
+            itemElem.append(spanElem)
+            itemElem.append(' ')
+
+        if options.mainAuthor?
+            spanElem = $('<span/>').addClass('name')
+            spanElem.text(options.mainAuthor)
             itemElem.append(spanElem)
 
-        if entryAuthor?
-            spanElem = $('<span/>').addClass('name')
-            spanElem.text(entryAuthor + ': ')
-            itemElem.append(spanElem)
+            if options.inlineAuthor?
+                inlineSpanElem = $('<span/>').addClass('virtualName')
+                inlineSpanElem.text("<#{options.inlineAuthor}>")
+                spanElem.append(' ')
+                spanElem.append(inlineSpanElem)
+
+            itemElem.append(': ')
 
         spanElem = $('<span/>').addClass('content')
         spanElem.text(entryText)
@@ -380,7 +405,12 @@ class this.ChatController
 
     _addNewEntryMarkToTab: (tabPage, notifyData={}, notifyText=null) ->
         tabID = tabPage.attr('id')
+        isReceivingHistory = tabPage.hasClass('receiving-history')
 
+        # Ignore historical messages, accept those addressing the user explicitly
+        return if isReceivingHistory and not notifyData.isAddressingOwn
+
+        # Mark tab for new message
         if document.hidden or not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')
             # Add/increment marker for unread messages
             tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
@@ -401,6 +431,7 @@ class this.ChatController
             if notifyData.isAddressingOwn
                 tabHeader.addClass(@gui.addressTabMarker.replace(/\./g, ''))
 
+        # May signalize message in window title
         @_checkForSignalizingMessageToWindow(notifyData, notifyText)
 
     _resetNewEntryMarkOfTab: (tabPage) ->

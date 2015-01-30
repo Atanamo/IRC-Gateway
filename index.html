@@ -88,12 +88,16 @@
         }
 
 
-        .chatMessages li[data-item=own] {
+        .chatMessages li.own {
             font-weight: bold;
         }
 
-        div[data-channel] .chatMessages li[data-item=marker],
-        div[data-channel] .chatMessages li[data-item=server] {
+        .chatMessages li.historical {
+            font-size: 0.8em;
+        }
+
+        div[data-channel] .chatMessages li.marker,
+        div[data-channel] .chatMessages li.notice {
             color: gray;
         }
 

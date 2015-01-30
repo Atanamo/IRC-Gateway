@@ -7,7 +7,8 @@ Config = require './config'
 
 getTimestamp = ->
     currDateTime = new Date()
-    return currDateTime.toISOString().replace(/T|Z/g, ' ')
+    dateTimeString = currDateTime.toISOString().replace(/T|Z/g, ' ').trim()
+    return "[#{dateTimeString}]"
 
 
 module.exports.info = (text...) ->
