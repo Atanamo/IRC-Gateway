@@ -152,7 +152,7 @@ class this.ChatController
 
     handleChannelNotice: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
-        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text)
+        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, true)
         @_addNewEntryMarkToTab(tabPage, data, data.text)
 
     handleChannelHistoryMark: (channel, timestamp, data) ->
@@ -340,11 +340,13 @@ class this.ChatController
         @_appendEntryToTab(tabPage, timestamp, 'message', text, options)
         @_scrollToBottomOfTab(tabPage)
 
-    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText) ->
+    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, isSentByUser=false) ->
         noticeText = "** #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
+        styleClasses = 'notice'
+        styleClasses += ' fromUser' if isSentByUser
 
-        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: 'notice')
+        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: styleClasses)
         @_scrollToBottomOfTab(tabPage)
 
     _appendHistoryMarkerToTab: (tabPage, timestamp, markerNoticeText) ->
@@ -353,18 +355,16 @@ class this.ChatController
         @_scrollToBottomOfTab(tabPage)
 
     _appendEntryToTab: (tabPage, entryTimestamp, entryType, entryText, options) ->
-        timeString = null
-        timeString = @_getLocalizedTime(entryTimestamp) if entryTimestamp?
-
         # Build new list item
         itemElem = $('<li/>')
         itemElem.attr('data-item', entryType)
         itemElem.addClass(options.styleClasses)
         itemElem.addClass('historical') if entryType isnt 'marker' and tabPage.hasClass('receiving-history')
 
-        if timeString?
+        if entryTimestamp?
             spanElem = $('<span/>').addClass('time')
-            spanElem.text("[#{timeString}]")
+            spanElem.text("[#{@_getLocalizedTime(entryTimestamp)}]")
+            spanElem.attr('title', @_getLocalizedDateTime(entryTimestamp))
             itemElem.append(spanElem)
             itemElem.append(' ')
 
@@ -379,7 +379,7 @@ class this.ChatController
                 spanElem.append(' ')
                 spanElem.append(inlineSpanElem)
 
-            itemElem.append(': ')
+            spanElem.append(': ')
 
         spanElem = $('<span/>').addClass('content')
         spanElem.text(entryText)
@@ -407,8 +407,8 @@ class this.ChatController
         tabID = tabPage.attr('id')
         isReceivingHistory = tabPage.hasClass('receiving-history')
 
-        # Ignore historical messages, accept those addressing the user explicitly
-        return if isReceivingHistory and not notifyData.isAddressingOwn
+        # Ignore historical messages
+        return if isReceivingHistory
 
         # Mark tab for new message
         if document.hidden or not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')

@@ -119,6 +119,9 @@ class SchizoBot
     getNickName: ->
         return @nickName
 
+    getGameTitle: ->
+        return @gameData.title
+
     getWebChannelList: ->
         return @botChannelList
 
@@ -249,7 +252,7 @@ class SchizoBot
         if targetNickOrChannel is @nick
             log.debug "Notice by #{senderNick} to #{targetNickOrChannel}: #{notice}"
         else if @_isChannelMaster(targetNickOrChannel)
-            @_sendToWebChannel(targetNickOrChannel, 'handleBotNotice', senderNick, notice)
+            @_sendNoticeToWebChannel(targetNickOrChannel, senderNick, notice)
 
 
     _handleIrcCommandViaCTCP: (senderNick, targetNickOrChannel, rawMessage) =>
@@ -264,7 +267,7 @@ class SchizoBot
         if checkMessage.indexOf('action') is 0
             actionText = rawMessage.replace(/^(action)/i, '').trim()  # Extract action text
             noticeText = "#{senderNick} #{actionText}"  # Build complete notice
-            @_sendToWebChannel(channel, 'handleBotNotice', senderNick, noticeText)
+            @_sendNoticeToWebChannel(channel, senderNick, noticeText)
 
     _handleIrcCommandReplyViaCTCP: (senderNick, targetNickOrChannel, rawReplyMessage) =>
         # This handler should only be triggered, if the bot had sent a CTCP request to another IRC client before

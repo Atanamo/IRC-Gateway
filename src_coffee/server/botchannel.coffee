@@ -215,11 +215,22 @@ class BotChannel extends Channel
     # @override
     _getUserList: ->
         userList = super
+        botGameNames = {}
+
+        # Get game titles of bots
+        for botID, bot of @botList
+            botGameNames[bot.getNickName()] = bot.getGameTitle()
 
         # Append irc users to list
         for nickName, userFlag of @ircUserList
             clientIdentity = ClientIdentity.createFromIrcNick("#{userFlag}#{nickName}")
-            userList.push(clientIdentity.toData())
+            identityData = clientIdentity.toData()
+
+            if botGameNames[nickName]?  
+                # Append game title to full name, if user is a bot
+                identityData.title += ' - ' + botGameNames[nickName]
+
+            userList.push(identityData)
 
         return userList
 
