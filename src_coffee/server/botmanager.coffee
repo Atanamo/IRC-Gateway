@@ -43,6 +43,11 @@ class BotManager
 
         return Q.all([globalChannelPromise, singleChannelsPromise])
 
+    addGameBotToChannel: (gameID, channel) ->
+        bot = @botList[gameID]
+        return unless bot?
+        return @_addBotToChannel(bot, channel)
+
 
     #
     # Initial setup routines

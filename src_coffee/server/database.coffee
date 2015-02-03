@@ -225,9 +225,30 @@ class Database
             }
         return promise
 
+    # Returns the data for the channel matching given game and title.
+    # @param idGame [int] The id of the game world, the requested channel belongs to.
+    # @param channelTitle [string] The title of the requested channel (is allowed to contain spaces, etc.).
+    # @return [promise] A promise, resolving to a data map with keys
+    #   `game_id` (The id of the game, a channel belongs to - should normally equal the given idGame),
+    #   `name` (The unique name of the channel - used internally),
+    #   `title` (The display name of the channel - should normally equal the given title),
+    #   `irc_channel` (The exact name of the IRC channel to optionally mirror) and
+    #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE).
+    #   If the read data set is empty, the promise is rejected. 
+    getChannelDataByTitle: (idGame, channelTitle) ->
+        sql = "
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`, 
+                       `GalaxyID` AS `game_id`, `Title` AS `title`, `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                WHERE `GalaxyID`=#{@_toQuery(idGame)}
+                  AND `Title` LIKE #{@_toQuery(channelTitle)}
+              "
+        return @_readSimpleData(sql, true)
+
     # Returns a list of channels, which were joined by the given client.
     # @param clientIdentity [ClientIdentity] The identity of the client to read the channels for.
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    #   `game_id` (The id of the game, a channel belongs to - may be null for the global channel),
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
     #   `irc_channel` (Optional: The exact name of an IRC channel to mirror) and
@@ -239,6 +260,7 @@ class Database
         gamePromise = @_getGameData(idGame)
         gamePromise = gamePromise.then (gameData) =>
             return {
+                game_id: gameData.game_id
                 name: "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameData.game_id}"
                 title: gameData.game_title
                 is_public: true
@@ -248,11 +270,12 @@ class Database
         idUser = clientIdentity.getUserID()
         sql = "
                 SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
-                       `C`.`Title` AS `title`, `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
+                       `C`.`GalaxyID` AS `game_id`, `C`.`Title` AS `title`, `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
                 FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
                 JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
                   ON `CJ`.`ChannelID`=`C`.`ID`
                 WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
+                  AND `C`.`GalaxyID`=#{@_toQuery(idGame)}
               "
         channelsPromise = @_readMultipleData(sql)
 
@@ -389,6 +412,41 @@ class Database
         ###
 
 
+    # Creates a new channel with given data and returns the resulting data of the channel in database.
+    # @param channelData [object] A data map with keys
+    #   `game_id` (The id of the game, a channel should belong to),
+    #   `title` (The display name for the channel - is allowed to contain spaces, etc.),
+    #   `irc_channel` (The exact name of an IRC channel to optionally mirror - Defaults to null) and
+    #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE - Defaults to FALSE).
+    # @return [promise] A promise, resolving to a data map with keys equal to the given object, but complemented with key
+    #   `name` (The unique name of the channel - used internally).
+    #   If the channel could not be created, the promise is rejected. 
+    createChannelByData: (channelData) ->
+        channelData.irc_channel ?= null
+        channelData.is_public ?= false
+
+        if not channelData.game_id or not channelData.title
+            return Q.fcall =>
+                throw new Error('Invalid arguments')
+
+        sqlOptional = if channelData.irc_channel? then "`IrcChannel`=#{@_toQuery(channelData.irc_channel)}," else ''
+        sql = "
+                INSERT INTO `#{Config.SQL_TABLES.CHANNEL_LIST}` SET
+                    `GalaxyID`=#{@_toQuery(channelData.game_id)},
+                    `Title`=#{@_toQuery(channelData.title)},
+                    #{sqlOptional}
+                    `IsPublic`=#{@_toQuery(channelData.is_public)}
+              "
+        promise = @_sendQuery(sql)
+        promise = promise.then (resultData) =>
+            # Add channel name to data object
+            channelID = resultData.insertId
+            channelName = "#{Config.INTERN_NONGAME_CHANNEL_PREFIX}#{channelID}"
+            channelData.name = channelName
+            return channelData
+
+        return promise
+
     # Deletes all related data (logs, joinings, etc.) of all channels, which belong to the given game.
     # @param gameID [int] The id of the game world.
     deleteChannelsByGame: (gameID) ->
@@ -424,10 +482,13 @@ class Database
             @_sendQuery(sql)
 
 
-    addClientToChannel: (client, channelIdent) ->
+
+    addClientToChannel: (client, channelName) ->
+        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be joined explicitly
+        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
         # TODO
 
-    removeClientFromChannel: (client, channelIdent) ->
+    removeClientFromChannel: (client, channelName) ->
         # TODO
 
     saveSingleValue: (namespace, key, value) ->

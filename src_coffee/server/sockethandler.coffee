@@ -12,7 +12,8 @@ BotChannel = require './botchannel'
 ## Main class
 class SocketHandler
 
-    constructor: ->
+    constructor: (addGameBotToChannelCallback) ->
+        @_addGameBotToChannel = addGameBotToChannelCallback
 
     start: ->
         @_bindSocketGlobalEvents()
@@ -85,14 +86,9 @@ class SocketHandler
             clientSocket.emit 'auth_fail', err.message  # TODO: Send notice based on auth error
 
     _acceptNewClient: (clientSocket) ->
-        # Let client join default channel
-        #botChannel = BotChannel.getInstance(Config.INTERN_BOT_CHANNEL_NAME, Config.IRC_CHANNEL_GLOBAL)  # TODO
-        #botChannel.addClient(clientSocket, true)
-
-        # Let client join to saved channels
+        # Let client join to saved channels (and default channels)
         promise = db.getClientChannels(clientSocket.identity)
         promise.then (channelList) =>
-            #console.log 'LIST', channelList
             for channelData in channelList
                 channel = Channel.getInstance(channelData)
                 channel.addClient(clientSocket, true)
@@ -100,11 +96,44 @@ class SocketHandler
 
     _handleClientChannelJoin: (clientSocket, channelData) =>
         # TODO
-        # - Check for channel existence in DB
-        # - If it not exist, create it in DB
-        # - Create/Get Channel instance
-        # - Add client to channel instance
-        # - If channel is a bot Channel: Add the bot of client's game
+        # + Check for channel existence in DB
+        # + If it not exist, create it in DB
+        # + Create/Get Channel instance
+        # + Add client to channel instance (if it is not already in it)
+        # + If channel is a bot Channel: Add the bot of client's game
+        # - Check password for channel
+        return unless clientSocket.identity?
+
+        gameID = clientSocket.identity.getGameID()
+
+        promise = db.getChannelDataByTitle(idGame, channelTitle)
+
+        promise = promise.fail (err) =>
+            # Channel does not exist yet, create it
+            createData =
+                game_id: gameID
+                title: channelData.title
+                #irc_channel: channelData.ircChannel  # TODO: Allow joining IRC
+                is_public: channelData.isPublic
+            return db.createChannelByData(createData)
+
+        promise = promise.then (channelData) =>
+            # Channel does exist, get/create instance
+            if channelData.irc_channel
+                channel = BotChannel.getInstance(channelData)
+                @_addGameBotToChannel(gameID, channel)
+            else
+                channel = Channel.getInstance(channelData)
+
+            # Let client join the channel
+            channel.addClient(clientSocket)
+
+        promise.fail (err) =>
+            # Emit join fail
+            clientSocket.emit 'join_fail', err.message  
+            # In webclient: Translate errors by creating keys from messages (all lower case, spaces replaced);
+            #               fallback to original message, if translation cannot be found
+
 
 
 ## Export class

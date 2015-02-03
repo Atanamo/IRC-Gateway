@@ -66,6 +66,8 @@ class Channel
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
     addClient: (clientSocket, isRejoin=false) ->
+        return if clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is already joined to channel
+
         isExistingIdentity = @_hasUniqueClient(clientSocket)
 
         channelInfo =
@@ -101,11 +103,13 @@ class Channel
                 @_sendUserListToSocket(clientSocket)
 
     removeClient: (clientSocket, isDisconnect=false) ->
+        return unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
+
         # Unregister events for this channel
         clientSocket.removeAllListeners @eventNameMsg
         clientSocket.removeAllListeners @eventNameLeave
         clientSocket.removeAllListeners @eventNameHistory
-        clientSocket.removeAllListeners 'disconnect'
+        clientSocket.removeAllListeners 'disconnect'  # TODO: Doesnt this remove disconnect listener on other channels, too?
 
         # Update client
         clientSocket.leave(@name)             # Remove client from room of channel

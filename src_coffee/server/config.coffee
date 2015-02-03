@@ -35,6 +35,7 @@ module.exports =
     GAMES_LOOKUP_INTERVAL: 20       # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
     MAX_CHANNEL_LOGS: 100           # Maximum number of logs per channel in database - This controls the max size of the chat logs table
     MAX_CHANNEL_LOGS_TO_CLIENT: 50  # Maximum number of channel logs for a client - This controls the max length of a channel's chat history a client can request
+    MAX_CHANNELS_PER_CLIENT: 5      # Maximum number of channels a client/user is allowed to create
     MAX_BOTS: 5                     # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
 
     BOT_RECONNECT_DELAY: 61000      # Delay time in milliseconds, for reconnecting to server, when connection has been refused

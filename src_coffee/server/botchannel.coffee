@@ -14,7 +14,7 @@ ClientIdentity = require './clientidentity'
 ##
 ## @extends Channel
 class BotChannel extends Channel
-    @_instances: {}
+    #@_instances: {}  # Inherited
     botList: null
 
     gameID: 0
@@ -53,6 +53,7 @@ class BotChannel extends Channel
     addBot: (bot) ->
         # Store bot reference, addressable by game id
         botID = bot.getID()
+        return Q(false) if @botList[botID]?  # Cancel, if bot already added
         @botList[botID] = bot
         # Let bot join the irc channel
         isMasterBot = Object.keys(@botList).length is 1  # First bot is master

@@ -61,6 +61,13 @@ class this.Translation
 
         return text
 
+    # Returns the translations for the given server message
+    @getForServerMessage: (message) ->
+        # TODO
+        # Create key from message (all lower case, spaces replaced by underscores, prefixed);
+        # fallback to original message, if translation cannot be found
+
+
     # Returns the browser language code
     @getLangCode: ->
         return navigator.language or navigator.userLanguage

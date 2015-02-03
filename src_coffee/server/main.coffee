@@ -39,8 +39,8 @@ class Gateway
 
     constructor: ->
         @_bindServerEvents()
-        @socketHandler = new SocketHandler()
         @botManager = new BotManager()
+        @socketHandler = new SocketHandler(@botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
         ## Register http server events
