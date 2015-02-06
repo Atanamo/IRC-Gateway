@@ -20,12 +20,14 @@ class BotChannel extends Channel
     gameID: 0
     ircChannelName: ''
     ircChannelTopic: null
+    ircChannelPassword: null
     ircUserList: null
     isPermanent: false
 
     constructor: (data, @isPermanent) ->
         super
         @ircChannelName = data.irc_channel or @ircChannelName
+        @ircChannelPassword = data.password or @ircChannelPassword
         @gameID = data.game_id or @gameID
         @botList = {}
         @ircUserList = {}
@@ -44,7 +46,7 @@ class BotChannel extends Channel
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
-        super(clientSocket, true)   # true, because: dont do that: db.addClientToChannel(clientSocket, @name)
+        super(clientSocket, isRejoin)
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
@@ -80,6 +82,9 @@ class BotChannel extends Channel
 
     getIrcChannelName: ->
         return @ircChannelName
+
+    getIrcChannelPassword: ->
+        return @ircChannelPassword
 
     getGameID: ->
         return @gameID

@@ -16,7 +16,7 @@ class BotManager
     constructor: ->
         @botList = {}
 
-    start: ->
+    start: =>
         # Setup bot channels
         globalChannelPromise = @_setupGlobalBotChannel()
         singleChannelsPromise = @_setupSingleBotChannels()
@@ -43,10 +43,16 @@ class BotManager
 
         return Q.all([globalChannelPromise, singleChannelsPromise])
 
-    addGameBotToChannel: (gameID, channel) ->
+    # Used by SocketHandler as callback to add a bot to a new channel 
+    # (Therefor must be bound to BotManager instance)
+    addGameBotToChannel: (gameID, channel) =>
         bot = @botList[gameID]
         return unless bot?
         return @_addBotToChannel(bot, channel)
+
+    shutdown: =>
+        clearInterval(@watcherTimer) if @watcherTimer?
+        @_destroyBots(@botList)
 
 
     #
@@ -212,11 +218,6 @@ class BotManager
         promises = for key, channel of channelList
             channel.removeBot(bot)
         return Q.all(promises)
-
-
-    shutdown: ->
-        clearInterval(@watcherTimer) if @watcherTimer?
-        @_destroyBots(@botList)
 
 
 

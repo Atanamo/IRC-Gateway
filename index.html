@@ -100,6 +100,9 @@
         div[data-channel] .chatMessages li.notice {
             color: gray;
         }
+        .chatMessages li.error {
+            color: red;
+        }
 
         .chatUsersCount {
             display: none;
@@ -155,9 +158,29 @@
         </div>
     </div>
 
-    <form id="chat_form" action="#" class="inactive">
-        <input type="text" id="chat_input" />
-        <input type="submit" id="chat_submit_btn" />
+    <form id="chatForm" action="#" class="inactive">
+        <input type="text" id="chatInput">
+        <input type="submit" id="chatSubmitButton">
+    </form>
+
+    <form id="channelCreateForm" action="#" class="active">
+        <div class="inputContainer">
+            <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
+            <input type="text" id="channelNameInput">
+        </div>
+        <div class="inputContainer">
+            <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
+            <input type="text" id="channelPasswordInput">
+        </div>
+        <div class="inputContainer">
+            <input type="checkbox" id="channelFlagPublic">
+            <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
+        </div>
+        <div class="inputContainer">
+            <input type="checkbox" id="channelFlagIRC">
+            <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
+        </div>
+        <input type="submit" id="channelCreateSubmitButton">
     </form>
 
     <div id="tabPageSkeletonContainer" style="display:none;">
@@ -169,10 +192,17 @@
             </div>
             <div class="chatUsersContainer">
                 <div class="chatUsersCount">
-                    <span class="title"></span>
+                    <span class="title" data-content="label.current_number_of_players"></span>
                     <span class="value"></span>
                 </div>
-                <ul class="chatUsers">
+                <ul class="chatUsers players">
+
+                </ul>
+                <div class="chatChannelName">
+                    <span class="title" data-content="label.irc_channel_name"></span>
+                    <span class="value"></span>
+                </div>
+                <ul class="chatUsers irc">
 
                 </ul>
             </div>

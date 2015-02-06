@@ -53,7 +53,7 @@ module.exports =
     IRC_SERVER_PORT: ircServerPort
 
     IRC_GLOBAL_CHANNEL: ircGlobalChannel
-    #IRC_LOCAL_CHANNEL_PATTERN: '#sgr_ingame_galaxy_<id>'
+    IRC_NONGAME_CHANNEL_PREFIX: '#sgr_ingame_channel_'
     #IRC_LOCAL_CHANNEL_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
     INTERN_GLOBAL_CHANNEL_TITLE: "IRC (#{ircGlobalChannel})"

@@ -105,19 +105,31 @@ class SocketHandler
         return unless clientSocket.identity?
 
         gameID = clientSocket.identity.getGameID()
+        requestedChannelTitle = channelData?.title or null
+        requestedChannelPassword = channelData?.password or null
 
-        promise = db.getChannelDataByTitle(idGame, channelTitle)
+        return unless requestedChannelTitle?
 
+        log.debug 'Client requests join for channel, data:', channelData
+
+        # Check for existent channel
+        promise = db.getChannelDataByTitle(gameID, requestedChannelTitle)
+
+        # Handle existing/non-existing channel
         promise = promise.fail (err) =>
             # Channel does not exist yet, create it
             createData =
                 game_id: gameID
                 title: channelData.title
-                #irc_channel: channelData.ircChannel  # TODO: Allow joining IRC
-                is_public: channelData.isPublic
+                password: channelData.password
+                is_public: channelData.isPublic or false
+                is_for_irc: channelData.isForIrc or false
             return db.createChannelByData(createData)
 
         promise = promise.then (channelData) =>
+            if (requestedChannelPassword or '') isnt (channelData.password or '')
+                throw new Error('Wrong password')
+
             # Channel does exist, get/create instance
             if channelData.irc_channel
                 channel = BotChannel.getInstance(channelData)

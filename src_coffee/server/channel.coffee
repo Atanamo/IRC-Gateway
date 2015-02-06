@@ -66,13 +66,14 @@ class Channel
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
     addClient: (clientSocket, isRejoin=false) ->
-        return if clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is already joined to channel
+        return false if clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is already joined to channel
 
         isExistingIdentity = @_hasUniqueClient(clientSocket)
 
         channelInfo =
             title: @title
             isPublic: @isPublic
+            ircChannelName: @ircChannelName  # Only available, when called from sub class BotChannel
 
         @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
         clientSocket.join(@name)                             # Join client to room of channel
@@ -102,8 +103,10 @@ class Channel
             else
                 @_sendUserListToSocket(clientSocket)
 
+        return true
+
     removeClient: (clientSocket, isDisconnect=false) ->
-        return unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
+        return false unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
 
         # Unregister events for this channel
         clientSocket.removeAllListeners @eventNameMsg
@@ -135,6 +138,8 @@ class Channel
         # Remove and close instance, if last client left
         @_checkForDestroy()
 
+        return true
+
 
     #
     # Sending routines
@@ -151,6 +156,7 @@ class Channel
         promise.then (logListData) =>
             oldestTimestamp = logListData[0]?.timestamp or -1
             newestTimestamp = logListData[logListData.length - 1]?.timestamp or -1
+            logListData.pop() if logListData.length is 1 and not @isPublic  # Filter client's join
             markerData =
                 count: logListData.length
                 start: oldestTimestamp

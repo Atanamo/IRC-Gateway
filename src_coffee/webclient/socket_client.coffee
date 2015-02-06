@@ -50,10 +50,10 @@ class this.SocketClient
     _handleServerDisconnect: (errorMsg) =>
         @identityData = null
         if errorMsg?
-            @chatController.handleServerMessage('Connection error: ' + errorMsg)
+            @chatController.handleServerMessage('Connection error: ' + errorMsg, true)
             console.error 'Connection error:', errorMsg
         else
-            @chatController.handleServerMessage('Connection lost! Server may quit')
+            @chatController.handleServerMessage('Connection lost! Server may quit', true)
         @chatController.handleServerDisconnect()
 
     _handleServerAuthAck: (identityData) =>
@@ -61,8 +61,8 @@ class this.SocketClient
         @chatController.handleServerMessage('Authentication successful!')
 
     _handleServerAuthFail: (errorMsg) =>
-        @chatController.handleServerMessage('Authentication failed!')
-        @chatController.handleServerMessage('Reason: ' + errorMsg)
+        @chatController.handleServerMessage('Authentication failed!', true)
+        @chatController.handleServerMessage('Reason: ' + errorMsg, true)
 
     _handleServerWelcome: (text) =>
         @chatController.handleServerMessage('Welcome message: ' + text)
@@ -137,6 +137,14 @@ class this.SocketClient
 
     sendMessage: (channel, messageText) ->
         @socket.emit 'message#' + channel, messageText
+
+    sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->
+        channelData = 
+            title: channelName or ''
+            password: channelPassword or ''
+            isPublic: isPublic or false
+            isForIrc: isForIrc or false
+        @socket.emit 'join', channelData
 
 
     #

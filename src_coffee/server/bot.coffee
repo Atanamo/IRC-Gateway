@@ -378,6 +378,9 @@ class SchizoBot
     _sendUserListRequestToIrcChannel: (channelName) ->
         @client.send('names', channelName)
 
+    _sendModeSettingToIrcChannel: (channelName, modesExpression, additionalArgs...) ->
+        @client.send('MODE', channelName, modesExpression, additionalArgs...);
+
     _respondToIrcViaCTCP: (receiverNick, ctcpCommand, responseText) ->
         ctcpText = "#{ctcpCommand} #{responseText}"
         @client.ctcp(receiverNick, 'notice', ctcpText)  # Send notice for a reply to command
@@ -399,11 +402,29 @@ class SchizoBot
     handleWebChannelJoin: (botChannel, isMasterBot) ->
         joinDeferred = Q.defer()
         ircChannelName = botChannel.getIrcChannelName()
+        ircChannelPassword = botChannel.getIrcChannelPassword() or null
+
+        # Store channel data
         @botChannelList[ircChannelName] = botChannel
         @masterChannelList[ircChannelName] = isMasterBot
-        log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} (As master: #{isMasterBot})..."
-        @client.join ircChannelName, ->
+
+        # Join IRC channel
+        log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} " +
+                 "(As master: #{isMasterBot}, password: #{(ircChannelPassword or '<none>')})..."
+
+        joinExpression = ircChannelName
+        joinExpression += ' ' + ircChannelPassword if ircChannelPassword?
+
+        @client.join joinExpression, =>
+            # Set channel modes
+            if ircChannelName.indexOf(Config.IRC_NONGAME_CHANNEL_PREFIX) is 0
+                @_sendModeSettingToIrcChannel(ircChannelName, '+s')  # Set to secret
+            if ircChannelPassword?
+                @_sendModeSettingToIrcChannel(ircChannelName, '+k', ircChannelPassword)  # Set channel password
+
+            # Resolve join
             joinDeferred.resolve()
+
         return joinDeferred.promise
 
     handleWebChannelLeave: (botChannel) ->
@@ -411,6 +432,7 @@ class SchizoBot
         ircChannelName = botChannel.getIrcChannelName()
         delete @botChannelList[ircChannelName]
         delete @masterChannelList[ircChannelName]
+        # Part from IRC channel
         log.info "Removing bot '#{@nickName}' from channel #{ircChannelName}..."
         @client.part ircChannelName, Config.BOT_LEAVE_MESSAGE, ->
             partDeferred.resolve()

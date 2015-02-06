@@ -4,6 +4,10 @@ class this.ChatController
 
     socketHandler: null
 
+    CHANNEL_NAME_MIN_LENGTH = 4
+    CHANNEL_NAME_MAX_LENGTH = 20
+    CHANNEL_PASSWORD_MIN_LENGTH = 5
+
     serverIP: ''
     serverPort: 0
     instanceData: {}
@@ -16,8 +20,14 @@ class this.ChatController
     isSignalizingMessagesToWindow: false
 
     gui:
-        chatForm: '#chat_form'
-        chatInput: '#chat_input'
+        multilangContents: '*[data-content]'
+        channelCreateForm: '#channelCreateForm'
+        channelNameInput: '#channelNameInput'
+        channelPasswordInput: '#channelPasswordInput'
+        channelFlagPublic: '#channelFlagPublic'
+        channelFlagIRC: '#channelFlagIRC'
+        chatForm: '#chatForm'
+        chatInput: '#chatInput'
         tabsystemViewport: '#tabsystem .tabsystemViewport'
         tabsystemHeaderList: '#tabsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
@@ -25,7 +35,6 @@ class this.ChatController
         tabPagesMessages: '.chatMessages'
         tabPagesUsers: '.chatUsers'
         tabPagesUsersNumberBox: '.chatUsersCount'
-        tabPagesUsersNumberText: '.chatUsersCount .title'
         tabPagesUsersNumberValue: '.chatUsersCount .value'
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
@@ -35,6 +44,7 @@ class this.ChatController
         addressTabMarker: '.addressed'
 
     events:
+        'channelCreateForm submit': '_handleGuiChannelCreateSubmit'
         'chatForm submit': '_handleGuiMessageSubmit'
         'tabsystemHeaders click': '_handleGuiTabClick'
 
@@ -47,6 +57,8 @@ class this.ChatController
 
         @windowTitleBackup = top.document.title
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
+
+        @_translateMultilangContents()
 
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
@@ -79,6 +91,12 @@ class this.ChatController
         @_bindGuiElements()
         @_bindGuiEvents()
 
+    _translateMultilangContents: ->
+        @ui.multilangContents.each (idx, element) =>
+            textElem = $(element)
+            translatedText = Translation.get(textElem.data('content'))
+            textElem.html(translatedText) if translatedText
+
 
     #
     # GUI event handling
@@ -88,6 +106,24 @@ class this.ChatController
         clearInterval(@windowSignalTimer) if @windowSignalTimer?
         top.document.title = @windowTitleBackup  # Reset window title
         @_resetNewEntryMarkOfTab(@activeTabPage)  # Reset marker for unread messages
+
+    _handleGuiChannelCreateSubmit: (event) =>
+        event.preventDefault()
+        channelName = @ui.channelNameInput.val().trim()
+        channelPassword = @ui.channelPasswordInput.val().trim()
+        isPublic = @ui.channelFlagPublic.prop('checked') or false
+        isForIrc = @ui.channelFlagIRC.prop('checked') or false
+
+        unless CHANNEL_NAME_MIN_LENGTH <= channelName.length <= CHANNEL_NAME_MAX_LENGTH
+            @handleServerMessage(Translation.get('msg.illegal_channel_name'), true)
+            return
+
+        @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
+
+        # Reset the form inputs
+        @ui.channelCreateForm[0]?.reset?()
+
+
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
@@ -114,8 +150,9 @@ class this.ChatController
         # Show new active tab
         @activeTabPage.show()
 
-        # Toggle usability of input form
+        # Toggle usability of input forms
         @ui.chatForm.toggleClass('inactive', tabID is @ui.tabPageServer.attr('id'))
+        @ui.channelCreateForm.toggleClass('inactive', tabID isnt @ui.tabPageServer.attr('id'))
 
         # Reset marker for unread messages
         @_resetNewEntryMarkOfTab(@activeTabPage)
@@ -140,9 +177,11 @@ class this.ChatController
             @_clearUserListOfTab(tabPage)
             @_addNewEntryMarkToTab(tabPage, {force: true}, informText) if idx is 0
 
-    handleServerMessage: (msg) ->
+    handleServerMessage: (msg, isError=false) ->
+        messageType = 'log'
+        messageType = 'error' if isError
         tabPage = @ui.tabPageServer
-        @_appendNoticeToTab(tabPage, null, 'log', msg)
+        @_appendNoticeToTab(tabPage, null, messageType, msg)
         @_addNewEntryMarkToTab(tabPage)
 
     handleChannelMessage: (channel, timestamp, data) ->
@@ -302,7 +341,6 @@ class this.ChatController
 
     _setUserNumberToTab: (tabPage, userNumber) ->
         tabPage.find(@gui.tabPagesUsersNumberBox).show()
-        tabPage.find(@gui.tabPagesUsersNumberText).html(Translation.get('info.current_number_of_players'))
         tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
 
     _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
@@ -345,6 +383,7 @@ class this.ChatController
         timestamp = (new Date()).getTime() unless timestamp?
         styleClasses = 'notice'
         styleClasses += ' fromUser' if isSentByUser
+        styleClasses += ' error' if noticeType is 'error'
 
         @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: styleClasses)
         @_scrollToBottomOfTab(tabPage)
@@ -359,7 +398,7 @@ class this.ChatController
         itemElem = $('<li/>')
         itemElem.attr('data-item', entryType)
         itemElem.addClass(options.styleClasses)
-        itemElem.addClass('historical') if entryType isnt 'marker' and tabPage.hasClass('receiving-history')
+        itemElem.addClass('historical') if entryType isnt 'marker' and @_isHistoryReceivingTab(tabPage)
 
         if entryTimestamp?
             spanElem = $('<span/>').addClass('time')
@@ -405,7 +444,7 @@ class this.ChatController
 
     _addNewEntryMarkToTab: (tabPage, notifyData={}, notifyText=null) ->
         tabID = tabPage.attr('id')
-        isReceivingHistory = tabPage.hasClass('receiving-history')
+        isReceivingHistory = @_isHistoryReceivingTab(tabPage)
 
         # Ignore historical messages
         return if isReceivingHistory
@@ -471,6 +510,8 @@ class this.ChatController
             clearInterval(@windowSignalTimer) if @windowSignalTimer?
             @windowSignalTimer = setInterval(blinkFunc, 800)
 
+    _isHistoryReceivingTab: (tabPage) ->
+        return tabPage.hasClass('receiving-history')
 
     _scrollToBottomOfTab: (tabPage) ->
         pageElem = tabPage.find(@gui.tabPagesMessagesPage)

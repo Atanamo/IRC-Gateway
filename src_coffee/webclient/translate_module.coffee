@@ -18,14 +18,21 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ has been kicked from server by $actor$, reason: $reason$'
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
         'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
-        'info.current_number_of_players': 'Players online'
         'info.start_of_chat_history': 'Start of chat history ($start$ - $end$)'
         'info.end_of_chat_history': 'End of chat history ($start$ - $end$)'
         'info.unknown': 'unknown'
+        'label.current_number_of_players': 'Players online'
+        'label.irc_channel_name': 'IRC'
+        'label.channel_name': 'Channel name'
+        'label.channel_password': 'Channel password'
+        'label.channel_flag_public': 'Hide joined users'
+        'label.channel_flag_irc': 'Mirror channel to IRC'
     }
 
     # German translated texts
     TEXTS_DE = {
+        'msg.illegal_channel_name': 'Der Channel-Name ist unzulässig! Er muss mindestens 4 Zeichen lang sein'  # TODO
+
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server verloren! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
@@ -41,10 +48,15 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ wurde von $actor$ vom Server geworfen, Grund: $reason$'
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
         'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
-        'info.current_number_of_players': 'Spieler online'
         'info.start_of_chat_history': 'Beginn des Chatverlaufs ($start$ - $end$)'
         'info.end_of_chat_history': 'Ende des Chatverlaufs ($start$ - $end$)'
         'info.unknown': 'Unbekannt'
+        'label.current_number_of_players': 'Spieler online'
+        'label.irc_channel_name': 'IRC'
+        'label.channel_name': 'Channel-Name'
+        'label.channel_password': 'Channel-Passwort'
+        'label.channel_flag_public': 'Beigetretene User verstecken'
+        'label.channel_flag_irc': 'Channel ins IRC spiegeln'
     }
 
     # Currently used translations
