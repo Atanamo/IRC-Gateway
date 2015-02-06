@@ -104,14 +104,16 @@
             color: red;
         }
 
-        .chatUsersCount {
+        .chatUsersCount,
+        .chatChannelName {
             display: none;
             padding: 7px 7px;
             border-bottom: solid 1px #aaa;
             font-size: 0.9em
         }
 
-        .chatUsersCount .title:after {
+        .chatUsersCount .title:after,
+        .chatChannelName .title:after {
             content: ':';
         }
 
@@ -124,7 +126,10 @@
             list-style-type: none;
             white-space: nowrap;
             padding: 3px 7px;
-            font-size: 0.9em
+            font-size: 0.9em;
+        }
+        .chatUsers.players li:last-child {
+            border-bottom: solid 1px #aaa;
         }
 
         form {

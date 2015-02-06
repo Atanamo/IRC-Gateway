@@ -33,9 +33,12 @@ class this.ChatController
         tabsystemHeaders: '.tabsystemHeaders li'
         tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
-        tabPagesUsers: '.chatUsers'
+        tabPagesUsersIngame: '.chatUsers.players'
+        tabPagesUsersIrc: '.chatUsers.irc'
         tabPagesUsersNumberBox: '.chatUsersCount'
         tabPagesUsersNumberValue: '.chatUsersCount .value'
+        tabPagesChannelNameBox: '.chatChannelName'
+        tabPagesChannelNameValue: '.chatChannelName .value'
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
         tabPageSkeleton: '#tabPageSkeleton'
@@ -113,6 +116,8 @@ class this.ChatController
         channelPassword = @ui.channelPasswordInput.val().trim()
         isPublic = @ui.channelFlagPublic.prop('checked') or false
         isForIrc = @ui.channelFlagIRC.prop('checked') or false
+
+        # TODO
 
         unless CHANNEL_NAME_MIN_LENGTH <= channelName.length <= CHANNEL_NAME_MAX_LENGTH
             @handleServerMessage(Translation.get('msg.illegal_channel_name'), true)
@@ -212,6 +217,7 @@ class this.ChatController
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
         channelTitle = data?.title or channel
+        ircChannelName = data.ircChannelName or null
         isNewTab = (tabPage?.length is 0)
 
         if isNewTab
@@ -233,6 +239,9 @@ class this.ChatController
         # Print join message to tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
+
+        # Set IRC channel name
+        @_setIrcChannelNameToTab(tabPage, ircChannelName) if ircChannelName?
 
         return isNewTab
 
@@ -336,24 +345,29 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _clearUserListOfTab: (tabPage) ->
-        tabPage.find(@gui.tabPagesUsers).empty()
-
     _setUserNumberToTab: (tabPage, userNumber) ->
         tabPage.find(@gui.tabPagesUsersNumberBox).show()
         tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
 
-    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
-        itemText = shortName
-        itemText += ' [IRC]' if isIrcUser
+    _setIrcChannelNameToTab: (tabPage, ircChannelName) ->
+        tabPage.find(@gui.tabPagesChannelNameBox).show()
+        tabPage.find(@gui.tabPagesChannelNameValue).html(ircChannelName)
 
+    _clearUserListOfTab: (tabPage) ->
+        tabPage.find(@gui.tabPagesUsersIngame).empty()
+        tabPage.find(@gui.tabPagesUsersIrc).empty()
+
+    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
         # Build new list item
         itemElem = $('<li/>')
         itemElem.attr('title', fullName)
-        itemElem.text(itemText)
+        itemElem.text(shortName)
 
         # Append item to list
-        messagesElem = tabPage.find(@gui.tabPagesUsers)
+        if isIrcUser
+            messagesElem = tabPage.find(@gui.tabPagesUsersIrc)
+        else
+            messagesElem = tabPage.find(@gui.tabPagesUsersIngame)
         messagesElem.append(itemElem)
 
     _appendMessageToTab: (tabPage, timestamp, {text, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn}) ->
