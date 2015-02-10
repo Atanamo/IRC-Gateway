@@ -3,6 +3,11 @@ class this.Translation
 
     # English translated texts
     TEXTS_EN = {
+        'server_msg.invalid_input': 'Invalid input!'
+        'server_msg.illegal_length_of_channel_name': 'The requested channel name is too short or too long!'
+        'server_msg.channel_password_too_short': 'The requested channel password is too short!'
+        'server_msg.channel_password_too_long': 'The requested channel password is too long!'
+
         'msg.server_connection_lost': 'Error: Lost connection to server! Waiting for reconnect...'
         'msg.channel_joined': 'Joined $channel$'
         'msg.initial_channel_topic': 'Channel topic: $topic$'
@@ -31,7 +36,12 @@ class this.Translation
 
     # German translated texts
     TEXTS_DE = {
-        'msg.illegal_channel_name': 'Der Channel-Name ist unzulässig! Er muss mindestens 4 Zeichen lang sein'  # TODO
+        'msg.illegal_channel_name': 'Der angeforderte Channel-Name ist unzulässig! Er muss mindestens 4 Zeichen lang sein'  # TODO
+
+        'server_msg.invalid_input': 'Ungültige Eingaben!'
+        'server_msg.illegal_length_of_channel_name': 'Der Channel-Name ist zu kurz oder zu lang!'
+        'server_msg.channel_password_too_short': 'Das angeforderte Channel-Passwort ist zu kurz!'
+        'server_msg.channel_password_too_long': 'Das angeforderte Channel-Passwort ist zu lang!'
 
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server verloren! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'

@@ -104,7 +104,9 @@ class Database
         promise = promise.then (resultRows) =>
             resultData = resultRows[0]
             if rejectIfEmpty and not resultData?
-                throw new Error('Result is empty')
+                err = new Error('Result is empty')
+                err.isDatabaseResult = true
+                throw err
             return resultData
         return promise
 
@@ -115,6 +117,11 @@ class Database
     #
     # Data value getters
     #
+
+    createValidationError: (error_msg) ->
+        err = new Error(error_msg)
+        err.isValidation = true
+        return err
 
     _get_hash_value: (original_val) ->
         hashingStream = crypto.createHash('md5')
@@ -130,6 +137,31 @@ class Database
     # Returns the current security token for the given player. This token must be send on auth request by the client.
     _get_security_token: (idUser, playerData) ->
         return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
+
+    # Checks the given data for `createChannelByData()` and throws an error, if validation fails.
+    # @param channelData [object] A data map with the channel data.
+    # @throws Error
+    _validateChannelDataForCreation: (channelData) ->
+        channelData.title = String(channelData.title or '').trim()
+        channelData.password = String(channelData.password or '').trim()
+        channelData.is_for_irc = !!channelData.is_for_irc
+        channelData.is_public = !!channelData.is_public
+
+        # Replace all (multiple) whitespace chars by space-char
+        channelData.title = channelData.title.replace(/\s/g, ' ').replace(/[ ]+/g, ' ')
+
+        # Do checks
+        if not channelData.game_id or not channelData.title
+            throw @createValidationError('Invalid input')
+
+        unless 4 <= channelData.title.length <= 30
+            throw @createValidationError('Illegal length of channel name')
+
+        if Config.REQUIRE_CHANNEL_PW and 2 >= channelData.password.length
+            throw @createValidationError('Channel password too short')
+
+        unless channelData.password.length <= 20
+            throw @createValidationError('Channel password too long')
 
 
     #
@@ -195,7 +227,7 @@ class Database
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
     #   `id` (The unique id of the game world) and
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
-    #   The list may be equal, if there are no games at all.
+    #   The list may be empty, if there are no games at all.
     getBotRepresentedGames: ->
         sql = "
                 SELECT `ID` AS `id`, `Galaxyname` AS `title`
@@ -214,7 +246,7 @@ class Database
     #   `password` (The password for joining the channel - not encrypted),
     #   `irc_channel` (The exact name of the IRC channel to mirror) and
     #   `is_public` (TRUE, if the channel is meant to be public and therefor joined players have to be hidden; else FALSE).
-    #   The list may be equal, if no appropriate channels exist.
+    #   The list may be empty, if no appropriate channels exist.
     getSingleBotChannels: ->
         sql = "
                 SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
@@ -271,7 +303,7 @@ class Database
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
     #   `irc_channel` (Optional: The exact name of an IRC channel to mirror) and
     #   `is_public` (TRUE, if the channel is meant to be public and therefor joined player's have to be hidden; else FALSE).
-    #   The list may be equal, if no channels are joined by the client.
+    #   The list may be empty, if no channels are joined by the client.
     getClientChannels: (clientIdentity) ->
         # Read data of client's game as default channel
         idGame = clientIdentity.getGameID()
@@ -356,7 +388,7 @@ class Database
     #   `event_name` (The name of the logged channel event),
     #   `event_data` (The logged data for the event, serialized as JSON string - contains values like message text or sender identity) and
     #   `timestamp` (The timestamp of the log entry/event).
-    #   The list may be equal, if no logs exists for the channel.
+    #   The list may be empty, if no logs exists for the channel.
     getLoggedChannelMessages: (channelName) ->
         sql = "
                 (
@@ -419,14 +451,8 @@ class Database
     #   `irc_channel` (The exact name of an IRC channel to mirror - Defaults to null, if `is_for_irc` was false).
     #   If the channel could not be created, the promise is rejected. 
     createChannelByData: (channelData) ->
-        channelData.is_for_irc ?= false
-        channelData.is_public ?= false
-        channelData.password ?= ''
-        channelData.title ?= ''
-
-        if not channelData.game_id or not channelData.title
-            return Q.fcall =>
-                throw new Error('Invalid arguments')
+        # May throw error, if data not valid
+        @_validateChannelDataForCreation(channelData)
 
         # Create the channel
         sql = "
@@ -506,6 +532,7 @@ class Database
 
     removeClientFromChannel: (client, channelName) ->
         # TODO
+
 
 
 

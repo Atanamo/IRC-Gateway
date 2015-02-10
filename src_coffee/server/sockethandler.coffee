@@ -50,20 +50,20 @@ class SocketHandler
         gameID = authData.gameID
         securityToken = authData.token
         authPromise = Q.fcall =>
-            throw new Error('Invalid user data')
+            throw db.createValidationError('Invalid user data')
 
         # Check auth data
         if userID? and gameID?
             authPromise = ClientIdentity.createFromDatabase(userID, gameID)
             authPromise = authPromise.fail (err) =>
-                throw new Error('Unknown user')  # Overwrite error
+                throw db.createValidationError('Unknown user')  # Overwrite error
             authPromise = authPromise.then (clientIdentity) =>
                 if Config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
-                    throw new Error('Invalid token')
+                    throw db.createValidationError('Invalid token')
                 return clientIdentity
 
         # Handle auth success/fail
-        authPromise.then (clientIdentity) =>
+        authPromise = authPromise.then (clientIdentity) =>
             return if clientSocket.isDisconnected
             log.debug 'Client auth granted:', clientIdentity
 
@@ -79,11 +79,17 @@ class SocketHandler
             # Add client to its channels
             @_acceptNewClient(clientSocket)
 
-        authPromise.fail (err) =>
+            return  # Explicit return to not return promise from @_acceptNewClient()
+
+        authPromise = authPromise.fail (err) =>
+            throw err unless err.isValidation
             return if clientSocket.isDisconnected
             log.debug 'Client auth rejected:', err.message
             # Emit auth fail
             clientSocket.emit 'auth_fail', err.message  # TODO: Send notice based on auth error
+
+        # End chain to observe errors (non-validation-errors)
+        authPromise.done()
 
     _acceptNewClient: (clientSocket) ->
         # Let client join to saved channels (and default channels)
@@ -92,6 +98,9 @@ class SocketHandler
             for channelData in channelList
                 channel = Channel.getInstance(channelData)
                 channel.addClient(clientSocket, true)
+        promise = promise.fail (err) =>
+            throw err unless err.isDatabaseResult
+        promise.done()
 
 
     _handleClientChannelJoin: (clientSocket, channelData) =>
@@ -128,7 +137,7 @@ class SocketHandler
 
         promise = promise.then (channelData) =>
             if (requestedChannelPassword or '') isnt (channelData.password or '')
-                throw new Error('Wrong password')
+                throw db.createValidationError('Wrong password')
 
             # Channel does exist, get/create instance
             if channelData.irc_channel
@@ -140,11 +149,18 @@ class SocketHandler
             # Let client join the channel
             channel.addClient(clientSocket)
 
-        promise.fail (err) =>
+        promise = promise.fail (err) =>
+            throw err unless err.isValidation
+
             # Emit join fail
             clientSocket.emit 'join_fail', err.message  
             # In webclient: Translate errors by creating keys from messages (all lower case, spaces replaced);
             #               fallback to original message, if translation cannot be found
+
+
+        # End chain to observe errors (non-validation-errors)
+        promise.done()
+
 
 
 

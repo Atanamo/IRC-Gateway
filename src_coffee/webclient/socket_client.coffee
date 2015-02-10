@@ -25,6 +25,7 @@ class this.SocketClient
         @socket.on 'auth_fail', @_handleServerAuthFail
         @socket.on 'welcome', @_handleServerWelcome
 
+        @socket.on 'join_fail', @_handleChannelJoinFail
         @socket.on 'history_start', @_handleChannelHistoryStart
         @socket.on 'history_end', @_handleChannelHistoryEnd
         @socket.on 'message', @_handleChannelMessage
@@ -67,6 +68,9 @@ class this.SocketClient
     _handleServerWelcome: (text) =>
         @chatController.handleServerMessage('Welcome message: ' + text)
 
+    _handleChannelJoinFail: (errorMsg) =>
+        # TODO: Translate
+        @chatController.handleServerMessage('Channel join failed: ' + errorMsg, true)
 
     _handleChannelJoined: (channel, timestamp, data) =>
         isOpeningJoin = @chatController.handleChannelJoined(channel, timestamp, data)

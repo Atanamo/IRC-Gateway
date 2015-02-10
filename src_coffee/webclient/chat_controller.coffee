@@ -117,18 +117,9 @@ class this.ChatController
         isPublic = @ui.channelFlagPublic.prop('checked') or false
         isForIrc = @ui.channelFlagIRC.prop('checked') or false
 
-        # TODO
-
-        unless CHANNEL_NAME_MIN_LENGTH <= channelName.length <= CHANNEL_NAME_MAX_LENGTH
-            @handleServerMessage(Translation.get('msg.illegal_channel_name'), true)
-            return
+        return unless channelName
 
         @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
-
-        # Reset the form inputs
-        @ui.channelCreateForm[0]?.reset?()
-
-
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
@@ -242,6 +233,9 @@ class this.ChatController
 
         # Set IRC channel name
         @_setIrcChannelNameToTab(tabPage, ircChannelName) if ircChannelName?
+
+        # Reset the form for channel creation/joining
+        @ui.channelCreateForm[0]?.reset?()
 
         return isNewTab
 

@@ -27,6 +27,7 @@ module.exports =
     DEBUG_ENABLED: true    # Set to true, to enable some debug output
     DEBUG_IRC_COMM: false  # Set to true, to enable debug output from irc communication by bots
     AUTH_ENABLED: false    # Set to true, to enable client authentification by a security token (Otherwise all valid player IDs will be accepted)
+    REQUIRE_CHANNEL_PW: false  # Set to true, to force clients to set a password when creating a channel (The password then must be at least 3 digits long)
 
     WEB_SERVER_PORT: 8050  # The port of the webserver started by this app
 
