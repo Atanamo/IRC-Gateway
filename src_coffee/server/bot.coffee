@@ -53,7 +53,7 @@ class SchizoBot
             debug: Config.DEBUG_IRC_COMM
             showErrors: true
             floodProtection: true                   # Protect the bot from beeing kicked, if users are flooding
-            floodProtectionDelay: 50                # Delay time for messages to avoid flooding
+            floodProtectionDelay: 100               # Delay time for messages to avoid flooding
             retryDelay: Config.BOT_RECONNECT_DELAY  # Delay time for reconnects
             stripColors: true                       # Strip mirc colors
 
@@ -238,6 +238,7 @@ class SchizoBot
         if channel?
             respondFunc('Sry, what?')
         else
+            message = message.substr(0, 20) + '...' if message.length > 25
             respondFunc("Unknown command '#{message}'. --- #{defaultResponse}")
 
     _handleIrcMessageToChannel: (senderNick, channel, message, rawData) =>
@@ -334,7 +335,7 @@ class SchizoBot
             timespanDays = Math.floor(timespanHours / 24)
             timespanFractHours = timespanHours - (timespanDays*24)
             connectDateText = @connectDateTime.toUTCString()
-            respondFunc("Uptime = #{timespanDays} days, #{timespanFractHours} hours  (Since #{connectDateText})")
+            respondFunc("Uptime = #{timespanDays} days, #{timespanFractHours.toFixed(2)} hours  (Since #{connectDateText})")
             return true
         return false
 

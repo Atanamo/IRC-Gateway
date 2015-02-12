@@ -4,8 +4,8 @@
 # Bot sub config
 botNickPrefix = '_Galaxy'       # Prefix for bot's nick name on IRC
 botName = 'SGR GalaxyBot'       # Bot's official name
-botVersion = 'v1.1'             # Bot's version number string
-botLastUpdate = '2014-12-28'    # Update info for bot version
+botVersion = 'v1.2'             # Bot's version number string
+botLastUpdate = '2015-02-13'    # Update info for bot version
 
 # IRC sub config
 ircServerIP = 'underworld1.no.quakenet.org'
