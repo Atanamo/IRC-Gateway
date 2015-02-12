@@ -36,12 +36,17 @@ class this.Translation
 
     # German translated texts
     TEXTS_DE = {
-        'msg.illegal_channel_name': 'Der angeforderte Channel-Name ist unzulässig! Er muss mindestens 4 Zeichen lang sein'  # TODO
-
         'server_msg.invalid_input': 'Ungültige Eingaben!'
-        'server_msg.illegal_length_of_channel_name': 'Der Channel-Name ist zu kurz oder zu lang!'
+        'server_msg.illegal_length_of_channel_name': 'Der angeforderte Channel-Name ist zu kurz oder zu lang!'
         'server_msg.channel_password_too_short': 'Das angeforderte Channel-Passwort ist zu kurz!'
         'server_msg.channel_password_too_long': 'Das angeforderte Channel-Passwort ist zu lang!'
+
+        # Invalid user data
+        # Unknown user
+        # Invalid token
+
+        # Reached channel limit
+        # Wrong password
 
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server verloren! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'

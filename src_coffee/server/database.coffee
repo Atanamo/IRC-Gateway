@@ -138,10 +138,10 @@ class Database
     _get_security_token: (idUser, playerData) ->
         return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
 
-    # Checks the given data for `createChannelByData()` and throws an error, if validation fails.
+    # Checks the given data for being valid to be passed to `createChannelByData()` and throws an error, if validation fails.
     # @param channelData [object] A data map with the channel data.
-    # @throws Error
-    _validateChannelDataForCreation: (channelData) ->
+    # @throws Error if given data is invalid. The error is flagged as validation error.
+    getValidatedChannelDataForCreation: (channelData) ->
         channelData.title = String(channelData.title or '').trim()
         channelData.password = String(channelData.password or '').trim()
         channelData.is_for_irc = !!channelData.is_for_irc
@@ -162,6 +162,8 @@ class Database
 
         unless channelData.password.length <= 20
             throw @createValidationError('Channel password too long')
+
+        return channelData
 
 
     #
@@ -344,6 +346,23 @@ class Database
 
         return resultPromise
 
+    # Returns the number of channels, which were created by the given client.
+    # @param clientIdentity [ClientIdentity] The identity of the client to count the channels for.
+    # @return [promise] A promise, resolving to the number of channels.
+    getClientCreatedChannelsCount: (clientIdentity) ->
+        idGame = clientIdentity.getGameID()
+        idUser = clientIdentity.getUserID()
+        sql = "
+                SELECT COUNT(`ID`) AS `channels`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                WHERE `GalaxyID`=#{@_toQuery(idGame)}
+                  AND `CreatorUserID`=#{@_toQuery(idUser)}
+              "
+        promise = @_readSimpleData(sql)
+        promise = promise.then (data) =>
+            return data?.channels
+        return promise
+
     # Returns the saved identification data for the given player in the given game.
     # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
     # @param idGame [int] The id of the player's game world as given by a client on logon.
@@ -440,6 +459,7 @@ class Database
 
 
     # Creates a new channel with given data and returns the resulting data of the channel in database.
+    # @param clientIdentity [ClientIdentity] The identity of the client to set as channel creator.
     # @param channelData [object] A data map with keys
     #   `game_id` (The id of the game, a channel should belong to),
     #   `title` (The display name for the channel - is allowed to contain spaces, etc.),
@@ -450,14 +470,13 @@ class Database
     #   `name` (The unique name of the channel - used internally) and
     #   `irc_channel` (The exact name of an IRC channel to mirror - Defaults to null, if `is_for_irc` was false).
     #   If the channel could not be created, the promise is rejected. 
-    createChannelByData: (channelData) ->
-        # May throw error, if data not valid
-        @_validateChannelDataForCreation(channelData)
-
+    createChannelByData: (clientIdentity, channelData) ->
         # Create the channel
+        idUser = clientIdentity.getUserID()
         sql = "
                 INSERT INTO `#{Config.SQL_TABLES.CHANNEL_LIST}` SET
                     `GalaxyID`=#{@_toQuery(channelData.game_id)},
+                    `CreatorUserID`=#{@_toQuery(idUser)},
                     `Title`=#{@_toQuery(channelData.title)},
                     `Password`=#{@_toQuery(channelData.password)},
                     `IsPublic`=#{@_toQuery(channelData.is_public)}
@@ -532,6 +551,7 @@ class Database
 
     removeClientFromChannel: (client, channelName) ->
         # TODO
+        # Only allow parting on channels not created by the client
 
 
 

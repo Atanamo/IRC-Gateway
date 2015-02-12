@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `chat - channellogs` (
 CREATE TABLE IF NOT EXISTS `chat - channels` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `GalaxyID` tinyint(5) unsigned NOT NULL,
+  `CreatorUserID` int(10) unsigned NOT NULL,
   `Title` tinytext NOT NULL,
   `Password` tinytext NOT NULL,
   `IrcChannel` tinytext,

@@ -86,7 +86,7 @@ class SocketHandler
             return if clientSocket.isDisconnected
             log.debug 'Client auth rejected:', err.message
             # Emit auth fail
-            clientSocket.emit 'auth_fail', err.message  # TODO: Send notice based on auth error
+            clientSocket.emit 'auth_fail', err.message
 
         # End chain to observe errors (non-validation-errors)
         authPromise.done()
@@ -104,13 +104,6 @@ class SocketHandler
 
 
     _handleClientChannelJoin: (clientSocket, channelData) =>
-        # TODO
-        # + Check for channel existence in DB
-        # + If it not exist, create it in DB
-        # + Create/Get Channel instance
-        # + Add client to channel instance (if it is not already in it)
-        # + If channel is a bot Channel: Add the bot of client's game
-        # - Check password for channel
         return unless clientSocket.identity?
 
         gameID = clientSocket.identity.getGameID()
@@ -121,47 +114,75 @@ class SocketHandler
 
         log.debug 'Client requests join for channel, data:', channelData
 
+        # Check channel data
+        promise = Q.fcall =>
+            return if clientSocket.isDisconnected
+            checkData =
+                game_id: clientSocket.identity?.getGameID()
+                title: channelData.title
+                password: channelData.password
+                is_public: channelData.isPublic
+                is_for_irc: channelData.isForIrc
+            return db.getValidatedChannelDataForCreation(checkData)
+
         # Check for existent channel
-        promise = db.getChannelDataByTitle(gameID, requestedChannelTitle)
+        promise = promise.then (validChannelData) =>
+            channelData = validChannelData  # Overwrite in outer scope (for passing to fail handler)
+            return db.getChannelDataByTitle(gameID, requestedChannelTitle)
 
         # Handle existing/non-existing channel
         promise = promise.fail (err) =>
-            # Channel does not exist yet, create it
-            createData =
-                game_id: gameID
-                title: channelData.title
-                password: channelData.password
-                is_public: channelData.isPublic or false
-                is_for_irc: channelData.isForIrc or false
-            return db.createChannelByData(createData)
+            # Cancel channel creation, if error is not from existence check
+            throw err unless err.isDatabaseResult
+            throw err if clientSocket.isDisconnected
+            # Channel does not exist yet, try creating it
+            return @_createNewChannel(clientSocket.identity, channelData)
 
-        promise = promise.then (channelData) =>
-            if (requestedChannelPassword or '') isnt (channelData.password or '')
-                throw db.createValidationError('Wrong password')
-
-            # Channel does exist, get/create instance
-            if channelData.irc_channel
-                channel = BotChannel.getInstance(channelData)
-                @_addGameBotToChannel(gameID, channel)
-            else
-                channel = Channel.getInstance(channelData)
-
-            # Let client join the channel
-            channel.addClient(clientSocket)
+        promise = promise.then (existingChannelData) =>
+            return if clientSocket.isDisconnected
+            # Channel does (now) exist, try joining
+            @_joinClientToChannel(clientSocket, existingChannelData, requestedChannelPassword)
 
         promise = promise.fail (err) =>
+            return if err.isDatabaseResult
             throw err unless err.isValidation
-
+            return if clientSocket.isDisconnected
+            log.debug 'Client channel join rejected:', err.message
             # Emit join fail
             clientSocket.emit 'join_fail', err.message  
-            # In webclient: Translate errors by creating keys from messages (all lower case, spaces replaced);
-            #               fallback to original message, if translation cannot be found
-
 
         # End chain to observe errors (non-validation-errors)
         promise.done()
 
+    _createNewChannel: (clientIdentity, channelData) ->
+        # Check limit of created channels
+        countPromise = db.getClientCreatedChannelsCount(clientIdentity)
+        countPromise = countPromise.then (channelsCount) =>
+            if channelsCount >= Config.MAX_CHANNELS_PER_CLIENT
+                throw db.createValidationError('Reached channel limit')
+            return true
 
+        # If limit not reached, create the channel
+        createPromise = countPromise.then =>
+            log.debug 'Storing data for new channel:', channelData
+            return db.createChannelByData(clientIdentity, channelData)
+
+        return createPromise
+
+    _joinClientToChannel: (clientSocket, channelData, requestedChannelPassword) ->
+        # Check channel password
+        if (requestedChannelPassword or '') isnt (channelData.password or '')
+            throw db.createValidationError('Wrong password')
+
+        # Get/create channel instance
+        if channelData.irc_channel
+            channel = BotChannel.getInstance(channelData)
+            @_addGameBotToChannel(channelData.game_id, channel)
+        else
+            channel = Channel.getInstance(channelData)
+
+        # Let client join the channel
+        channel.addClient(clientSocket)
 
 
 ## Export class
