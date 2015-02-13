@@ -7,6 +7,21 @@ class this.Translation
         'server_msg.illegal_length_of_channel_name': 'The requested channel name is too short or too long!'
         'server_msg.channel_password_too_short': 'The requested channel password is too short!'
         'server_msg.channel_password_too_long': 'The requested channel password is too long!'
+        'server_msg.invalid_user_data': 'Invalid user data!'
+        'server_msg.unknown_user': 'Unknown user!'
+        'server_msg.invalid_token': 'Invalid token!'
+        'server_msg.reached_channel_limit': 'You reached the limit for self-created channels! Please delete other channels first.'
+        'server_msg.wrong_password': 'Wrong channel password!'
+
+        'manage_msg.loading_start': 'Loading...'
+        'manage_msg.connect_success': 'Connection established!'
+        'manage_msg.connect_error': 'Connection error: $error$'
+        'manage_msg.connect_lost': 'Connection lost! Server may quit'
+        'manage_msg.auth_start': 'Authenticating...'
+        'manage_msg.auth_success': 'Authentication successful!'
+        'manage_msg.auth_failed': 'Authentication failed! $reason$'
+        'manage_msg.welcome_message': 'Welcome message: $message$'
+        'manage_msg.channel_join_failed': 'Channel join failed! $reason$'
 
         'msg.server_connection_lost': 'Error: Lost connection to server! Waiting for reconnect...'
         'msg.channel_joined': 'Joined $channel$'
@@ -23,9 +38,11 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ has been kicked from server by $actor$, reason: $reason$'
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
         'msg.actor_changed_a_mode': '$actor$ set channel mode $mode_event$'
+
         'info.start_of_chat_history': 'Start of chat history ($start$ - $end$)'
         'info.end_of_chat_history': 'End of chat history ($start$ - $end$)'
         'info.unknown': 'unknown'
+
         'label.current_number_of_players': 'Players online'
         'label.irc_channel_name': 'IRC'
         'label.channel_name': 'Channel name'
@@ -40,15 +57,23 @@ class this.Translation
         'server_msg.illegal_length_of_channel_name': 'Der angeforderte Channel-Name ist zu kurz oder zu lang!'
         'server_msg.channel_password_too_short': 'Das angeforderte Channel-Passwort ist zu kurz!'
         'server_msg.channel_password_too_long': 'Das angeforderte Channel-Passwort ist zu lang!'
+        'server_msg.invalid_user_data': 'Ungültige Benutzerdaten!'
+        'server_msg.unknown_user': 'Unbekannter Benutzer!'
+        'server_msg.invalid_token': 'Ungültiges Token!'
+        'server_msg.reached_channel_limit': 'Du hast das Limit für selbst erstellte Channels erreicht! Lösche bitte bestehende Channels vorher.'
+        'server_msg.wrong_password': 'Das Channel-Passwort ist falsch!'
 
-        # Invalid user data
-        # Unknown user
-        # Invalid token
+        'manage_msg.loading_start': 'Initialisierung läuft...'
+        'manage_msg.connect_success': 'Verbindung zum Server hergestellt!'
+        'manage_msg.connect_error': 'Verbindungsabbruch: $error$'
+        'manage_msg.connect_lost': 'Verbindung zum Server abgerissen! Server wurde eventuell beendet.'
+        'manage_msg.auth_start': 'Anmeldung läuft...'
+        'manage_msg.auth_success': 'Anmeldung erfolgreich!'
+        'manage_msg.auth_failed': 'Anmeldung fehlgeschlagen! $reason$'
+        'manage_msg.welcome_message': 'Willkommensnachricht: $message$'
+        'manage_msg.channel_join_failed': 'Channel-Beitritt fehlgeschlagen! $reason$'
 
-        # Reached channel limit
-        # Wrong password
-
-        'msg.server_connection_lost': 'Fehler: Verbindung zum Server verloren! Warten auf Reconnect...'
+        'msg.server_connection_lost': 'Fehler: Verbindung zum Server abgerissen! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
         'msg.new_channel_topic.authorless': 'Ein neues Channel-Thema wurde gesetzt: $topic$'
@@ -63,9 +88,11 @@ class this.Translation
         'msg.user_killed_from_server': '$user$ wurde von $actor$ vom Server geworfen, Grund: $reason$'
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'
         'msg.actor_changed_a_mode': '$actor$ setzt Channel-Modus: $mode_event$'
+
         'info.start_of_chat_history': 'Beginn des Chatverlaufs ($start$ - $end$)'
         'info.end_of_chat_history': 'Ende des Chatverlaufs ($start$ - $end$)'
         'info.unknown': 'Unbekannt'
+
         'label.current_number_of_players': 'Spieler online'
         'label.irc_channel_name': 'IRC'
         'label.channel_name': 'Channel-Name'
@@ -80,7 +107,7 @@ class this.Translation
 
     # Returns the translations for a text with given key and replaces placeholders by given data
     @get: (key, data) ->
-        text = localTexts[key] or ''
+        text = localTexts[key] or "{Missing text for key: #{key}}"
 
         if data?
             for name, val of data
@@ -90,10 +117,9 @@ class this.Translation
 
     # Returns the translations for the given server message
     @getForServerMessage: (message) ->
-        # TODO
-        # Create key from message (all lower case, spaces replaced by underscores, prefixed);
-        # fallback to original message, if translation cannot be found
-
+        key_part = message.toLowerCase().replace(/[ ]/g, '_')
+        text = localTexts["server_msg.#{key_part}"] or message
+        return text
 
     # Returns the browser language code
     @getLangCode: ->

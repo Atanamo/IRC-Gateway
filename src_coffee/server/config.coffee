@@ -57,7 +57,7 @@ module.exports =
     IRC_NONGAME_CHANNEL_PREFIX: '#igw_ingame_'
     #IRC_LOCAL_CHANNEL_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
-    INTERN_GLOBAL_CHANNEL_TITLE: "IRC (#{ircGlobalChannel})"
+    INTERN_GLOBAL_CHANNEL_TITLE: 'Community IRC'
     INTERN_GLOBAL_CHANNEL_NAME: 'irc_channel'
     INTERN_GAME_CHANNEL_PREFIX: 'galaxy_'
     INTERN_NONGAME_CHANNEL_PREFIX: 'channel_'  # Must differ from INTERN_GAME_CHANNEL_PREFIX

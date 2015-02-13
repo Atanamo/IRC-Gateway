@@ -9,6 +9,7 @@ class this.SocketClient
     serverPort: 0
     instanceData: null
     identityData: null
+    lastMessageSentStamp: 0
 
     constructor: (@chatController, @serverIP, @serverPort, @instanceData) ->
 
@@ -44,33 +45,40 @@ class this.SocketClient
     #
 
     _handleServerConnect: =>
-        @chatController.handleServerMessage('Connection established!')
-        @chatController.handleServerMessage('Authenticating...')
+        @chatController.handleServerMessage(Translation.get('manage_msg.connect_success'))
+        @chatController.handleServerMessage(Translation.get('manage_msg.auth_start'))
         @_sendAuthRequest()
 
     _handleServerDisconnect: (errorMsg) =>
         @identityData = null
         if errorMsg?
-            @chatController.handleServerMessage('Connection error: ' + errorMsg, true)
+            serverText = Translation.getForServerMessage(errorMsg)
+            text = Translation.get('manage_msg.connect_error', error: serverText)
+            @chatController.handleServerMessage(text, true)
             console.error 'Connection error:', errorMsg
         else
-            @chatController.handleServerMessage('Connection lost! Server may quit', true)
+            @chatController.handleServerMessage(Translation.get('manage_msg.connect_lost'), true)
         @chatController.handleServerDisconnect()
 
     _handleServerAuthAck: (identityData) =>
         @identityData = identityData
-        @chatController.handleServerMessage('Authentication successful!')
+        @chatController.handleServerMessage(Translation.get('manage_msg.auth_success'))
 
     _handleServerAuthFail: (errorMsg) =>
-        @chatController.handleServerMessage('Authentication failed!', true)
-        @chatController.handleServerMessage('Reason: ' + errorMsg, true)
+        serverText = Translation.getForServerMessage(errorMsg)
+        text = Translation.get('manage_msg.auth_failed', reason: serverText)
+        @chatController.handleServerMessage(text, true)
 
-    _handleServerWelcome: (text) =>
-        @chatController.handleServerMessage('Welcome message: ' + text)
+    _handleServerWelcome: (welcomeMsg) =>
+        serverText = Translation.getForServerMessage(welcomeMsg)
+        text = Translation.get('manage_msg.welcome_message', message: serverText)
+        @chatController.handleServerMessage(text)
 
     _handleChannelJoinFail: (errorMsg) =>
-        # TODO: Translate
-        @chatController.handleServerMessage('Channel join failed: ' + errorMsg, true)
+        serverText = Translation.getForServerMessage(errorMsg)
+        text = Translation.get('manage_msg.channel_join_failed', reason: serverText)
+        @chatController.handleServerMessage(text, true)
+
 
     _handleChannelJoined: (channel, timestamp, data) =>
         isOpeningJoin = @chatController.handleChannelJoined(channel, timestamp, data)
@@ -118,6 +126,7 @@ class this.SocketClient
         @_simplifyUserIdentityData(data, 'sender')
         @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelMessage(channel, timestamp, data)
+        @lastMessageSentStamp = 0 if data.isOwn
 
     _handleChannelNotice: (channel, timestamp, data) =>
         @_simplifyUserIdentityData(data, 'sender')
@@ -140,6 +149,10 @@ class this.SocketClient
         @socket.emit 'history#' + channel
 
     sendMessage: (channel, messageText) ->
+        # Ignore, if last message had not been returned from server yet, but was sent since 10 seconds
+        return if @lastMessageSentStamp + 10000 > (new Date()).getTime()
+        # Send message to server
+        @lastMessageSentStamp = (new Date()).getTime()
         @socket.emit 'message#' + channel, messageText
 
     sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->

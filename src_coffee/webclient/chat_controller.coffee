@@ -98,7 +98,7 @@ class this.ChatController
         @ui.multilangContents.each (idx, element) =>
             textElem = $(element)
             translatedText = Translation.get(textElem.data('content'))
-            textElem.html(translatedText) if translatedText
+            textElem.text(translatedText) if translatedText
 
 
     #
@@ -227,9 +227,10 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
             tabPage.hide()
 
-        # Print join message to tab
+        # Print join message to new tab and server tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
+        @handleServerMessage(noticeText)
 
         # Set IRC channel name
         @_setIrcChannelNameToTab(tabPage, ircChannelName) if ircChannelName?
