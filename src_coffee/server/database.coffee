@@ -246,6 +246,7 @@ class Database
     # Returns a list of channels, which should be mirrored to IRC - each by only one bot. This excludes the global channel.
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
     #   `game_id` (The id of the game, the bot to be used belongs to),
+    #   `creator_id` (The id of the user, who created the channel),
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
     #   `password` (The password for joining the channel - not encrypted),
@@ -254,11 +255,12 @@ class Database
     #   The list may be empty, if no appropriate channels exist.
     getSingleBotChannels: ->
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
-                       `GalaxyID` AS `game_id`, `C`.`Title` AS `title`, `Password` AS `password`, 
-                       `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
-                WHERE `C`.`IrcChannel` IS NOT NULL
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
+                       `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
+                       `Title` AS `title`, `Password` AS `password`,
+                       `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
+                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                WHERE `IrcChannel` IS NOT NULL
               "
         return @_readMultipleData(sql)
 
@@ -284,6 +286,7 @@ class Database
     # @param channelTitle [string] The title of the requested channel (is allowed to contain spaces, etc.).
     # @return [promise] A promise, resolving to a data map with keys
     #   `game_id` (The id of the game, a channel belongs to - should normally equal the given idGame),
+    #   `creator_id` (The id of the user, who created the channel),
     #   `name` (The unique name of the channel - used internally),
     #   `title` (The display name of the channel - should normally equal the given title),
     #   `password` (The password for joining the channel - not encrypted),
@@ -292,8 +295,9 @@ class Database
     #   If the read data set is empty, the promise is rejected. 
     getChannelDataByTitle: (idGame, channelTitle) ->
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`, 
-                       `GalaxyID` AS `game_id`, `Title` AS `title`, `Password` AS `password`, 
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
+                       `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
+                       `Title` AS `title`, `Password` AS `password`,
                        `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
                 FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
                 WHERE `GalaxyID`=#{@_toQuery(idGame)}
@@ -306,6 +310,7 @@ class Database
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
+    #   `creator_id` (Optional: The id of the user, who created the channel),
     #   `irc_channel` (Optional: The exact name of an IRC channel to mirror) and
     #   `is_public` (TRUE, if the channel is meant to be public and therefor joined player's have to be hidden; else FALSE).
     #   The list may be empty, if no channels are joined by the client.
@@ -323,8 +328,9 @@ class Database
         # Read non-default channels
         idUser = clientIdentity.getUserID()
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`, 
-                       `C`.`Title` AS `title`, `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
+                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`,
+                       `C`.`CreatorUserID` AS `creator_id`, `C`.`Title` AS `title`,
+                       `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
                 FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
                 JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
                   ON `CJ`.`ChannelID`=`C`.`ID`
@@ -465,19 +471,21 @@ class Database
     #   `game_id` (The id of the game, a channel should belong to),
     #   `title` (The display name for the channel - is allowed to contain spaces, etc.),
     #   `password` (The password for joining the channel - not encrypted),
-    #   `is_for_irc` (TRUE, if the channel should to be mirrored to IRC; else FALSE - Defaults to FALSE) and
-    #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE - Defaults to FALSE).
+    #   `is_for_irc` (TRUE, if the channel should to be mirrored to IRC; else FALSE - defaults to FALSE) and
+    #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE - defaults to FALSE).
     # @return [promise] A promise, resolving to a data map with keys equal to the given object, but complemented with keys
+    #   `creator_id` (The id of the user, who created the channel - should equal user id of given identity),
     #   `name` (The unique name of the channel - used internally) and
-    #   `irc_channel` (The exact name of an IRC channel to mirror - Defaults to null, if `is_for_irc` was false).
+    #   `irc_channel` (The exact name of an IRC channel to mirror - defaults to null, if `is_for_irc` was false).
     #   If the channel could not be created, the promise is rejected. 
     createChannelByData: (clientIdentity, channelData) ->
         # Create the channel
-        idUser = clientIdentity.getUserID()
+        userID = clientIdentity.getUserID()
+        channelData.creator_id = userID
         sql = "
                 INSERT INTO `#{Config.SQL_TABLES.CHANNEL_LIST}` SET
                     `GalaxyID`=#{@_toQuery(channelData.game_id)},
-                    `CreatorUserID`=#{@_toQuery(idUser)},
+                    `CreatorUserID`=#{@_toQuery(userID)},
                     `Title`=#{@_toQuery(channelData.title)},
                     `Password`=#{@_toQuery(channelData.password)},
                     `IsPublic`=#{@_toQuery(channelData.is_public)}

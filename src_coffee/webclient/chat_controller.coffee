@@ -26,6 +26,8 @@ class this.ChatController
         channelPasswordInput: '#channelPasswordInput'
         channelFlagPublic: '#channelFlagPublic'
         channelFlagIRC: '#channelFlagIRC'
+        channelLeaveButton: '.channelLeaveButton'
+        channelDeleteButton: '.channelDeleteButton'
         chatForm: '.chatForm'
         chatInput: '.chatForm .chatInput'
         tabsystemViewport: '#tabsystem .tabsystemViewport'
@@ -50,6 +52,8 @@ class this.ChatController
         'channelCreateForm submit': '_handleGuiChannelCreateSubmit'
         'chatForm submit': '_handleGuiMessageSubmit'
         'tabsystemHeaders click': '_handleGuiTabClick'
+        'channelLeaveButton click': '_handleGuiChannelLeave'
+        'channelDeleteButton click': '_handleGuiChannelDelete'
 
 
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
@@ -121,13 +125,20 @@ class this.ChatController
 
         @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
 
+    _handleGuiChannelDelete: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+        @socketHandler.sendChannelDeleteRequest(channel)
+
+    _handleGuiChannelLeave: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+        @socketHandler.sendChannelLeaveRequest(channel)
+
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
-        messageText = @activeTabPage?.find(@gui.chatInput).val().trim()
         channel = @activeTabPage?.data('channel') or ''
-
-        if messageText isnt '' and channel isnt ''
-            @socketHandler.sendMessage(channel, messageText)
+        @socketHandler.sendMessage(channel)
 
     _handleGuiTabClick: (event) =>
         tabHeader = $(event.currentTarget)
@@ -226,6 +237,12 @@ class this.ChatController
             tabPage = @_getChannelTabPage(channel)
             tabPage.hide()
 
+            # Remove invalid buttons
+            unless data.isCustom
+                tabPage.find(@gui.channelLeaveButton).remove()
+            unless data.creatorID is @instanceData?.userID
+                tabPage.find(@gui.channelDeleteButton).remove()
+
         # Print join message to new tab and server tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
@@ -246,6 +263,9 @@ class this.ChatController
         @ui.tabsystemViewport.find("##{tabID}").remove()
         @ui.tabsystemHeaderList.find("[data-id=#{tabID}]").remove()
         @_updateGuiBindings()
+
+        # Show server tab
+        @ui.tabsystemHeaders[0]?.click()
 
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)

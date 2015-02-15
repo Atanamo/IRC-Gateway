@@ -1,4 +1,8 @@
 
+## Include app modules
+Config = require './config'
+
+
 ## Basic abstraction of a socket.io room.
 ## Instances have to be created by static method `getInstance()`:
 ## Each channel only is allowed to have one instance - meaning to have a singleton per channel name.
@@ -13,11 +17,13 @@ class Channel
     uniqueClientsMap: null
 
     name: 'default'
+    creatorID: 0
     isPublic: false
     title: ''
 
     eventNameMsg: 'message#unnamed'
     eventNameLeave: 'leave#unnamed'
+    eventNameDelete: 'delete#unnamed'
     eventNameHistory: 'history#unnamed'
 
 
@@ -25,6 +31,7 @@ class Channel
         @_updateUniqueClientsMap()  # Initialize map of unique clients
 
         @name = data.name or @name
+        @creatorID = data.creator_id or @creatorID
         @isPublic = data.is_public or @isPublic
         @title = data.title or @name
 
@@ -32,6 +39,7 @@ class Channel
 
         @eventNameMsg = 'message#' + @name
         @eventNameLeave = 'leave#' + @name
+        @eventNameDelete = 'delete#' + @name
         @eventNameHistory = 'history#' + @name
 
     @getInstance: (channelData) ->
@@ -62,7 +70,8 @@ class Channel
 
     _registerListeners: (clientSocket) ->
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
-        clientSocket.on @eventNameLeave, => @_handleClientLeave(clientSocket)
+        clientSocket.on @eventNameLeave, (isClose) => @_handleClientLeave(clientSocket, isClose)
+        clientSocket.on @eventNameDelete, => @_handleClientDeleteRequest(clientSocket)
         clientSocket.on @eventNameHistory, => @_handleClientHistoryRequest(clientSocket)
         clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
 
@@ -73,7 +82,9 @@ class Channel
 
         channelInfo =
             title: @title
+            creatorID: @creatorID
             isPublic: @isPublic
+            isCustom: @name.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
             ircChannelName: @ircChannelName  # Only available, when called from sub class BotChannel
 
         @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
@@ -106,7 +117,7 @@ class Channel
 
         return true
 
-    removeClient: (clientSocket, isDisconnect=false) ->
+    removeClient: (clientSocket, isClose=false) ->
         return false unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
 
         # Unregister events for this channel
@@ -128,12 +139,12 @@ class Channel
             if @isPublic
                 @_sendUserNumberToRoom()
             else
-                leaveAction = if isDisconnect then 'quit' else 'part'
+                leaveAction = if isClose then 'quit' else 'part'
                 @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
                 @_sendUserListToRoom()
 
             # Permanently unregister client from channel
-            unless isDisconnect
+            unless isClose
                 db.removeClientFromChannel(clientSocket.identity, @name)
 
         # Remove and close instance, if last client left
@@ -226,16 +237,20 @@ class Channel
         return if messageText is ''
         @_sendMessageToRoom(clientSocket.identity, messageText)
 
-    _handleClientLeave: (clientSocket, isDisconnect=false) =>
-        # TODO
-        # Only allow parting on channels not created by the client
-
-        log.debug "Removing client from channel '#{@name}' (by disconnect: #{isDisconnect}):", clientSocket.identity
-        @removeClient(clientSocket, isDisconnect)
-
     _handleClientHistoryRequest: (clientSocket) =>
         log.debug "Client requests chat history for '#{@name}'"
         @_sendHistoryToSocket(clientSocket)
+
+    _handleClientLeave: (clientSocket, isClose=false) =>
+        # TODO
+        # Only allow parting on channels not created by the client
+
+        log.debug "Removing client from channel '#{@name}' (by disconnect: #{isClose}):", clientSocket.identity
+        @removeClient(clientSocket, isClose)
+
+    _handleClientDeleteRequest: (clientSocket) =>
+        # TODO
+        log.debug "Deleting channel '#{@name}' by client #{clientSocket.identity.getName()}"
 
 
     #

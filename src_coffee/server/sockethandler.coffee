@@ -81,9 +81,7 @@ class SocketHandler
             clientSocket.emit 'welcome', "Hello #{clientIdentity.getName()}, you are now online!"
 
             # Add client to its channels
-            @_acceptNewClient(clientSocket)
-
-            return  # Explicit return to not return promise from @_acceptNewClient()
+            return @_acceptNewClient(clientSocket)
 
         authPromise = authPromise.fail (err) =>
             throw err unless err.isValidation
@@ -104,7 +102,7 @@ class SocketHandler
                 channel.addClient(clientSocket, true)
         promise = promise.fail (err) =>
             throw err unless err.isDatabaseResult
-        promise.done()
+        return promise
 
 
     _handleClientChannelJoin: (clientSocket, channelData) =>

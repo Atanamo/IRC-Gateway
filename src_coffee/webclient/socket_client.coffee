@@ -155,6 +155,12 @@ class this.SocketClient
         @lastMessageSentStamp = (new Date()).getTime()
         @socket.emit 'message#' + channel, messageText
 
+    sendChannelLeaveRequest: (channel) ->
+        @socket.emit 'leave#' + channel
+
+    sendChannelDeleteRequest: (channel) ->
+        @socket.emit 'delete#' + channel
+
     sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->
         channelData = 
             title: channelName or ''

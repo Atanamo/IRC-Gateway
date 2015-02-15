@@ -51,6 +51,8 @@ class this.Translation
         'label.channel_password': 'Channel password'
         'label.channel_flag_public': 'Hide joined users'
         'label.channel_flag_irc': 'Mirror channel to IRC'
+        'label.button.leave_channel': 'Leave channel'
+        'label.button.delete_channel': 'Delete channel'
     }
 
     # German translated texts
@@ -103,6 +105,8 @@ class this.Translation
         'label.channel_password': 'Channel-Passwort'
         'label.channel_flag_public': 'Beigetretene User verstecken'
         'label.channel_flag_irc': 'Channel ins IRC spiegeln'
+        'label.button.leave_channel': 'Channel verlassen'
+        'label.button.delete_channel': 'Channel löschen'
     }
 
     # Currently used translations
