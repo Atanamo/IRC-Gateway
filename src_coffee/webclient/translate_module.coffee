@@ -45,6 +45,8 @@ class this.Translation
 
         'label.current_number_of_players': 'Players online'
         'label.irc_channel_name': 'IRC'
+        'label.channel_join_options': 'Join or create channel'
+        'label.channel_creation_options': 'Further options for new channel'
         'label.channel_name': 'Channel name'
         'label.channel_password': 'Channel password'
         'label.channel_flag_public': 'Hide joined users'
@@ -95,6 +97,8 @@ class this.Translation
 
         'label.current_number_of_players': 'Spieler online'
         'label.irc_channel_name': 'IRC'
+        'label.channel_join_options': 'Channel beitreten oder neu erstellen'
+        'label.channel_creation_options': 'Zusatzoptionen für neuen Channel'
         'label.channel_name': 'Channel-Name'
         'label.channel_password': 'Channel-Passwort'
         'label.channel_flag_public': 'Beigetretene User verstecken'

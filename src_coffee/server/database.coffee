@@ -561,7 +561,7 @@ class Database
               "
         return @_sendQuery(sql)
 
-    # Deletes the given client for having joined the given channel.
+    # Deletes the given client from having joined the given channel.
     # @param clientIdentity [ClientIdentity] The identity of the client.
     # @param channelName [string] The name of the channel.
     # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.

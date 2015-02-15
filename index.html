@@ -132,11 +132,26 @@
             border-bottom: solid 1px #aaa;
         }
 
-        form {
-            margin-top: 7px;
-        }
         form.inactive {
             display: none;
+        }
+
+        .formSection {
+            margin-top: 7px;
+        }
+
+        .formSection .sectionHeader {
+            font-size: 1em;
+            margin: 5px 0;
+        }
+
+        .formSection .inputContainer label {
+            display: inline-block;
+            min-width: 130px;
+        }
+
+        .formSection .inputContainer label:first-child:after {
+            content: ':';
         }
 
     </style>
@@ -164,28 +179,38 @@
     </div>
 
     <form id="chatForm" action="#" class="inactive">
-        <input type="text" id="chatInput">
-        <input type="submit" id="chatSubmitButton">
+        <div class="formSection">
+            <input type="text" id="chatInput">
+            <input type="submit" id="chatSubmitButton">
+        </div>
     </form>
 
-    <form id="channelCreateForm" action="#" class="active">
-        <div class="inputContainer">
-            <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
-            <input type="text" id="channelNameInput" required maxlength="30">
+    <form id="channelCreateForm" action="#">
+        <div class="formSection">
+            <h2 class="sectionHeader" data-content="label.channel_join_options"></h2>
+            <div class="inputContainer">
+                <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
+                <input type="text" id="channelNameInput" required maxlength="30">
+            </div>
+            <div class="inputContainer">
+                <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
+                <input type="text" id="channelPasswordInput" maxlength="20">
+            </div>
         </div>
-        <div class="inputContainer">
-            <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
-            <input type="text" id="channelPasswordInput" maxlength="20">
+        <div class="formSection">
+            <h2 class="sectionHeader" data-content="label.channel_creation_options"></h2>
+            <div class="inputContainer">
+                <input type="checkbox" id="channelFlagPublic">
+                <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
+            </div>
+            <div class="inputContainer">
+                <input type="checkbox" id="channelFlagIRC">
+                <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
+            </div>
         </div>
-        <div class="inputContainer">
-            <input type="checkbox" id="channelFlagPublic">
-            <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
+        <div class="formSection">
+            <input type="submit" id="channelCreateSubmitButton">
         </div>
-        <div class="inputContainer">
-            <input type="checkbox" id="channelFlagIRC">
-            <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
-        </div>
-        <input type="submit" id="channelCreateSubmitButton">
     </form>
 
     <div id="tabPageSkeletonContainer" style="display:none;">
