@@ -330,6 +330,7 @@ class Database
                   ON `CJ`.`ChannelID`=`C`.`ID`
                 WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
                   AND `C`.`GalaxyID`=#{@_toQuery(idGame)}
+                ORDER BY `C`.`ID` ASC
               "
         channelsPromise = @_readMultipleData(sql)
 
@@ -340,13 +341,10 @@ class Database
         resultPromise = channelsPromise.then (channelListData) =>
             list = channelListData
             return gamePromise.then (gameChannelData) =>
-                list.push(gameChannelData) if gameChannelData?
+                list.unshift(gameChannelData) if gameChannelData?
                 return globalChannelPromise.then (defaultChannelData) =>
-                    list.push(defaultChannelData)
+                    list.unshift(defaultChannelData)
                     return list
-        resultPromise = resultPromise.then (channelListData) =>
-            return channelListData.reverse()  # Reverse channel order: Default channel first, then galaxy, then individual ones...
-
         return resultPromise
 
     # Returns the number of channels, which were created by the given client.
@@ -513,6 +511,7 @@ class Database
 
     # Deletes all related data (logs, joinings, etc.) of all channels, which belong to the given game.
     # @param gameID [int] The id of the game world.
+    # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
     deleteChannelsByGame: (gameID) ->
         internalGameChannel = "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameID}"
 
@@ -538,23 +537,44 @@ class Database
         joinsPromise = @_sendQuery(sql)
 
         # Delete channels
-        Q.all([logsPromise, joinsPromise]).then =>
+        promise = Q.all([logsPromise, joinsPromise]).then =>
             sql = "
                     DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                   "
-            @_sendQuery(sql)
+            return @_sendQuery(sql)
 
+        return promise
 
-
-    addClientToChannel: (client, channelName) ->
+    # Saves the given client for having joined the given channel.
+    # @param clientIdentity [ClientIdentity] The identity of the client.
+    # @param channelName [string] The name of the channel.
+    # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
+    addClientToChannel: (clientIdentity, channelName) ->
         return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be joined explicitly
         channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
-        # TODO
+        userID = clientIdentity.getUserID()
+        sql = "
+                INSERT INTO `#{Config.SQL_TABLES.CHANNEL_JOININGS}` SET
+                    `UserID`=#{@_toQuery(userID)},
+                    `ChannelID`=#{@_toQuery(channelID)}
+              "
+        return @_sendQuery(sql)
 
-    removeClientFromChannel: (client, channelName) ->
-        # TODO
-        # Only allow parting on channels not created by the client
+    # Deletes the given client for having joined the given channel.
+    # @param clientIdentity [ClientIdentity] The identity of the client.
+    # @param channelName [string] The name of the channel.
+    # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
+    removeClientFromChannel: (clientIdentity, channelName) ->
+        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be parted explicitly
+        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        userID = clientIdentity.getUserID()
+        sql = "
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
+                WHERE `UserID`=#{@_toQuery(userID)}
+                  AND `ChannelID`=#{@_toQuery(channelID)}
+              "
+        return @_sendQuery(sql)
 
 
 

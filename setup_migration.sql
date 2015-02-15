@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS `chat - channels` (
   `IrcChannel` tinytext,
   `IsPublic` tinyint(1) unsigned NOT NULL,
   PRIMARY KEY (`ID`),
-  KEY `GalaxyID` (`GalaxyID`)
+  KEY `GalaxyID` (`GalaxyID`),
+  KEY `CreatorUserID` (`CreatorUserID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='Stored custom/non-default channels';
 
 -- --------------------------------------------------------
@@ -30,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `chat - channels` (
 --
 
 CREATE TABLE IF NOT EXISTS `chat - channeljoins` (
-  `ID` int(10) unsigned NOT NULL,
+  `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `UserID` int(10) unsigned NOT NULL,
   `ChannelID` int(10) unsigned NOT NULL,
   PRIMARY KEY (`UserID`,`ChannelID`),

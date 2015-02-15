@@ -96,7 +96,7 @@ class Channel
 
             # Permanently register client for channel
             unless isRejoin
-                db.addClientToChannel(clientSocket, @name)
+                db.addClientToChannel(clientSocket.identity, @name)
         else
             # Send initial user list to client
             if @isPublic
@@ -132,9 +132,9 @@ class Channel
                 @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
                 @_sendUserListToRoom()
 
-            # Permanently unregister client for channel
+            # Permanently unregister client from channel
             unless isDisconnect
-                db.removeClientFromChannel(clientSocket, @name)
+                db.removeClientFromChannel(clientSocket.identity, @name)
 
         # Remove and close instance, if last client left
         @_checkForDestroy()
@@ -227,6 +227,9 @@ class Channel
         @_sendMessageToRoom(clientSocket.identity, messageText)
 
     _handleClientLeave: (clientSocket, isDisconnect=false) =>
+        # TODO
+        # Only allow parting on channels not created by the client
+
         log.debug "Removing client from channel '#{@name}' (by disconnect: #{isDisconnect}):", clientSocket.identity
         @removeClient(clientSocket, isDisconnect)
 
