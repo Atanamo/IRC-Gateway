@@ -463,5 +463,3 @@ class SchizoBot
 # Export class
 module.exports = SchizoBot
 
-
-

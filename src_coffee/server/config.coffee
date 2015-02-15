@@ -1,27 +1,28 @@
-
+##
 ## CONFIG ##
+##
 
-# Bot sub config
-botNickPrefix = '_Galaxy'       # Prefix for bot's nick name on IRC
-botName = 'SGR GalaxyBot'       # Bot's official name
-botVersion = 'v1.2'             # Bot's version number string
-botLastUpdate = '2015-02-13'    # Update info for bot version
-
-# IRC sub config
-ircServerIP = 'underworld1.no.quakenet.org'
-ircServerPort = 6667
-ircGlobalChannel = '#sgr2'
-
-# MySQL sub config
+# MySQL access config
 mysqlServerIP = '127.0.0.1'
 mysqlServerPort = 3306
-mysqlUser = 'sgr'
+mysqlUser = 'USERNAME'
 mysqlPassword = 'SECRET'
 mysqlCommonDatabase = 'irc_gateway'      # The name of the database in which the app stores its own tables and/or core tables of the game
 mysqlGameDatabasePrefix = 'game_world_'  # The name prefix of the database in which tables of a game world can be found (To be appended with a database id)
 
+# IRC access config
+ircServerIP = 'underworld1.no.quakenet.org'
+ircServerPort = 6667
+ircGlobalChannel = '#irc_gateway_test'
 
-# Main config
+# Bot sub config
+botNickPrefix = '_Game'       # Prefix for bot's nick name on IRC
+botName = 'GameCommBot'       # Bot's official name
+botVersion = 'v1.2'           # Bot's version number string
+botLastUpdate = '2015-02-13'  # Update info for bot version
+
+
+## Main config
 module.exports =
 
     DEBUG_ENABLED: true    # Set to true, to enable some debug output
@@ -41,7 +42,7 @@ module.exports =
 
     BOT_RECONNECT_DELAY: 61000      # Delay time in milliseconds, for reconnecting to server, when connection has been refused
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
-    BOT_USERNAME_PATTERN: "Galaxy<id>Bot"                     # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
+    BOT_USERNAME_PATTERN: "#{botName}_<id>"                   # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
     BOT_VERSION_STRING: "#{botName}, #{botVersion} " +        # The version string of the Bot, for requests on IRC
                         "(Last update: #{botLastUpdate}) " +
@@ -52,14 +53,12 @@ module.exports =
 
     IRC_SERVER_IP: ircServerIP
     IRC_SERVER_PORT: ircServerPort
-
     IRC_GLOBAL_CHANNEL: ircGlobalChannel
     IRC_NONGAME_CHANNEL_PREFIX: '#igw_ingame_'
-    #IRC_LOCAL_CHANNEL_PASSWORD: '!This1Is2The3Ultimate4PW5!'
 
     INTERN_GLOBAL_CHANNEL_TITLE: 'Community IRC'
-    INTERN_GLOBAL_CHANNEL_NAME: 'irc_channel'
-    INTERN_GAME_CHANNEL_PREFIX: 'galaxy_'
+    INTERN_GLOBAL_CHANNEL_NAME: 'community_channel'
+    INTERN_GAME_CHANNEL_PREFIX: 'game_'
     INTERN_NONGAME_CHANNEL_PREFIX: 'channel_'  # Must differ from INTERN_GAME_CHANNEL_PREFIX
 
     SQL_HOST: mysqlServerIP
@@ -71,9 +70,11 @@ module.exports =
     SQL_SOCKET_PATH: '/var/run/mysqld/mysqld.sock'  # Define this path on unix systems. Find out the path using 'mysqladmin variables | grep sock'
 
     SQL_TABLES:
-        GAMES_LIST: 'game_worlds'         # The name of the table in common db, which contains the list of game worlds
-        PREFIX_GAME_TABLE: 'game_'        # The name prefix of tables in game db, which contain data of a game world's contents
-        POSTFIX_GAME_PLAYERS: '_players'  # The name postfix of the game table, which contains the list of a game world's players
-        CHANNEL_LIST: 'chat - channels'
-        CHANNEL_JOININGS: 'chat - channeljoins'
-        CHANNEL_LOGS: 'chat - channellogs'
+        GAMES_LIST: 'game_worlds'                # The name of the table in common db, which contains the list of game worlds
+        PREFIX_GAME_TABLE: 'game_'               # The name prefix of tables in game db, which contain data of a game world's contents
+        POSTFIX_GAME_PLAYERS: '_players'         # The name postfix of the game table, which contains the list of a game world's players
+
+        CHANNEL_LIST: 'chat - channels'          # The name of the table for storing non-game/custom channels (Must be created, see database_setup.sql)
+        CHANNEL_JOININGS: 'chat - channeljoins'  # The name of the table for storing user joins to custom channels (Must be created, see database_setup.sql)
+        CHANNEL_LOGS: 'chat - channellogs'       # The name of the table for storing chat histories of all channels (Must be created, see database_setup.sql)
+

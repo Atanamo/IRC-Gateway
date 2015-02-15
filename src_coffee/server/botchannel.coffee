@@ -7,6 +7,7 @@ ClientIdentity = require './clientidentity'
 
 ## Extended abstraction of a socket.io room, which is mirrored to an IRC channel.
 ## Communication to IRC is handled by multiple Bots, each representing a game instance.
+## An instance of a BotChannel destroys itself after all clients and bots have left.
 ##
 ## When a socket client sends a message, it is routed to the bot, that represents the client's game instance.
 ## When a message is triggered on IRC, the respective bot sends it to the associated BotChannel.

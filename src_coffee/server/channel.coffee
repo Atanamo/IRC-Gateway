@@ -1,10 +1,11 @@
 
-## Include app modules
-#Config = require './config'
-
-
 ## Basic abstraction of a socket.io room.
-## If channel is public, it doesn't inform connected clients by a current list of other socket clients.
+## Instances have to be created by static method `getInstance()`:
+## Each channel only is allowed to have one instance - meaning to have a singleton per channel name.
+## An instance destroys itself after all clients have left.
+##
+## Messages to the channel (and other events) are broadcasted to all clients in the channel.
+## Limitation on channels flagged public: Clients get not informed by a current list of other clients in the channel.
 ##
 class Channel
     @_instances: {}
@@ -278,7 +279,6 @@ class Channel
                 userList.push(clientIdentity.toData())
 
         return userList
-
 
 
 

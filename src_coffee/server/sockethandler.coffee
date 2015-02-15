@@ -9,7 +9,11 @@ Channel = require './channel'
 BotChannel = require './botchannel'
 
 
-## Main class
+## Abstraction of a handler for common client request on a socket.io socket.
+## Handles client connects/disconnects, auth requests and channel join/creation requests.
+## Additional channel-specific requests are handled by Channel instances.
+## To be used as singleton.
+##
 class SocketHandler
 
     constructor: (addGameBotToChannelCallback) ->
@@ -183,6 +187,7 @@ class SocketHandler
 
         # Let client join the channel
         channel.addClient(clientSocket)
+
 
 
 ## Export class

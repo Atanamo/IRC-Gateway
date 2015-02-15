@@ -1,29 +1,11 @@
--- ------------------------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------------
 -- This example script sets up all database tables needed for the chat system itself, 
 -- but without tables for game world environment.
--- If you change table names, you have to modify the config (See SQL_TABLES).
--- If you change table structure or similar, you have to modify the queries of the database class.
--- ------------------------------------------------------------------------------------------------
+-- If you change table names, you have to modify the config.
+-- If you change table structure or similar, you have to modify the database class.
+-- -----------------------------------------------------------------------------------
 -- MySQL server version: 5.6.12
--- ------------------------------------------------------------------------------------------------
-
---
--- Scheme for table `chat - channels`
---
-
-CREATE TABLE IF NOT EXISTS `chat - channels` (
-  `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `GalaxyID` tinyint(5) unsigned NOT NULL,
-  `CreatorUserID` int(10) unsigned NOT NULL,
-  `Title` tinytext NOT NULL,
-  `Password` tinytext NOT NULL,
-  `IrcChannel` tinytext,
-  `IsPublic` tinyint(1) unsigned NOT NULL,
-  PRIMARY KEY (`ID`),
-  KEY `GalaxyID` (`GalaxyID`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='Stored custom/non-default channels';
-
--- --------------------------------------------------------
+-- -----------------------------------------------------------------------------------
 
 --
 -- Scheme for table `chat - channeljoins`
@@ -53,4 +35,22 @@ CREATE TABLE IF NOT EXISTS `chat - channellogs` (
   `Timestamp` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`ChannelBufferID`,`ChannelTextID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Current chat history of all channels';
+
+-- --------------------------------------------------------
+
+--
+-- Scheme for table `chat - channels`
+--
+
+CREATE TABLE IF NOT EXISTS `chat - channels` (
+  `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `GalaxyID` tinyint(5) unsigned NOT NULL,
+  `CreatorUserID` int(10) unsigned NOT NULL,
+  `Title` tinytext NOT NULL,
+  `Password` tinytext NOT NULL,
+  `IrcChannel` tinytext,
+  `IsPublic` tinyint(1) unsigned NOT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `GalaxyID` (`GalaxyID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='Stored custom/non-default channels';
 

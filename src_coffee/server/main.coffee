@@ -13,9 +13,6 @@ Database = require './database'
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
-BotChannel = require './botchannel'
-Bot = require './bot'
-
 ## Create library API objects
 app = express()
 server = http.createServer(app)    # Create HTTP server instance

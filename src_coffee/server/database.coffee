@@ -7,14 +7,17 @@ crypto = require 'crypto'
 Config = require './config'
 
 
-## Class definition - Database:
-## Wraps the database of choice.
+## Abstraction of database interactions: Wraps the database of choice.
 ## Provides ready-to-use methods for all needed read/write operations.
 ##
+## Structure:
+## * Common connect/disconnect
+## * Database query helper routines
+## * Data value getters
+## * Interface routines for app queries
+##
 class Database
-
     connection: null
-
 
     connect: ->
         deferred = Q.defer()
@@ -552,7 +555,6 @@ class Database
     removeClientFromChannel: (client, channelName) ->
         # TODO
         # Only allow parting on channels not created by the client
-
 
 
 

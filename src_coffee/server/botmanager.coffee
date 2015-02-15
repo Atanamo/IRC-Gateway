@@ -5,7 +5,10 @@ BotChannel = require './botchannel'
 Bot = require './bot'
 
 
-## Main class
+## Abstraction of a service for watching existence of games.
+## It manages creation and destruction of bots based on the available games.
+## To be used as singleton.
+##
 class BotManager
     isManaging: false
     watcherTimer: null

@@ -11,16 +11,14 @@ getTimestamp = ->
     return "[#{dateTimeString}]"
 
 
-module.exports.info = (text...) ->
-    console.log '#', getTimestamp(), text...
-
-    #gateway_global.db.writeLog()
-
 if Config.DEBUG_ENABLED
     module.exports.debug = (text...) ->
         console.log '=>', getTimestamp(), text...
 else
     module.exports.debug = ->
+
+module.exports.info = (text...) ->
+    console.log '#', getTimestamp(), text...
 
 module.exports.warn = (text, sender='General') ->
     console.warn "! #{getTimestamp()} Warning by #{sender}:", text
