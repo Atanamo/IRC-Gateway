@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `chat - channellogs` (
   `EventTextID` varchar(25) NOT NULL,
   `EventData` text NOT NULL,
   `Timestamp` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`ChannelBufferID`,`ChannelTextID`)
+  PRIMARY KEY (`ChannelTextID`,`ChannelBufferID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Current chat history of all channels';
 
 -- --------------------------------------------------------

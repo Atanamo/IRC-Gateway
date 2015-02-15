@@ -26,8 +26,8 @@ class this.ChatController
         channelPasswordInput: '#channelPasswordInput'
         channelFlagPublic: '#channelFlagPublic'
         channelFlagIRC: '#channelFlagIRC'
-        chatForm: '#chatForm'
-        chatInput: '#chatInput'
+        chatForm: '.chatForm'
+        chatInput: '.chatForm .chatInput'
         tabsystemViewport: '#tabsystem .tabsystemViewport'
         tabsystemHeaderList: '#tabsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
@@ -123,7 +123,7 @@ class this.ChatController
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
-        messageText = @ui.chatInput.val().trim()
+        messageText = @activeTabPage?.find(@gui.chatInput).val().trim()
         channel = @activeTabPage?.data('channel') or ''
 
         if messageText isnt '' and channel isnt ''
@@ -146,9 +146,8 @@ class this.ChatController
         # Show new active tab
         @activeTabPage.show()
 
-        # Toggle usability of input forms
-        @ui.chatForm.toggleClass('inactive', tabID is @ui.tabPageServer.attr('id'))
-        @ui.channelCreateForm.toggleClass('inactive', tabID isnt @ui.tabPageServer.attr('id'))
+        # Focus input field
+        @activeTabPage.find(@gui.chatInput).focus()
 
         # Reset marker for unread messages
         @_resetNewEntryMarkOfTab(@activeTabPage)
@@ -370,7 +369,7 @@ class this.ChatController
 
         if isOwn
             styleClasses += ' own'
-            @ui.chatInput.val('')
+            tabPage.find(@gui.chatInput).val('')
         else
             styleClasses += ' external'
 

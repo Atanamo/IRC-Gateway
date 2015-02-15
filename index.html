@@ -61,21 +61,33 @@
 
         .tabsystemViewport {
             border: 1px solid #aaa;
-            height: 200px;
+            height: 250px;
             overflow: hidden;
             background: #eee;
         }
 
         .tabsystemViewport > div {
             display: flex;
+            flex-flow: column nowrap;
             width: 100%;
             height: 100%;
+        }
+
+        .chatOutputContainer {
+            display: flex;
+            flex: 1;
+            width: 100%;
             padding: 10px;
+        }
+
+        .chatFormContainer {
+            width: 100%;
+            padding: 10px;
+            border-top: solid 1px #aaa;
         }
 
         .chatMessagesContainer,
         .chatUsersContainer {
-            height: 100%;
             overflow-y: scroll;
         }
 
@@ -132,12 +144,22 @@
             border-bottom: solid 1px #aaa;
         }
 
-        form.inactive {
-            display: none;
+
+        form {
+            width: 100%;
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: space-between;
         }
 
         .formSection {
+            width: 50%;
+        }
+        .formSection:nth-child(n+3) {
             margin-top: 7px;
+        }
+        .formSection.right {
+            text-align: right;
         }
 
         .formSection .sectionHeader {
@@ -169,72 +191,79 @@
         </ul>
         <div class="tabsystemViewport">
             <div id="tabPageServer">
-                <div class="chatMessagesContainer">
-                    <ul class="chatMessages">
-                        <li data-content="manage_msg.loading_start">Loading...</li>
-                    </ul>
+                <div class="chatOutputContainer">
+                    <div class="chatMessagesContainer">
+                        <ul class="chatMessages">
+                            <li data-content="manage_msg.loading_start">Loading...</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="chatFormContainer">
+                    <form id="channelCreateForm" action="#">
+                        <div class="formSection">
+                            <h2 class="sectionHeader" data-content="label.channel_join_options"></h2>
+                            <div class="inputContainer">
+                                <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
+                                <input type="text" id="channelNameInput" required maxlength="30">
+                            </div>
+                            <div class="inputContainer">
+                                <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
+                                <input type="text" id="channelPasswordInput" maxlength="20">
+                            </div>
+                        </div>
+                        <div class="formSection">
+                            <h2 class="sectionHeader" data-content="label.channel_creation_options"></h2>
+                            <div class="inputContainer">
+                                <input type="checkbox" id="channelFlagPublic">
+                                <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
+                            </div>
+                            <div class="inputContainer">
+                                <input type="checkbox" id="channelFlagIRC">
+                                <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
+                            </div>
+                        </div>
+                        <div class="formSection">
+                            <input type="submit" id="channelCreateSubmitButton">
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <form id="chatForm" action="#" class="inactive">
-        <div class="formSection">
-            <input type="text" id="chatInput">
-            <input type="submit" id="chatSubmitButton">
-        </div>
-    </form>
-
-    <form id="channelCreateForm" action="#">
-        <div class="formSection">
-            <h2 class="sectionHeader" data-content="label.channel_join_options"></h2>
-            <div class="inputContainer">
-                <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
-                <input type="text" id="channelNameInput" required maxlength="30">
-            </div>
-            <div class="inputContainer">
-                <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
-                <input type="text" id="channelPasswordInput" maxlength="20">
-            </div>
-        </div>
-        <div class="formSection">
-            <h2 class="sectionHeader" data-content="label.channel_creation_options"></h2>
-            <div class="inputContainer">
-                <input type="checkbox" id="channelFlagPublic">
-                <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
-            </div>
-            <div class="inputContainer">
-                <input type="checkbox" id="channelFlagIRC">
-                <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
-            </div>
-        </div>
-        <div class="formSection">
-            <input type="submit" id="channelCreateSubmitButton">
-        </div>
-    </form>
 
     <div id="tabPageSkeletonContainer" style="display:none;">
         <div id="tabPageSkeleton">
-            <div class="chatMessagesContainer">
-                <ul class="chatMessages">
+            <div class="chatOutputContainer">
+                <div class="chatMessagesContainer">
+                    <ul class="chatMessages">
 
-                </ul>
+                    </ul>
+                </div>
+                <div class="chatUsersContainer">
+                    <div class="chatUsersCount">
+                        <span class="title" data-content="label.current_number_of_players"></span>
+                        <span class="value"></span>
+                    </div>
+                    <ul class="chatUsers players">
+
+                    </ul>
+                    <div class="chatChannelName">
+                        <span class="title" data-content="label.irc_channel_name"></span>
+                        <span class="value"></span>
+                    </div>
+                    <ul class="chatUsers irc">
+
+                    </ul>
+                </div>
             </div>
-            <div class="chatUsersContainer">
-                <div class="chatUsersCount">
-                    <span class="title" data-content="label.current_number_of_players"></span>
-                    <span class="value"></span>
-                </div>
-                <ul class="chatUsers players">
-
-                </ul>
-                <div class="chatChannelName">
-                    <span class="title" data-content="label.irc_channel_name"></span>
-                    <span class="value"></span>
-                </div>
-                <ul class="chatUsers irc">
-
-                </ul>
+            <div class="chatFormContainer">
+                <form action="#" class="chatForm">
+                    <div class="formSection">
+                        <input type="text" name="chatInput" class="chatInput">
+                        <input type="submit" class="chatSubmitButton">
+                    </div>
+                </form>
             </div>
         </div>
     </div>
