@@ -336,7 +336,7 @@ class Database
                   ON `CJ`.`ChannelID`=`C`.`ID`
                 WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
                   AND `C`.`GalaxyID`=#{@_toQuery(idGame)}
-                ORDER BY `C`.`ID` ASC
+                ORDER BY `CJ`.`ID` ASC
               "
         channelsPromise = @_readMultipleData(sql)
 
@@ -514,6 +514,37 @@ class Database
                       "
                 @_sendQuery(sql)
             return channelData
+
+        return promise
+
+    # Deletes all related data (logs, joinings, etc.) of the channel with the given game.
+    # @param channelName [string] The internal name of the channel to delete.
+    # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
+    deleteChannel: (channelName) ->
+        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be deleted
+        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+
+        # Delete channel logs
+        sql = "
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` 
+                WHERE `ChannelID`=#{@_toQuery(channelID)}
+              "
+        logsPromise = @_sendQuery(sql)
+
+        # Delete channel joinings
+        sql = "
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}` 
+                WHERE `ChannelID`=#{@_toQuery(channelID)}
+              "
+        joinsPromise = @_sendQuery(sql)
+
+        # Delete channels
+        promise = Q.all([logsPromise, joinsPromise]).then =>
+            sql = "
+                    DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    WHERE `ID`=#{@_toQuery(channelID)}
+                  "
+            return @_sendQuery(sql)
 
         return promise
 

@@ -27,12 +27,16 @@ class this.SocketClient
         @socket.on 'welcome', @_handleServerWelcome
 
         @socket.on 'join_fail', @_handleChannelJoinFail
+        @socket.on 'leave_fail', @_handleChannelLeaveFail
+        @socket.on 'delete_fail', @_handleChannelDeleteFail
+        @socket.on 'joined', @_handleChannelJoined
+        @socket.on 'left', @_handleChannelLeft
+        @socket.on 'deleted', @_handleChannelDeleted
+
         @socket.on 'history_start', @_handleChannelHistoryStart
         @socket.on 'history_end', @_handleChannelHistoryEnd
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
-        @socket.on 'joined', @_handleChannelJoined
-        @socket.on 'left', @_handleChannelLeft
         @socket.on 'channel_topic', @_handleChannelTopic
         @socket.on 'channel_clients', @_handleChannelUserList
         @socket.on 'channel_clients_count', @_handleChannelUserNumber
@@ -74,18 +78,30 @@ class this.SocketClient
         text = Translation.get('manage_msg.welcome_message', message: serverText)
         @chatController.handleServerMessage(text)
 
+
     _handleChannelJoinFail: (errorMsg) =>
         serverText = Translation.getForServerMessage(errorMsg)
         text = Translation.get('manage_msg.channel_join_failed', reason: serverText)
         @chatController.handleServerMessage(text, true)
 
+    _handleChannelLeaveFail: (channel, timestamp, errorMsg) =>
+        serverText = Translation.getForServerMessage(errorMsg)
+        @chatController.handleChannelError(channel, timestamp, serverText)
+
+    _handleChannelDeleteFail: (channel, timestamp, errorMsg) =>
+        serverText = Translation.getForServerMessage(errorMsg)
+        @chatController.handleChannelError(channel, timestamp, serverText)
 
     _handleChannelJoined: (channel, timestamp, data) =>
         isOpeningJoin = @chatController.handleChannelJoined(channel, timestamp, data)
         @_sendChannelHistoryRequest(channel) if isOpeningJoin  # Only request history, if channel was not already opened
 
-    _handleChannelLeft: (channel, timestamp) =>
-        @chatController.handleChannelLeft(channel, timestamp)
+    _handleChannelLeft: (channel, timestamp, data) =>
+        @chatController.handleChannelLeft(channel, timestamp, data)
+
+    _handleChannelDeleted: (channel, timestamp, data) =>
+        @chatController.handleChannelDeleted(channel, timestamp, data)
+
 
     _handleChannelHistoryStart: (channel, timestamp, data) =>
         return if data.count is 0
@@ -155,8 +171,8 @@ class this.SocketClient
         @lastMessageSentStamp = (new Date()).getTime()
         @socket.emit 'message#' + channel, messageText
 
-    sendChannelLeaveRequest: (channel) ->
-        @socket.emit 'leave#' + channel
+    sendChannelLeaveRequest: (channel, isClose) ->
+        @socket.emit 'leave#' + channel, isClose
 
     sendChannelDeleteRequest: (channel) ->
         @socket.emit 'delete#' + channel
@@ -194,8 +210,9 @@ class this.SocketClient
 
     _addContentMetaInfo: (data, addressTextProperty='text') ->
         unless data.isOwn
-            data.isMentioningOwn = @_isAddressedToOwnUser(data[addressTextProperty], false)
-            data.isAddressingOwn = @_isAddressedToOwnUser(data[addressTextProperty], true)
+            addressText = data[addressTextProperty] or ''
+            data.isMentioningOwn = @_isAddressedToOwnUser(addressText, false)
+            data.isAddressingOwn = @_isAddressedToOwnUser(addressText, true)
 
     _isOwnUser: (data, nameProperty='sender') ->
         ownIdentityData = @identityData or {}

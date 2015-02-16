@@ -43,7 +43,8 @@ class BotChannel extends Channel
     # @override
     _checkForDestroy: ->
         if @_getNumberOfBots() is 0
-            super unless @isPermanent
+            return super unless @isPermanent
+        return false
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
@@ -63,7 +64,7 @@ class BotChannel extends Channel
         joinPromise = bot.handleWebChannelJoin(this, isMasterBot)
         return joinPromise
 
-    removeBot: (bot) ->
+    removeBot: (bot, checkForDestroy=true) ->
         botID = bot.getID()
         if @botList[botID]?
             # Remove bot reference before nominating new master
@@ -77,9 +78,18 @@ class BotChannel extends Channel
             partPromise = bot.handleWebChannelLeave(this)
 
             # May destroy instance (if it was the last bot)
-            @_checkForDestroy()
+            @_checkForDestroy() if checkForDestroy
+
             return partPromise
         return Q(false)
+
+    # @override
+    _deleteByClient: (clientSocket) ->
+        customRoutine = =>
+            # Kick off bots
+            for botID, bot of @botList
+                @removeBot(bot, false)
+        return super(clientSocket, customRoutine)
 
     getIrcChannelName: ->
         return @ircChannelName

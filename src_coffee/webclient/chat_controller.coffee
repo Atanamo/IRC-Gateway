@@ -133,12 +133,14 @@ class this.ChatController
     _handleGuiChannelLeave: (event) =>
         event.preventDefault()
         channel = @activeTabPage?.data('channel') or ''
-        @socketHandler.sendChannelLeaveRequest(channel)
+        @socketHandler.sendChannelLeaveRequest(channel, false)
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
         channel = @activeTabPage?.data('channel') or ''
-        @socketHandler.sendMessage(channel)
+        messageText = @activeTabPage?.find(@gui.chatInput).val().trim()
+        if messageText isnt '' and channel isnt ''
+            @socketHandler.sendMessage(channel, messageText)
 
     _handleGuiTabClick: (event) =>
         tabHeader = $(event.currentTarget)
@@ -240,7 +242,9 @@ class this.ChatController
             # Remove invalid buttons
             unless data.isCustom
                 tabPage.find(@gui.channelLeaveButton).remove()
-            unless data.creatorID is @instanceData?.userID
+            if data.creatorID is @instanceData?.userID
+                tabPage.find(@gui.channelLeaveButton).remove()
+            else
                 tabPage.find(@gui.channelDeleteButton).remove()
 
         # Print join message to new tab and server tab
@@ -256,8 +260,9 @@ class this.ChatController
 
         return isNewTab
 
-    handleChannelLeft: (channel, timestamp) ->
+    handleChannelLeft: (channel, timestamp, {title, isClose}={}) ->
         tabID = @_getChannelTabID(channel)
+        channelTitle = title or channel
 
         # Remove tab from DOM
         @ui.tabsystemViewport.find("##{tabID}").remove()
@@ -266,6 +271,24 @@ class this.ChatController
 
         # Show server tab
         @ui.tabsystemHeaders[0]?.click()
+
+        # Print leave message to server tab
+        unless isClose
+            noticeText = Translation.get('msg.channel_left', channel: channelTitle)
+            @handleServerMessage(noticeText)
+
+    handleChannelDeleted: (channel, timestamp, {title}={}) ->
+        channelTitle = title or channel
+        @handleChannelLeft(channel, timestamp, {title: channelTitle, isClose: true})
+
+        # Print delete message to server tab
+        noticeText = Translation.get('msg.channel_deleted', channel: channelTitle)
+        @handleServerMessage(noticeText)
+
+    handleChannelError: (channel, timestamp, errorMsg) ->
+        tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab(tabPage, timestamp, 'error', errorMsg)
+        @_addNewEntryMarkToTab(tabPage)
 
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)

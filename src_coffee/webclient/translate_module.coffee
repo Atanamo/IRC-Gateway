@@ -12,6 +12,9 @@ class this.Translation
         'server_msg.invalid_token': 'Invalid token!'
         'server_msg.reached_channel_limit': 'You reached the limit for self-created channels! Please delete other channels first.'
         'server_msg.wrong_password': 'Wrong channel password!'
+        'server_msg.cannot_leave_own_channel': 'Self-created channels can not be leaved!'
+        'server_msg.can_only_delete_own_channels': 'A channel can only be deleted, if it has been created by yourself!'
+        'server_msg.can_only_delete_empty_channels': 'A channel can only be deleted, if no other users are joined to it (even if offline)!'
 
         'manage_msg.loading_start': 'Loading...'
         'manage_msg.connect_success': 'Connection established!'
@@ -24,7 +27,9 @@ class this.Translation
         'manage_msg.channel_join_failed': 'Channel join failed! $reason$'
 
         'msg.server_connection_lost': 'Error: Lost connection to server! Waiting for reconnect...'
-        'msg.channel_joined': 'Joined $channel$'
+        'msg.channel_joined': 'Joined \'$channel$\''
+        'msg.channel_left': 'Left \'$channel$\''
+        'msg.channel_deleted': 'Channel \'$channel$\' has been deleted'
         'msg.initial_channel_topic': 'Channel topic: $topic$'
         'msg.new_channel_topic.authorless': 'New channel topic: $topic$'
         'msg.new_channel_topic.authored': '$author$ set new channel topic: $topic$'
@@ -66,6 +71,9 @@ class this.Translation
         'server_msg.invalid_token': 'Ungültiges Token!'
         'server_msg.reached_channel_limit': 'Du hast das Limit für selbst erstellte Channels erreicht! Lösche bitte bestehende Channels vorher.'
         'server_msg.wrong_password': 'Das Channel-Passwort ist falsch!'
+        'server_msg.cannot_leave_own_channels': 'Selbst erstellte Channels können nicht verlassen werden!'
+        'server_msg.can_only_delete_own_channels': 'Channels können nur gelöscht werden, wenn sie selbst erstellt wurden!'
+        'server_msg.can_only_delete_empty_channels': 'Channels können nur gelöscht werden, wenn keine anderen User beigetreten sind (selbst wenn offline)!'
 
         'manage_msg.loading_start': 'Initialisierung läuft...'
         'manage_msg.connect_success': 'Verbindung zum Server hergestellt!'
@@ -79,6 +87,8 @@ class this.Translation
 
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server abgerissen! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
+        'msg.channel_left': 'Channel \'$channel$\' verlassen'
+        'msg.channel_deleted': 'Channel \'$channel$\' wurde gelöscht'
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
         'msg.new_channel_topic.authorless': 'Ein neues Channel-Thema wurde gesetzt: $topic$'
         'msg.new_channel_topic.authored': '$author$ hat ein neues Channel-Thema gesetzt: $topic$'
