@@ -26,6 +26,7 @@ class this.ChatController
         channelPasswordInput: '#channelPasswordInput'
         channelFlagPublic: '#channelFlagPublic'
         channelFlagIRC: '#channelFlagIRC'
+        channelCloseButton: '.channelCloseButton'
         channelLeaveButton: '.channelLeaveButton'
         channelDeleteButton: '.channelDeleteButton'
         chatForm: '.chatForm'
@@ -52,6 +53,7 @@ class this.ChatController
         'channelCreateForm submit': '_handleGuiChannelCreateSubmit'
         'chatForm submit': '_handleGuiMessageSubmit'
         'tabsystemHeaders click': '_handleGuiTabClick'
+        'channelCloseButton click': '_handleGuiChannelClose'
         'channelLeaveButton click': '_handleGuiChannelLeave'
         'channelDeleteButton click': '_handleGuiChannelDelete'
 
@@ -124,6 +126,11 @@ class this.ChatController
         return unless channelName
 
         @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
+
+    _handleGuiChannelClose: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+        @socketHandler.sendChannelLeaveRequest(channel, true)
 
     _handleGuiChannelLeave: (event) =>
         event.preventDefault()
