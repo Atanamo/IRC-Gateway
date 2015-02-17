@@ -25,6 +25,10 @@ module.exports.warn = (text, sender='General') ->
 
 module.exports.error = (textOrError, sender='General') ->
     if textOrError instanceof Error
-        textOrError = if textOrError.message? then textOrError.message else textOrError.toString?() or textOrError
+        errObject = textOrError
+        textOrError = if errObject.message? then errObject.message else errObject.toString?() or errObject
     console.error "!! #{getTimestamp()} ERROR by #{sender}:", textOrError
-
+    if errObject?
+        console.error ''
+        console.error(errObject.stack)
+        console.error ''

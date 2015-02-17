@@ -71,7 +71,7 @@ class Gateway
             return @botManager.start()
 
         # Start listening for socket.io emits and for HTTP requests
-        startupPromise.then =>
+        startupPromise = startupPromise.then =>
             log.info 'Start listening...'
             server.listen(Config.WEB_SERVER_PORT)
 

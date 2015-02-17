@@ -23,12 +23,16 @@ class SocketHandler
         @_bindSocketGlobalEvents()
 
     _bindSocketGlobalEvents: ->
-        ## Register common websocket events
+        # Register common websocket events
         io.sockets.on 'connection', @_handleClientConnect  # Build-in event
 
     _bindSocketClientEvents: (clientSocket) ->
-        ## Register client socket events
-        clientSocket.on 'disconnect', => @_handleClientDisconnect(clientSocket)  # Build-in event
+        # Store callback for disconnect on socket
+        clientSocket.disconnectListener = =>
+            @_handleClientDisconnect(clientSocket)
+
+        # Register client socket events
+        clientSocket.on 'disconnect', clientSocket.disconnectListener  # Build-in event
         clientSocket.on 'auth', (authData) => @_handleClientAuthRequest(clientSocket, authData)
 
     _bindSocketClientAuthorizedEvents: (clientSocket) ->
@@ -41,10 +45,11 @@ class SocketHandler
 
     _handleClientDisconnect: (clientSocket) =>
         log.debug 'Client disconnected...'
-        # Deregister listeners
         clientSocket.isDisconnected = true
-        clientSocket.removeAllListeners()
-        #clientSocket.removeAllListeners 'disconnect'
+        # Deregister listeners
+        clientSocket.removeListener 'disconnect', clientSocket.disconnectListener
+        clientSocket.removeAllListeners 'auth'
+        clientSocket.removeAllListeners 'join'
 
     _handleClientAuthRequest: (clientSocket, authData) =>
         log.debug 'Client requests auth...'
