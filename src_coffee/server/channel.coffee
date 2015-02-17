@@ -138,7 +138,8 @@ class Channel
         return true
 
     removeClient: (clientSocket, isClose=false, isDisconnect=false) ->
-        return false unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
+        # Cancel, if socket is not joined to channel (but force on disconnect)
+        return false if not isDisconnect and clientSocket.rooms.indexOf(@name) < 0
 
         log.debug "Removing client #{clientSocket.identity.getName()} from channel '#{@name}' (by close: #{isClose})"
 
