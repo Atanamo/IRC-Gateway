@@ -214,7 +214,7 @@ class this.ChatController
 
     handleChannelNotice: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
-        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, true)
+        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, isSentByUser: true)
         @_addNewEntryMarkToTab(tabPage, data, data.text)
 
     handleChannelHistoryMark: (channel, timestamp, data) ->
@@ -369,7 +369,7 @@ class this.ChatController
                 userName = "-#{Translation.get('info.unknown')}-" unless userName?
                 noticeText = Translation.get('msg.user_list_changed', user: userName)
 
-        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
+        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText, data)
         @_addNewEntryMarkToTab(tabPage, data, noticeText)
 
     handleChannelModeChange: (channel, timestamp, {actor, mode, enabled, argument}) ->
@@ -444,10 +444,11 @@ class this.ChatController
         @_appendEntryToTab(tabPage, timestamp, 'message', text, options)
         @_scrollToBottomOfTab(tabPage)
 
-    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, isSentByUser=false) ->
+    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, {isOwn, isSentByUser}={}) ->
         noticeText = "** #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
         styleClasses = 'notice'
+        styleClasses += ' own' if isOwn
         styleClasses += ' fromUser' if isSentByUser
         styleClasses += ' error' if noticeType is 'error'
 
