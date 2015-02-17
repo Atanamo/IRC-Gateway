@@ -125,15 +125,19 @@ class this.ChatController
 
         @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
 
-    _handleGuiChannelDelete: (event) =>
-        event.preventDefault()
-        channel = @activeTabPage?.data('channel') or ''
-        @socketHandler.sendChannelDeleteRequest(channel)
-
     _handleGuiChannelLeave: (event) =>
         event.preventDefault()
         channel = @activeTabPage?.data('channel') or ''
-        @socketHandler.sendChannelLeaveRequest(channel, false)
+
+        if confirm(Translation.get('confirm_dialog.leave_channel'))
+            @socketHandler.sendChannelLeaveRequest(channel, false)
+
+    _handleGuiChannelDelete: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+
+        if confirm(Translation.get('confirm_dialog.delete_channel'))
+            @socketHandler.sendChannelDeleteRequest(channel)
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()

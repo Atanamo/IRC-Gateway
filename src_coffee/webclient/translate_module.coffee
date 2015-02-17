@@ -26,6 +26,9 @@ class this.Translation
         'manage_msg.welcome_message': 'Welcome message: $message$'
         'manage_msg.channel_join_failed': 'Channel join failed! $reason$'
 
+        'confirm_dialog.leave_channel': 'Really want to leave the channel?'
+        'confirm_dialog.delete_channel': 'Really want to delete the channel?\nChat history would be lost.'
+
         'msg.server_connection_lost': 'Error: Lost connection to server! Waiting for reconnect...'
         'msg.channel_joined': 'Joined \'$channel$\''
         'msg.channel_left': 'Left \'$channel$\''
@@ -84,6 +87,9 @@ class this.Translation
         'manage_msg.auth_failed': 'Anmeldung fehlgeschlagen! $reason$'
         'manage_msg.welcome_message': 'Willkommensnachricht: $message$'
         'manage_msg.channel_join_failed': 'Channel-Beitritt fehlgeschlagen! $reason$'
+
+        'confirm_dialog.leave_channel': 'Soll der Channel wirklich verlassen werden?'
+        'confirm_dialog.delete_channel': 'Soll der Channel wirklich gelöscht werden?\nChatverläufe würden verloren gehen.'
 
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server abgerissen! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
