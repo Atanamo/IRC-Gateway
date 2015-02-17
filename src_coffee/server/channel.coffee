@@ -217,12 +217,21 @@ class Channel
         promise.then (logListData) =>
             oldestTimestamp = logListData[0]?.timestamp or -1
             newestTimestamp = logListData[logListData.length - 1]?.timestamp or -1
-            logListData.pop() if logListData.length is 1 and not @isPublic  # Filter client's join
+
+            # Filter last entry, if it's the client's join (Cause in this case, the history is requested on joining)
+            if not @isPublic
+                lastEntry = logListData[logListData.length-1]
+                if lastEntry?.event_name is 'user_change'
+                    eventData = JSON.parse(lastEntry.event_data) or {}
+                    logListData.pop() if eventData.type is 'add' or  eventData.action is 'join'
+
+            # Build marker data
             markerData =
                 count: logListData.length
                 start: oldestTimestamp
                 end: newestTimestamp
 
+            # Send history
             @_sendToSocket(clientSocket, 'history_start', markerData)
             for logEntry in logListData
                 eventData = JSON.parse(logEntry.event_data)

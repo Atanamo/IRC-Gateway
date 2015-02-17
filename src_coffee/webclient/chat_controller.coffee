@@ -187,6 +187,10 @@ class this.ChatController
     # Socket client handling
     #
 
+    isHistoryReceivingChannel: (channel) ->
+        tabPage = @_getChannelTabPage(channel)
+        return @_isHistoryReceivingTab(tabPage)
+
     handleServerDisconnect: ->
         # Inform all channel tabs and clear user lists
         informText = Translation.get('msg.server_connection_lost')

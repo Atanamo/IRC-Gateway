@@ -128,7 +128,10 @@ class this.SocketClient
         @chatController.handleChannelUserNumber(channel, clientsNumber)
 
     _handleChannelUserChange: (channel, timestamp, data) =>
-        if not @_isOwnUser(data, 'user') or data.action in ['kick', 'kill']  # Ignore notices on own channel join/leave
+        isOwnHiddenChange = @_isOwnUser(data, 'user') and data.action in ['join', 'leave']
+        isHistoric = @chatController.isHistoryReceivingChannel(channel)
+
+        if not isOwnHiddenChange or isHistoric  # Ignore live notices on own channel join/leave
             @_simplifyUserIdentityData(data, 'user')
             @_addContentMetaInfo(data, 'user')
             @chatController.handleChannelUserChange(channel, timestamp, data)
