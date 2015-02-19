@@ -66,36 +66,36 @@ class this.Translation
 
     # German translated texts
     TEXTS_DE = {
-        'server_msg.invalid_input': 'Ungültige Eingaben!'
+        'server_msg.invalid_input': 'Ung&uuml;ltige Eingaben!'
         'server_msg.illegal_length_of_channel_name': 'Der angeforderte Channel-Name ist zu kurz oder zu lang!'
         'server_msg.channel_password_too_short': 'Das angeforderte Channel-Passwort ist zu kurz!'
         'server_msg.channel_password_too_long': 'Das angeforderte Channel-Passwort ist zu lang!'
-        'server_msg.invalid_user_data': 'Ungültige Benutzerdaten!'
+        'server_msg.invalid_user_data': 'Ung&uuml;ltige Benutzerdaten!'
         'server_msg.unknown_user': 'Unbekannter Benutzer!'
-        'server_msg.invalid_token': 'Ungültiges Token!'
-        'server_msg.reached_channel_limit': 'Du hast das Limit für selbst erstellte Channels erreicht! Lösche bitte bestehende Channels vorher.'
+        'server_msg.invalid_token': 'Ung&uuml;ltiges Token!'
+        'server_msg.reached_channel_limit': 'Du hast das Limit f&uuml;r selbst erstellte Channels erreicht! L&ouml;sche bitte bestehende Channels vorher.'
         'server_msg.wrong_password': 'Das Channel-Passwort ist falsch!'
-        'server_msg.cannot_leave_own_channels': 'Selbst erstellte Channels können nicht verlassen werden!'
-        'server_msg.can_only_delete_own_channels': 'Channels können nur gelöscht werden, wenn sie selbst erstellt wurden!'
-        'server_msg.can_only_delete_empty_channels': 'Channels können nur gelöscht werden, wenn keine anderen User beigetreten sind (selbst wenn offline)!'
+        'server_msg.cannot_leave_own_channels': 'Selbst erstellte Channels k&ouml;nnen nicht verlassen werden!'
+        'server_msg.can_only_delete_own_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn sie selbst erstellt wurden!'
+        'server_msg.can_only_delete_empty_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn keine anderen User beigetreten sind (selbst wenn offline)!'
 
-        'manage_msg.loading_start': 'Initialisierung läuft...'
+        'manage_msg.loading_start': 'Initialisierung l&auml;uft...'
         'manage_msg.connect_success': 'Verbindung zum Server hergestellt!'
         'manage_msg.connect_error': 'Verbindungsabbruch: $error$'
         'manage_msg.connect_lost': 'Verbindung zum Server abgerissen! Server wurde eventuell beendet.'
-        'manage_msg.auth_start': 'Anmeldung läuft...'
+        'manage_msg.auth_start': 'Anmeldung l&auml;uft...'
         'manage_msg.auth_success': 'Anmeldung erfolgreich!'
         'manage_msg.auth_failed': 'Anmeldung fehlgeschlagen! $reason$'
         'manage_msg.welcome_message': 'Willkommensnachricht: $message$'
         'manage_msg.channel_join_failed': 'Channel-Beitritt fehlgeschlagen! $reason$'
 
         'confirm_dialog.leave_channel': 'Soll der Channel wirklich verlassen werden?'
-        'confirm_dialog.delete_channel': 'Soll der Channel wirklich gelöscht werden?\nChatverläufe würden verloren gehen.'
+        'confirm_dialog.delete_channel': 'Soll der Channel wirklich gel&ouml;scht werden?\nChatverl&auml;ufe w&uuml;rden verloren gehen.'
 
         'msg.server_connection_lost': 'Fehler: Verbindung zum Server abgerissen! Warten auf Reconnect...'
         'msg.channel_joined': 'Channel \'$channel$\' beigetreten'
         'msg.channel_left': 'Channel \'$channel$\' verlassen'
-        'msg.channel_deleted': 'Channel \'$channel$\' wurde gelöscht'
+        'msg.channel_deleted': 'Channel \'$channel$\' wurde gel&ouml;scht'
         'msg.initial_channel_topic': 'Channel-Thema: $topic$'
         'msg.new_channel_topic.authorless': 'Ein neues Channel-Thema wurde gesetzt: $topic$'
         'msg.new_channel_topic.authored': '$author$ hat ein neues Channel-Thema gesetzt: $topic$'
@@ -117,19 +117,26 @@ class this.Translation
         'label.current_number_of_players': 'Spieler online'
         'label.irc_channel_name': 'IRC'
         'label.channel_join_options': 'Channel beitreten oder neu erstellen'
-        'label.channel_creation_options': 'Zusatzoptionen für neuen Channel'
+        'label.channel_creation_options': 'Zusatzoptionen f&uuml;r neuen Channel'
         'label.channel_name': 'Channel-Name'
         'label.channel_password': 'Channel-Passwort'
         'label.channel_flag_public': 'Beigetretene User verstecken'
         'label.channel_flag_irc': 'Channel ins IRC spiegeln'
-        'label.button.close_channel': 'Schließen'
+        'label.button.close_channel': 'Schlie&szlig;en'
         'label.button.leave_channel': 'Channel verlassen'
-        'label.button.delete_channel': 'Channel löschen'
+        'label.button.delete_channel': 'Channel l&ouml;schen'
     }
 
     # Currently used translations
     localTexts = TEXTS_EN
 
+    # Helper textarea, to decode html entities to result text
+    converterTextArea = $('<textarea/>')
+
+    # Returns the plaintext output for the given text, having all html entities to be resolved to real characters
+    @_toDecoded: (textWithEscapes) ->
+        converterTextArea.html(textWithEscapes)  # Write/fill as html
+        return converterTextArea.val()           # Read as value - this is the browser interpreted result of the html
 
     # Returns the translations for a text with given key and replaces placeholders by given data
     @get: (key, data) ->
@@ -139,13 +146,13 @@ class this.Translation
             for name, val of data
                 text = text.replace("$#{name}$", val)
 
-        return text
+        return @_toDecoded(text)
 
     # Returns the translations for the given server message
     @getForServerMessage: (message) ->
         key_part = message.toLowerCase().replace(/[ ]/g, '_')
         text = localTexts["server_msg.#{key_part}"] or message
-        return text
+        return @_toDecoded(text)
 
     # Returns the browser language code
     @getLangCode: ->
