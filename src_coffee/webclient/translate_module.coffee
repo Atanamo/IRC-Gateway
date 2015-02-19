@@ -51,6 +51,7 @@ class this.Translation
         'info.end_of_chat_history': 'End of chat history ($start$ - $end$)'
         'info.unknown': 'unknown'
 
+        'label.server_tab': 'Server'
         'label.current_number_of_players': 'Players online'
         'label.irc_channel_name': 'IRC'
         'label.channel_join_options': 'Join or create channel'
@@ -114,6 +115,7 @@ class this.Translation
         'info.end_of_chat_history': 'Ende des Chatverlaufs ($start$ - $end$)'
         'info.unknown': 'Unbekannt'
 
+        'label.server_tab': 'Server'
         'label.current_number_of_players': 'Spieler online'
         'label.irc_channel_name': 'IRC'
         'label.channel_join_options': 'Channel beitreten oder neu erstellen'
