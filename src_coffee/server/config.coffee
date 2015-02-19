@@ -34,7 +34,8 @@ module.exports =
 
     CLIENT_AUTH_SECRET: 'SECRET_2'  # A secret string to be used as part of the security token (The token needs to be sent from a client on login)
 
-    GAMES_LOOKUP_INTERVAL: 20       # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+    GAMES_LOOKUP_INTERVAL: 60       # Interval time in seconds, for looking up the games list in database and create/destroy appropriate bots accordingly
+    CLIENTS_DISCONNECT_DELAY: 2000  # Timeout in milliseconds, for waiting for reconnect of a client before broadcasting its disconnection (If it reconnects before timeout, nothing is broadcasted)
     MAX_CHANNEL_LOGS: 100           # Maximum number of logs per channel in database - This controls the max size of the chat logs table
     MAX_CHANNEL_LOGS_TO_CLIENT: 50  # Maximum number of channel logs for a client - This controls the max length of a channel's chat history a client can request
     MAX_CHANNELS_PER_CLIENT: 3      # Maximum number of channels a client/user is allowed to create

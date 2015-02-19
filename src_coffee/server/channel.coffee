@@ -76,7 +76,7 @@ class Channel
     _registerListeners: (clientSocket) ->
         # Store callback for channel-specific disconnect on socket
         clientSocket[@listenerNameDisconnect] = disconnectCallback = =>
-            @_handleClientLeave(clientSocket, true, true)
+            @_handleClientDisconnect(clientSocket)
 
         # Register channel-specific client events
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
@@ -313,12 +313,21 @@ class Channel
         log.debug "Client requests chat history for '#{@name}'"
         @_sendHistoryToSocket(clientSocket)
 
-    _handleClientLeave: (clientSocket, isClose=false, isDisconnect=false) ->
+    _handleClientLeave: (clientSocket, isClose=false) ->
         if not isClose and clientSocket.identity.getUserID() is @creatorID
             # Disallow permanent leaving on channels created by the client
             @_sendToSocket(clientSocket, 'leave_fail', 'Cannot leave own channels')
         else
-            @removeClient(clientSocket, isClose, isDisconnect)
+            @removeClient(clientSocket, isClose)
+
+    _handleClientDisconnect: (clientSocket) ->
+        # Immediately unregister listeners
+        @_unregisterListeners(clientSocket)
+        # Delay disconnect for configured time - This will allow to rejoin before disconnect is executed
+        delay_promise = Q.delay(Config.CLIENTS_DISCONNECT_DELAY)
+        delay_promise = delay_promise.then =>
+            @removeClient(clientSocket, true, true)
+        delay_promise.done()
 
     _handleClientDeleteRequest: (clientSocket) ->
         if clientSocket.identity.getUserID() isnt @creatorID

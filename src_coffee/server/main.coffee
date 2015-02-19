@@ -13,6 +13,9 @@ Database = require './database'
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
+## Configure global libraries
+Q.longStackSupport = Config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
+
 ## Create library API objects
 app = express()
 server = http.createServer(app)    # Create HTTP server instance
