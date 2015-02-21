@@ -239,20 +239,33 @@ class this.ChatController
         isNewTab = (tabPage?.length is 0)
 
         if isNewTab
-            # Set up tab parts
-            htmlTabHeader = "<li data-id=\"#{tabID}\">#{channelTitle}</li>"
+            # Build tab header
+            tabHeaderTitle = $("<span/>")
+            tabHeaderTitle.addClass('title')
+            tabHeaderTitle.text(channelTitle)
+            tabHeader = $("<li/>")
+            tabHeader.attr('data-id', tabID)
+            tabHeader.attr('title', channelTitle)
+            tabHeader.append(tabHeaderTitle)
+
+            # Build tab body
             tabSkeleton = @ui.tabPageSkeleton.clone()
             tabSkeleton.attr('id', tabID)
             tabSkeleton.attr('data-channel', channel)
 
             # Add tab to DOM
             @ui.tabsystemViewport.append(tabSkeleton)
-            @ui.tabsystemHeaderList.append(htmlTabHeader)
+            @ui.tabsystemHeaderList.append(tabHeader)
             @_updateGuiBindings()
 
             # Get new tab
             tabPage = @_getChannelTabPage(channel)
             tabPage.hide()
+
+            # Hide non-default boxes
+            tabPage.find(@gui.tabPagesUsersNumberBox).hide()
+            tabPage.find(@gui.tabPagesChannelNameBox).hide()
+            tabPage.find(@gui.tabPagesUsersIngame).hide()
 
             # Remove invalid buttons
             unless data.isCustom
@@ -308,8 +321,17 @@ class this.ChatController
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
         @_clearUserListOfTab(tabPage)
+        clientsNumber = 0
         for identityData in clientList
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
+            clientsNumber++ unless identityData.isIrcClient
+        # Show list and number of players, if joined players are not hidden (number not zero)
+        if clientsNumber isnt 0
+            tabPage.find(@gui.tabPagesUsersIngame).show()
+            tabPage.find(@gui.tabPagesUsersIngame).removeClass('secret')
+            @_setUserNumberToTab(tabPage, clientsNumber)
+        else
+            tabPage.find(@gui.tabPagesUsersIngame).addClass('secret')
 
     handleChannelUserNumber: (channel, clientsNumber) ->
         tabPage = @_getChannelTabPage(channel)

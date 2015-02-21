@@ -118,7 +118,6 @@
 
         .chatUsersCount,
         .chatChannelName {
-            display: none;
             padding: 7px 7px;
             border-bottom: solid 1px #aaa;
             font-size: 0.9em
@@ -187,10 +186,12 @@
 
     <div id="tabsystem">
         <ul class="tabsystemHeaders">
-            <li data-id="tabPageServer" data-content="label.server_tab" class="active">Server</li>
+            <li data-id="tabPageServer" title="Server" class="active">
+                <span data-content="label.server_tab" class="title">Server<span>
+            </li>
         </ul>
         <div class="tabsystemViewport">
-            <div id="tabPageServer">
+            <div id="tabPageServer" class="tabPage">
                 <div class="chatOutputContainer">
                     <div class="chatMessagesContainer">
                         <ul class="chatMessages">
@@ -225,6 +226,8 @@
                         <div class="formSection">
                             <input type="submit" id="channelCreateSubmitButton">
                         </div>
+                        <div class="formSection">
+                        </div>
                     </form>
                 </div>
             </div>
@@ -233,7 +236,7 @@
 
 
     <div id="tabPageSkeletonContainer" style="display:none;">
-        <div id="tabPageSkeleton">
+        <div id="tabPageSkeleton" class="tabPage">
             <div class="chatOutputContainer">
                 <div class="chatMessagesContainer">
                     <ul class="chatMessages">
