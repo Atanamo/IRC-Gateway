@@ -9,6 +9,7 @@ class this.SocketClient
     serverPort: 0
     instanceData: null
     identityData: null
+    lastMessageSentStamp: 0
 
     constructor: (@chatController, @serverIP, @serverPort, @instanceData) ->
 
@@ -25,12 +26,17 @@ class this.SocketClient
         @socket.on 'auth_fail', @_handleServerAuthFail
         @socket.on 'welcome', @_handleServerWelcome
 
+        @socket.on 'join_fail', @_handleChannelJoinFail
+        @socket.on 'leave_fail', @_handleChannelLeaveFail
+        @socket.on 'delete_fail', @_handleChannelDeleteFail
+        @socket.on 'joined', @_handleChannelJoined
+        @socket.on 'left', @_handleChannelLeft
+        @socket.on 'deleted', @_handleChannelDeleted
+
         @socket.on 'history_start', @_handleChannelHistoryStart
         @socket.on 'history_end', @_handleChannelHistoryEnd
         @socket.on 'message', @_handleChannelMessage
         @socket.on 'notice', @_handleChannelNotice
-        @socket.on 'joined', @_handleChannelJoined
-        @socket.on 'left', @_handleChannelLeft
         @socket.on 'channel_topic', @_handleChannelTopic
         @socket.on 'channel_clients', @_handleChannelUserList
         @socket.on 'channel_clients_count', @_handleChannelUserNumber
@@ -43,37 +49,59 @@ class this.SocketClient
     #
 
     _handleServerConnect: =>
-        @chatController.handleServerMessage('Connection established!')
-        @chatController.handleServerMessage('Authenticating...')
+        @chatController.handleServerMessage(Translation.get('manage_msg.connect_success'))
+        @chatController.handleServerMessage(Translation.get('manage_msg.auth_start'))
         @_sendAuthRequest()
 
     _handleServerDisconnect: (errorMsg) =>
         @identityData = null
         if errorMsg?
-            @chatController.handleServerMessage('Connection error: ' + errorMsg)
+            serverText = Translation.getForServerMessage(errorMsg)
+            text = Translation.get('manage_msg.connect_error', error: serverText)
+            @chatController.handleServerMessage(text, true)
             console.error 'Connection error:', errorMsg
         else
-            @chatController.handleServerMessage('Connection lost! Server may quit')
+            @chatController.handleServerMessage(Translation.get('manage_msg.connect_lost'), true)
         @chatController.handleServerDisconnect()
 
     _handleServerAuthAck: (identityData) =>
         @identityData = identityData
-        @chatController.handleServerMessage('Authentication successful!')
+        @chatController.handleServerMessage(Translation.get('manage_msg.auth_success'))
 
     _handleServerAuthFail: (errorMsg) =>
-        @chatController.handleServerMessage('Authentication failed!')
-        @chatController.handleServerMessage('Reason: ' + errorMsg)
+        serverText = Translation.getForServerMessage(errorMsg)
+        text = Translation.get('manage_msg.auth_failed', reason: serverText)
+        @chatController.handleServerMessage(text, true)
 
-    _handleServerWelcome: (text) =>
-        @chatController.handleServerMessage('Welcome message: ' + text)
+    _handleServerWelcome: (welcomeMsg) =>
+        serverText = Translation.getForServerMessage(welcomeMsg)
+        text = Translation.get('manage_msg.welcome_message', message: serverText)
+        @chatController.handleServerMessage(text)
 
+
+    _handleChannelJoinFail: (errorMsg) =>
+        serverText = Translation.getForServerMessage(errorMsg)
+        text = Translation.get('manage_msg.channel_join_failed', reason: serverText)
+        @chatController.handleServerMessage(text, true)
+
+    _handleChannelLeaveFail: (channel, timestamp, errorMsg) =>
+        serverText = Translation.getForServerMessage(errorMsg)
+        @chatController.handleChannelError(channel, timestamp, serverText)
+
+    _handleChannelDeleteFail: (channel, timestamp, errorMsg) =>
+        serverText = Translation.getForServerMessage(errorMsg)
+        @chatController.handleChannelError(channel, timestamp, serverText)
 
     _handleChannelJoined: (channel, timestamp, data) =>
         isOpeningJoin = @chatController.handleChannelJoined(channel, timestamp, data)
         @_sendChannelHistoryRequest(channel) if isOpeningJoin  # Only request history, if channel was not already opened
 
-    _handleChannelLeft: (channel, timestamp) =>
-        @chatController.handleChannelLeft(channel, timestamp)
+    _handleChannelLeft: (channel, timestamp, data) =>
+        @chatController.handleChannelLeft(channel, timestamp, data)
+
+    _handleChannelDeleted: (channel, timestamp, data) =>
+        @chatController.handleChannelDeleted(channel, timestamp, data)
+
 
     _handleChannelHistoryStart: (channel, timestamp, data) =>
         return if data.count is 0
@@ -100,7 +128,10 @@ class this.SocketClient
         @chatController.handleChannelUserNumber(channel, clientsNumber)
 
     _handleChannelUserChange: (channel, timestamp, data) =>
-        if not @_isOwnUser(data, 'user') or data.action in ['kick', 'kill']  # Ignore notices on own channel join/leave
+        isOwnHiddenChange = @_isOwnUser(data, 'user') and data.action in ['join', 'leave']
+        isHistoric = @chatController.isHistoryReceivingChannel(channel)
+
+        if not isOwnHiddenChange or isHistoric  # Ignore live notices on own channel join/leave
             @_simplifyUserIdentityData(data, 'user')
             @_addContentMetaInfo(data, 'user')
             @chatController.handleChannelUserChange(channel, timestamp, data)
@@ -114,6 +145,7 @@ class this.SocketClient
         @_simplifyUserIdentityData(data, 'sender')
         @_addContentMetaInfo(data, 'text')
         @chatController.handleChannelMessage(channel, timestamp, data)
+        @lastMessageSentStamp = 0 if data.isOwn
 
     _handleChannelNotice: (channel, timestamp, data) =>
         @_simplifyUserIdentityData(data, 'sender')
@@ -136,7 +168,25 @@ class this.SocketClient
         @socket.emit 'history#' + channel
 
     sendMessage: (channel, messageText) ->
+        # Ignore, if last message had not been returned from server yet, but was sent since 10 seconds
+        return if @lastMessageSentStamp + 10000 > (new Date()).getTime()
+        # Send message to server
+        @lastMessageSentStamp = (new Date()).getTime()
         @socket.emit 'message#' + channel, messageText
+
+    sendChannelLeaveRequest: (channel, isClose) ->
+        @socket.emit 'leave#' + channel, isClose
+
+    sendChannelDeleteRequest: (channel) ->
+        @socket.emit 'delete#' + channel
+
+    sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->
+        channelData = 
+            title: channelName or ''
+            password: channelPassword or ''
+            isPublic: isPublic or false
+            isForIrc: isForIrc or false
+        @socket.emit 'join', channelData
 
 
     #
@@ -163,8 +213,9 @@ class this.SocketClient
 
     _addContentMetaInfo: (data, addressTextProperty='text') ->
         unless data.isOwn
-            data.isMentioningOwn = @_isAddressedToOwnUser(data[addressTextProperty], false)
-            data.isAddressingOwn = @_isAddressedToOwnUser(data[addressTextProperty], true)
+            addressText = data[addressTextProperty] or ''
+            data.isMentioningOwn = @_isAddressedToOwnUser(addressText, false)
+            data.isAddressingOwn = @_isAddressedToOwnUser(addressText, true)
 
     _isOwnUser: (data, nameProperty='sender') ->
         ownIdentityData = @identityData or {}

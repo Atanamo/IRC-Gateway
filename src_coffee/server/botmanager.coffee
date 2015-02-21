@@ -5,7 +5,10 @@ BotChannel = require './botchannel'
 Bot = require './bot'
 
 
-## Main class
+## Abstraction of a service for watching existence of games.
+## It manages creation and destruction of bots based on the available games.
+## To be used as singleton.
+##
 class BotManager
     isManaging: false
     watcherTimer: null
@@ -16,7 +19,7 @@ class BotManager
     constructor: ->
         @botList = {}
 
-    start: ->
+    start: =>
         # Setup bot channels
         globalChannelPromise = @_setupGlobalBotChannel()
         singleChannelsPromise = @_setupSingleBotChannels()
@@ -42,6 +45,17 @@ class BotManager
         botsPromise.done()
 
         return Q.all([globalChannelPromise, singleChannelsPromise])
+
+    # Used by SocketHandler as callback to add a bot to a new channel 
+    # (Therefor must be bound to BotManager instance)
+    addGameBotToChannel: (gameID, channel) =>
+        bot = @botList[gameID]
+        return unless bot?
+        return @_addBotToChannel(bot, channel)
+
+    shutdown: =>
+        clearInterval(@watcherTimer) if @watcherTimer?
+        @_destroyBots(@botList)
 
 
     #
@@ -207,11 +221,6 @@ class BotManager
         promises = for key, channel of channelList
             channel.removeBot(bot)
         return Q.all(promises)
-
-
-    shutdown: ->
-        clearInterval(@watcherTimer) if @watcherTimer?
-        @_destroyBots(@botList)
 
 
 

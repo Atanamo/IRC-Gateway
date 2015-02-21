@@ -53,7 +53,7 @@ class SchizoBot
             debug: Config.DEBUG_IRC_COMM
             showErrors: true
             floodProtection: true                   # Protect the bot from beeing kicked, if users are flooding
-            floodProtectionDelay: 50                # Delay time for messages to avoid flooding
+            floodProtectionDelay: 100               # Delay time for messages to avoid flooding
             retryDelay: Config.BOT_RECONNECT_DELAY  # Delay time for reconnects
             stripColors: true                       # Strip mirc colors
 
@@ -238,6 +238,7 @@ class SchizoBot
         if channel?
             respondFunc('Sry, what?')
         else
+            message = message.substr(0, 20) + '...' if message.length > 25
             respondFunc("Unknown command '#{message}'. --- #{defaultResponse}")
 
     _handleIrcMessageToChannel: (senderNick, channel, message, rawData) =>
@@ -334,7 +335,7 @@ class SchizoBot
             timespanDays = Math.floor(timespanHours / 24)
             timespanFractHours = timespanHours - (timespanDays*24)
             connectDateText = @connectDateTime.toUTCString()
-            respondFunc("Uptime = #{timespanDays} days, #{timespanFractHours} hours  (Since #{connectDateText})")
+            respondFunc("Uptime = #{timespanDays} days, #{timespanFractHours.toFixed(2)} hours  (Since #{connectDateText})")
             return true
         return false
 
@@ -378,6 +379,9 @@ class SchizoBot
     _sendUserListRequestToIrcChannel: (channelName) ->
         @client.send('names', channelName)
 
+    _sendModeSettingToIrcChannel: (channelName, modesExpression, additionalArgs...) ->
+        @client.send('MODE', channelName, modesExpression, additionalArgs...);
+
     _respondToIrcViaCTCP: (receiverNick, ctcpCommand, responseText) ->
         ctcpText = "#{ctcpCommand} #{responseText}"
         @client.ctcp(receiverNick, 'notice', ctcpText)  # Send notice for a reply to command
@@ -399,11 +403,32 @@ class SchizoBot
     handleWebChannelJoin: (botChannel, isMasterBot) ->
         joinDeferred = Q.defer()
         ircChannelName = botChannel.getIrcChannelName()
+        ircChannelPassword = botChannel.getIrcChannelPassword() or null
+
+        # Store channel data
         @botChannelList[ircChannelName] = botChannel
         @masterChannelList[ircChannelName] = isMasterBot
-        log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} (As master: #{isMasterBot})..."
-        @client.join ircChannelName, ->
-            joinDeferred.resolve()
+
+        # Join IRC channel (after connect)
+        promise = @getConnectionPromise()
+        promise = promise.then =>
+            log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} " +
+                     "(As master: #{isMasterBot}, password: #{(ircChannelPassword or '<none>')})..."
+
+            joinExpression = ircChannelName
+            joinExpression += ' ' + ircChannelPassword if ircChannelPassword?
+
+            @client.join joinExpression, =>
+                # Set channel modes
+                if ircChannelName.indexOf(Config.IRC_NONGAME_CHANNEL_PREFIX) is 0
+                    @_sendModeSettingToIrcChannel(ircChannelName, '+s')  # Set to secret
+                if ircChannelPassword?
+                    @_sendModeSettingToIrcChannel(ircChannelName, '+k', ircChannelPassword)  # Set channel password
+
+                # Resolve join
+                joinDeferred.resolve()
+        promise.done()
+
         return joinDeferred.promise
 
     handleWebChannelLeave: (botChannel) ->
@@ -411,9 +436,15 @@ class SchizoBot
         ircChannelName = botChannel.getIrcChannelName()
         delete @botChannelList[ircChannelName]
         delete @masterChannelList[ircChannelName]
-        log.info "Removing bot '#{@nickName}' from channel #{ircChannelName}..."
-        @client.part ircChannelName, Config.BOT_LEAVE_MESSAGE, ->
-            partDeferred.resolve()
+
+        # Part from IRC channel (after connect)
+        promise = @getConnectionPromise()
+        promise = promise.then =>
+            log.info "Removing bot '#{@nickName}' from channel #{ircChannelName}..."
+            @client.part ircChannelName, Config.BOT_LEAVE_MESSAGE, ->
+                partDeferred.resolve()
+        promise.done()
+
         return partDeferred.promise
 
     handleWebChannelMasterNomination: (botChannel) ->
@@ -424,7 +455,10 @@ class SchizoBot
     handleWebClientMessage: (channelName, senderIdentity, rawMessage) ->
         clientNick = senderIdentity.getName()
         messageText = "<#{clientNick}>: #{rawMessage}"
-        @client.say(channelName, messageText)
+
+        # Post to IRC, if client is connected
+        @client.say(channelName, messageText) unless @getConnectionPromise().isPending()
+
         # Mirror to web channel, if no other bot (the master) is triggering the message though observing
         @_sendMessageToWebChannel(channelName, @nickName, messageText) if @_isChannelMaster(channelName)
 
@@ -439,6 +473,4 @@ class SchizoBot
 
 # Export class
 module.exports = SchizoBot
-
-
 

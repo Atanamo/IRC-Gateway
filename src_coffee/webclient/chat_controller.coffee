@@ -4,6 +4,10 @@ class this.ChatController
 
     socketHandler: null
 
+    CHANNEL_NAME_MIN_LENGTH = 4
+    CHANNEL_NAME_MAX_LENGTH = 20
+    CHANNEL_PASSWORD_MIN_LENGTH = 5
+
     serverIP: ''
     serverPort: 0
     instanceData: {}
@@ -16,17 +20,28 @@ class this.ChatController
     isSignalizingMessagesToWindow: false
 
     gui:
-        chatForm: '#chat_form'
-        chatInput: '#chat_input'
+        multilangContents: '*[data-content]'
+        channelCreateForm: '#channelCreateForm'
+        channelNameInput: '#channelNameInput'
+        channelPasswordInput: '#channelPasswordInput'
+        channelFlagPublic: '#channelFlagPublic'
+        channelFlagIRC: '#channelFlagIRC'
+        channelCloseButton: '.channelCloseButton'
+        channelLeaveButton: '.channelLeaveButton'
+        channelDeleteButton: '.channelDeleteButton'
+        chatForm: '.chatForm'
+        chatInput: '.chatForm .chatInput'
         tabsystemViewport: '#tabsystem .tabsystemViewport'
         tabsystemHeaderList: '#tabsystem .tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
         tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
-        tabPagesUsers: '.chatUsers'
+        tabPagesUsersIngame: '.chatUsers.players'
+        tabPagesUsersIrc: '.chatUsers.irc'
         tabPagesUsersNumberBox: '.chatUsersCount'
-        tabPagesUsersNumberText: '.chatUsersCount .title'
         tabPagesUsersNumberValue: '.chatUsersCount .value'
+        tabPagesChannelNameBox: '.chatChannelName'
+        tabPagesChannelNameValue: '.chatChannelName .value'
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageServer: '#tabPageServer'
         tabPageSkeleton: '#tabPageSkeleton'
@@ -35,8 +50,12 @@ class this.ChatController
         addressTabMarker: '.addressed'
 
     events:
+        'channelCreateForm submit': '_handleGuiChannelCreateSubmit'
         'chatForm submit': '_handleGuiMessageSubmit'
         'tabsystemHeaders click': '_handleGuiTabClick'
+        'channelCloseButton click': '_handleGuiChannelClose'
+        'channelLeaveButton click': '_handleGuiChannelLeave'
+        'channelDeleteButton click': '_handleGuiChannelDelete'
 
 
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
@@ -47,6 +66,8 @@ class this.ChatController
 
         @windowTitleBackup = top.document.title
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
+
+        @_translateMultilangContents()
 
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
@@ -79,6 +100,12 @@ class this.ChatController
         @_bindGuiElements()
         @_bindGuiEvents()
 
+    _translateMultilangContents: ->
+        @ui.multilangContents.each (idx, element) =>
+            textElem = $(element)
+            translatedText = Translation.get(textElem.data('content'))
+            textElem.text(translatedText) if translatedText
+
 
     #
     # GUI event handling
@@ -89,11 +116,40 @@ class this.ChatController
         top.document.title = @windowTitleBackup  # Reset window title
         @_resetNewEntryMarkOfTab(@activeTabPage)  # Reset marker for unread messages
 
-    _handleGuiMessageSubmit: (event) =>
+    _handleGuiChannelCreateSubmit: (event) =>
         event.preventDefault()
-        messageText = @ui.chatInput.val().trim()
+        channelName = @ui.channelNameInput.val().trim()
+        channelPassword = @ui.channelPasswordInput.val().trim()
+        isPublic = @ui.channelFlagPublic.prop('checked') or false
+        isForIrc = @ui.channelFlagIRC.prop('checked') or false
+
+        return unless channelName
+
+        @socketHandler.sendChannelJoinRequest(channelName, channelPassword, isPublic, isForIrc)
+
+    _handleGuiChannelClose: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+        @socketHandler.sendChannelLeaveRequest(channel, true)
+
+    _handleGuiChannelLeave: (event) =>
+        event.preventDefault()
         channel = @activeTabPage?.data('channel') or ''
 
+        if confirm(Translation.get('confirm_dialog.leave_channel'))
+            @socketHandler.sendChannelLeaveRequest(channel, false)
+
+    _handleGuiChannelDelete: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+
+        if confirm(Translation.get('confirm_dialog.delete_channel'))
+            @socketHandler.sendChannelDeleteRequest(channel)
+
+    _handleGuiMessageSubmit: (event) =>
+        event.preventDefault()
+        channel = @activeTabPage?.data('channel') or ''
+        messageText = @activeTabPage?.find(@gui.chatInput).val().trim()
         if messageText isnt '' and channel isnt ''
             @socketHandler.sendMessage(channel, messageText)
 
@@ -114,8 +170,8 @@ class this.ChatController
         # Show new active tab
         @activeTabPage.show()
 
-        # Toggle usability of input form
-        @ui.chatForm.toggleClass('inactive', tabID is @ui.tabPageServer.attr('id'))
+        # Focus input field
+        @activeTabPage.find(@gui.chatInput).focus()
 
         # Reset marker for unread messages
         @_resetNewEntryMarkOfTab(@activeTabPage)
@@ -131,6 +187,10 @@ class this.ChatController
     # Socket client handling
     #
 
+    isHistoryReceivingChannel: (channel) ->
+        tabPage = @_getChannelTabPage(channel)
+        return @_isHistoryReceivingTab(tabPage)
+
     handleServerDisconnect: ->
         # Inform all channel tabs and clear user lists
         informText = Translation.get('msg.server_connection_lost')
@@ -140,9 +200,11 @@ class this.ChatController
             @_clearUserListOfTab(tabPage)
             @_addNewEntryMarkToTab(tabPage, {force: true}, informText) if idx is 0
 
-    handleServerMessage: (msg) ->
+    handleServerMessage: (msg, isError=false) ->
+        messageType = 'log'
+        messageType = 'error' if isError
         tabPage = @ui.tabPageServer
-        @_appendNoticeToTab(tabPage, null, 'log', msg)
+        @_appendNoticeToTab(tabPage, null, messageType, msg)
         @_addNewEntryMarkToTab(tabPage)
 
     handleChannelMessage: (channel, timestamp, data) ->
@@ -152,7 +214,7 @@ class this.ChatController
 
     handleChannelNotice: (channel, timestamp, data) ->
         tabPage = @_getChannelTabPage(channel)
-        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, true)
+        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, isSentByUser: true)
         @_addNewEntryMarkToTab(tabPage, data, data.text)
 
     handleChannelHistoryMark: (channel, timestamp, data) ->
@@ -173,43 +235,103 @@ class this.ChatController
         tabID = @_getChannelTabID(channel)
         tabPage = @_getChannelTabPage(channel)
         channelTitle = data?.title or channel
+        ircChannelName = data.ircChannelName or null
         isNewTab = (tabPage?.length is 0)
 
         if isNewTab
-            # Set up tab parts
-            htmlTabHeader = "<li data-id=\"#{tabID}\">#{channelTitle}</li>"
+            # Build tab header
+            tabHeaderTitle = $("<span/>")
+            tabHeaderTitle.addClass('title')
+            tabHeaderTitle.text(channelTitle)
+            tabHeader = $("<li/>")
+            tabHeader.attr('data-id', tabID)
+            tabHeader.attr('title', channelTitle)
+            tabHeader.append(tabHeaderTitle)
+
+            # Build tab body
             tabSkeleton = @ui.tabPageSkeleton.clone()
             tabSkeleton.attr('id', tabID)
             tabSkeleton.attr('data-channel', channel)
 
             # Add tab to DOM
             @ui.tabsystemViewport.append(tabSkeleton)
-            @ui.tabsystemHeaderList.append(htmlTabHeader)
+            @ui.tabsystemHeaderList.append(tabHeader)
             @_updateGuiBindings()
 
             # Get new tab
             tabPage = @_getChannelTabPage(channel)
             tabPage.hide()
 
-        # Print join message to tab
+            # Hide non-default boxes
+            tabPage.find(@gui.tabPagesUsersNumberBox).hide()
+            tabPage.find(@gui.tabPagesChannelNameBox).hide()
+            tabPage.find(@gui.tabPagesUsersIngame).hide()
+
+            # Remove invalid buttons
+            unless data.isCustom
+                tabPage.find(@gui.channelLeaveButton).remove()
+            if data.creatorID is @instanceData?.userID
+                tabPage.find(@gui.channelLeaveButton).remove()
+            else
+                tabPage.find(@gui.channelDeleteButton).remove()
+
+        # Print join message to new tab and server tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
         @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
+        @handleServerMessage(noticeText)
+
+        # Set IRC channel name
+        @_setIrcChannelNameToTab(tabPage, ircChannelName) if ircChannelName?
+
+        # Reset the form for channel creation/joining
+        @ui.channelCreateForm[0]?.reset?()
 
         return isNewTab
 
-    handleChannelLeft: (channel, timestamp) ->
+    handleChannelLeft: (channel, timestamp, {title, isClose}={}) ->
         tabID = @_getChannelTabID(channel)
+        channelTitle = title or channel
 
         # Remove tab from DOM
         @ui.tabsystemViewport.find("##{tabID}").remove()
         @ui.tabsystemHeaderList.find("[data-id=#{tabID}]").remove()
         @_updateGuiBindings()
 
+        # Show server tab
+        @ui.tabsystemHeaders[0]?.click()
+
+        # Print leave message to server tab
+        unless isClose
+            noticeText = Translation.get('msg.channel_left', channel: channelTitle)
+            @handleServerMessage(noticeText)
+
+    handleChannelDeleted: (channel, timestamp, {title}={}) ->
+        channelTitle = title or channel
+        @handleChannelLeft(channel, timestamp, {title: channelTitle, isClose: true})
+
+        # Print delete message to server tab
+        noticeText = Translation.get('msg.channel_deleted', channel: channelTitle)
+        @handleServerMessage(noticeText)
+
+    handleChannelError: (channel, timestamp, errorMsg) ->
+        tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab(tabPage, timestamp, 'error', errorMsg)
+        @_addNewEntryMarkToTab(tabPage)
+
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
         @_clearUserListOfTab(tabPage)
+        clientsNumber = 0
         for identityData in clientList
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
+            clientsNumber++ unless identityData.isIrcClient
+        # Show list and number of players, if joined players are not hidden (number not zero)
+        if clientsNumber isnt 0
+            tabPage.find(@gui.tabPagesUsersIngame).show()
+            tabPage.find(@gui.tabPagesUsersIngame).removeClass('secret')
+            @_setUserNumberToTab(tabPage, clientsNumber)
+        else
+            tabPage.find(@gui.tabPagesUsersIngame).addClass('secret')
 
     handleChannelUserNumber: (channel, clientsNumber) ->
         tabPage = @_getChannelTabPage(channel)
@@ -269,7 +391,7 @@ class this.ChatController
                 userName = "-#{Translation.get('info.unknown')}-" unless userName?
                 noticeText = Translation.get('msg.user_list_changed', user: userName)
 
-        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText)
+        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText, data)
         @_addNewEntryMarkToTab(tabPage, data, noticeText)
 
     handleChannelModeChange: (channel, timestamp, {actor, mode, enabled, argument}) ->
@@ -297,25 +419,29 @@ class this.ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _clearUserListOfTab: (tabPage) ->
-        tabPage.find(@gui.tabPagesUsers).empty()
-
     _setUserNumberToTab: (tabPage, userNumber) ->
         tabPage.find(@gui.tabPagesUsersNumberBox).show()
-        tabPage.find(@gui.tabPagesUsersNumberText).html(Translation.get('info.current_number_of_players'))
         tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
 
-    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
-        itemText = shortName
-        itemText += ' [IRC]' if isIrcUser
+    _setIrcChannelNameToTab: (tabPage, ircChannelName) ->
+        tabPage.find(@gui.tabPagesChannelNameBox).show()
+        tabPage.find(@gui.tabPagesChannelNameValue).html(ircChannelName)
 
+    _clearUserListOfTab: (tabPage) ->
+        tabPage.find(@gui.tabPagesUsersIngame).empty()
+        tabPage.find(@gui.tabPagesUsersIrc).empty()
+
+    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
         # Build new list item
         itemElem = $('<li/>')
         itemElem.attr('title', fullName)
-        itemElem.text(itemText)
+        itemElem.text(shortName)
 
         # Append item to list
-        messagesElem = tabPage.find(@gui.tabPagesUsers)
+        if isIrcUser
+            messagesElem = tabPage.find(@gui.tabPagesUsersIrc)
+        else
+            messagesElem = tabPage.find(@gui.tabPagesUsersIngame)
         messagesElem.append(itemElem)
 
     _appendMessageToTab: (tabPage, timestamp, {text, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn}) ->
@@ -323,7 +449,7 @@ class this.ChatController
 
         if isOwn
             styleClasses += ' own'
-            @ui.chatInput.val('')
+            tabPage.find(@gui.chatInput).val('')
         else
             styleClasses += ' external'
 
@@ -340,11 +466,13 @@ class this.ChatController
         @_appendEntryToTab(tabPage, timestamp, 'message', text, options)
         @_scrollToBottomOfTab(tabPage)
 
-    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, isSentByUser=false) ->
+    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, {isOwn, isSentByUser}={}) ->
         noticeText = "** #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
         styleClasses = 'notice'
+        styleClasses += ' own' if isOwn
         styleClasses += ' fromUser' if isSentByUser
+        styleClasses += ' error' if noticeType is 'error'
 
         @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: styleClasses)
         @_scrollToBottomOfTab(tabPage)
@@ -359,7 +487,7 @@ class this.ChatController
         itemElem = $('<li/>')
         itemElem.attr('data-item', entryType)
         itemElem.addClass(options.styleClasses)
-        itemElem.addClass('historical') if entryType isnt 'marker' and tabPage.hasClass('receiving-history')
+        itemElem.addClass('historical') if entryType isnt 'marker' and @_isHistoryReceivingTab(tabPage)
 
         if entryTimestamp?
             spanElem = $('<span/>').addClass('time')
@@ -405,7 +533,7 @@ class this.ChatController
 
     _addNewEntryMarkToTab: (tabPage, notifyData={}, notifyText=null) ->
         tabID = tabPage.attr('id')
-        isReceivingHistory = tabPage.hasClass('receiving-history')
+        isReceivingHistory = @_isHistoryReceivingTab(tabPage)
 
         # Ignore historical messages
         return if isReceivingHistory
@@ -471,6 +599,8 @@ class this.ChatController
             clearInterval(@windowSignalTimer) if @windowSignalTimer?
             @windowSignalTimer = setInterval(blinkFunc, 800)
 
+    _isHistoryReceivingTab: (tabPage) ->
+        return tabPage.hasClass('receiving-history')
 
     _scrollToBottomOfTab: (tabPage) ->
         pageElem = tabPage.find(@gui.tabPagesMessagesPage)

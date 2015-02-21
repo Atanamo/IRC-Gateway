@@ -7,6 +7,7 @@ ClientIdentity = require './clientidentity'
 
 ## Extended abstraction of a socket.io room, which is mirrored to an IRC channel.
 ## Communication to IRC is handled by multiple Bots, each representing a game instance.
+## An instance of a BotChannel destroys itself after all clients and bots have left.
 ##
 ## When a socket client sends a message, it is routed to the bot, that represents the client's game instance.
 ## When a message is triggered on IRC, the respective bot sends it to the associated BotChannel.
@@ -14,18 +15,20 @@ ClientIdentity = require './clientidentity'
 ##
 ## @extends Channel
 class BotChannel extends Channel
-    @_instances: {}
+    #@_instances: {}  # Inherited
     botList: null
 
     gameID: 0
     ircChannelName: ''
     ircChannelTopic: null
+    ircChannelPassword: null
     ircUserList: null
     isPermanent: false
 
     constructor: (data, @isPermanent) ->
         super
         @ircChannelName = data.irc_channel or @ircChannelName
+        @ircChannelPassword = data.password or @ircChannelPassword
         @gameID = data.game_id or @gameID
         @botList = {}
         @ircUserList = {}
@@ -40,11 +43,12 @@ class BotChannel extends Channel
     # @override
     _checkForDestroy: ->
         if @_getNumberOfBots() is 0
-            super unless @isPermanent
+            return super unless @isPermanent
+        return false
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
-        super(clientSocket, true)   # true, because: dont do that: db.addClientToChannel(clientSocket, @name)
+        super(clientSocket, isRejoin)
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
@@ -53,13 +57,14 @@ class BotChannel extends Channel
     addBot: (bot) ->
         # Store bot reference, addressable by game id
         botID = bot.getID()
+        return Q(false) if @botList[botID]?  # Cancel, if bot already added
         @botList[botID] = bot
         # Let bot join the irc channel
         isMasterBot = Object.keys(@botList).length is 1  # First bot is master
         joinPromise = bot.handleWebChannelJoin(this, isMasterBot)
         return joinPromise
 
-    removeBot: (bot) ->
+    removeBot: (bot, checkForDestroy=true) ->
         botID = bot.getID()
         if @botList[botID]?
             # Remove bot reference before nominating new master
@@ -73,12 +78,24 @@ class BotChannel extends Channel
             partPromise = bot.handleWebChannelLeave(this)
 
             # May destroy instance (if it was the last bot)
-            @_checkForDestroy()
+            @_checkForDestroy() if checkForDestroy
+
             return partPromise
         return Q(false)
 
+    # @override
+    _deleteByClient: (clientSocket) ->
+        customRoutine = =>
+            # Kick off bots
+            for botID, bot of @botList
+                @removeBot(bot, false)
+        return super(clientSocket, customRoutine)
+
     getIrcChannelName: ->
         return @ircChannelName
+
+    getIrcChannelPassword: ->
+        return @ircChannelPassword
 
     getGameID: ->
         return @gameID

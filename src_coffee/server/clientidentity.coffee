@@ -1,4 +1,8 @@
 
+## Abstraction of a client's identity.
+## Used to identify clients and to store information to be sent to other clients.
+## Instances have to be created by appropriate factory methods of the class.
+##
 class ClientIdentity
     id: 0
     idGame: 0

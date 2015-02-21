@@ -1,10 +1,15 @@
 
 ## Include app modules
-#Config = require './config'
+Config = require './config'
 
 
 ## Basic abstraction of a socket.io room.
-## If channel is public, it doesn't inform connected clients by a current list of other socket clients.
+## Instances have to be created by static method `getInstance()`:
+## Each channel only is allowed to have one instance - meaning to have a singleton per channel name.
+## An instance destroys itself after all clients have left.
+##
+## Messages to the channel (and other events) are broadcasted to all clients in the channel.
+## Limitation on channels flagged public: Clients get not informed by a current list of other clients in the channel.
 ##
 class Channel
     @_instances: {}
@@ -12,26 +17,33 @@ class Channel
     uniqueClientsMap: null
 
     name: 'default'
-    isPublic: false
+    creatorID: 0
     title: ''
+    isPublic: false
+    isCustom: false
 
     eventNameMsg: 'message#unnamed'
     eventNameLeave: 'leave#unnamed'
+    eventNameDelete: 'delete#unnamed'
     eventNameHistory: 'history#unnamed'
-
+    listenerNameDisconnect: 'disconnectListener_unnamed'
 
     constructor: (data) ->
         @_updateUniqueClientsMap()  # Initialize map of unique clients
 
         @name = data.name or @name
-        @isPublic = data.is_public or @isPublic
+        @creatorID = data.creator_id or @creatorID
         @title = data.title or @name
+        @isPublic = data.is_public or @isPublic
+        @isCustom = @name.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
 
         log.debug "Creating new channel '#{@name}'"
 
         @eventNameMsg = 'message#' + @name
         @eventNameLeave = 'leave#' + @name
+        @eventNameDelete = 'delete#' + @name
         @eventNameHistory = 'history#' + @name
+        @listenerNameDisconnect = 'disconnectListener_' + @name
 
     @getInstance: (channelData) ->
         name = channelData.name
@@ -49,6 +61,8 @@ class Channel
     _checkForDestroy: ->
         if @getNumberOfClients() is 0
             @_destroy()
+            return true
+        return false
 
 
     #
@@ -60,17 +74,38 @@ class Channel
         return Object.keys(clientsMap).length
 
     _registerListeners: (clientSocket) ->
+        # Store callback for channel-specific disconnect on socket
+        clientSocket[@listenerNameDisconnect] = disconnectCallback = =>
+            @_handleClientDisconnect(clientSocket)
+
+        # Register channel-specific client events
         clientSocket.on @eventNameMsg, (messageText) => @_handleClientMessage(clientSocket, messageText)
-        clientSocket.on @eventNameLeave, => @_handleClientLeave(clientSocket)
+        clientSocket.on @eventNameLeave, (isClose) => @_handleClientLeave(clientSocket, isClose)
+        clientSocket.on @eventNameDelete, => @_handleClientDeleteRequest(clientSocket)
         clientSocket.on @eventNameHistory, => @_handleClientHistoryRequest(clientSocket)
-        clientSocket.on 'disconnect', => @_handleClientLeave(clientSocket, true)
+        clientSocket.on 'disconnect', disconnectCallback
+
+    _unregisterListeners: (clientSocket) ->
+        # Deregister listeners
+        clientSocket.removeAllListeners @eventNameMsg
+        clientSocket.removeAllListeners @eventNameLeave
+        clientSocket.removeAllListeners @eventNameDelete
+        clientSocket.removeAllListeners @eventNameHistory
+        clientSocket.removeListener 'disconnect', clientSocket[@listenerNameDisconnect]
 
     addClient: (clientSocket, isRejoin=false) ->
+        return false if clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is already joined to channel
+
+        log.debug "Adding client '#{clientSocket.identity.getName()}' to channel '#{@name}'"
+
         isExistingIdentity = @_hasUniqueClient(clientSocket)
 
         channelInfo =
             title: @title
+            creatorID: @creatorID
             isPublic: @isPublic
+            isCustom: @isCustom
+            ircChannelName: @ircChannelName  # Only available, when called from sub class BotChannel
 
         @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
         clientSocket.join(@name)                             # Join client to room of channel
@@ -92,7 +127,7 @@ class Channel
 
             # Permanently register client for channel
             unless isRejoin
-                db.addClientToChannel(clientSocket, @name)
+                db.addClientToChannel(clientSocket.identity, @name)
         else
             # Send initial user list to client
             if @isPublic
@@ -100,16 +135,24 @@ class Channel
             else
                 @_sendUserListToSocket(clientSocket)
 
-    removeClient: (clientSocket, isDisconnect=false) ->
+        return true
+
+    removeClient: (clientSocket, isClose=false, isDisconnect=false) ->
+        # Cancel, if socket is not joined to channel (but force on disconnect)
+        return false if not isDisconnect and clientSocket.rooms.indexOf(@name) < 0
+
+        log.debug "Removing client #{clientSocket.identity.getName()} from channel '#{@name}' (by close: #{isClose})"
+
         # Unregister events for this channel
-        clientSocket.removeAllListeners @eventNameMsg
-        clientSocket.removeAllListeners @eventNameLeave
-        clientSocket.removeAllListeners @eventNameHistory
-        clientSocket.removeAllListeners 'disconnect'
+        @_unregisterListeners(clientSocket)
 
         # Update client
-        clientSocket.leave(@name)             # Remove client from room of channel
-        @_sendToSocket(clientSocket, 'left')  # Notice client for channel leave
+        leaveInfo =
+            title: @title
+            isClose: isClose
+
+        clientSocket.leave(@name)                        # Remove client from room of channel
+        @_sendToSocket(clientSocket, 'left', leaveInfo)  # Notice client for channel leave
 
         # Update the list of unique identities (May removes client's identity)
         @_updateUniqueClientsMap()
@@ -124,12 +167,53 @@ class Channel
                 @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
                 @_sendUserListToRoom()
 
-            # Permanently unregister client for channel
-            unless isDisconnect
-                db.removeClientFromChannel(clientSocket, @name)
+            # Permanently unregister client from channel
+            unless isClose
+                db.removeClientFromChannel(clientSocket.identity, @name)
 
         # Remove and close instance, if last client left
         @_checkForDestroy()
+
+        return true
+
+    # @protected
+    _deleteByClient: (clientSocket, customRoutine=null) ->
+        return false unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
+
+        log.debug "Deleting channel '#{@name}' by client #{clientSocket.identity.getName()}"
+
+        # Unregister events for this channel
+        @_unregisterListeners(clientSocket)
+
+        # Inform clients (There may be multiple sockets, but only one identity)
+        deleteInfo =
+            title: @title
+
+        @_sendToRoom('deleted', deleteInfo, false)
+
+        # Kick all sockets out of room
+        clientMetaList = io.sockets.adapter.rooms[@name]
+
+        for clientID of clientMetaList
+            currClientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+            if currClientSocket?
+                @_unregisterListeners(currClientSocket)
+                currClientSocket.leave(@name)
+
+        # Update the list of unique identities (Should now be empty)
+        @_updateUniqueClientsMap()
+
+        # Optionally run custom routine (For child classes)
+        customRoutine?()
+
+        # Remove and close instance, if last client left
+        is_destroyed = @_checkForDestroy()
+
+        # Delete channel from database (For security, only delete, if channel has been destroyed)
+        if is_destroyed
+            db.deleteChannel(@name)
+
+        return true
 
 
     #
@@ -147,11 +231,21 @@ class Channel
         promise.then (logListData) =>
             oldestTimestamp = logListData[0]?.timestamp or -1
             newestTimestamp = logListData[logListData.length - 1]?.timestamp or -1
+
+            # Filter last entry, if it's the client's join (Cause in this case, the history is requested on joining)
+            if not @isPublic
+                lastEntry = logListData[logListData.length-1]
+                if lastEntry?.event_name is 'user_change'
+                    eventData = JSON.parse(lastEntry.event_data) or {}
+                    logListData.pop() if eventData.type is 'add' or  eventData.action is 'join'
+
+            # Build marker data
             markerData =
                 count: logListData.length
                 start: oldestTimestamp
                 end: newestTimestamp
 
+            # Send history
             @_sendToSocket(clientSocket, 'history_start', markerData)
             for logEntry in logListData
                 eventData = JSON.parse(logEntry.event_data)
@@ -209,19 +303,39 @@ class Channel
 
     # May be overridden
     # @protected
-    _handleClientMessage: (clientSocket, messageText) =>
+    _handleClientMessage: (clientSocket, messageText) ->
         log.debug "Client message to '#{@name}':", messageText
-        messageText = messageText?.trim()
+        messageText = messageText?.trim() or ''
         return if messageText is ''
         @_sendMessageToRoom(clientSocket.identity, messageText)
-
-    _handleClientLeave: (clientSocket, isDisconnect=false) =>
-        log.debug "Removing client from channel '#{@name}' (by disconnect: #{isDisconnect}):", clientSocket.identity
-        @removeClient(clientSocket, isDisconnect)
 
     _handleClientHistoryRequest: (clientSocket) =>
         log.debug "Client requests chat history for '#{@name}'"
         @_sendHistoryToSocket(clientSocket)
+
+    _handleClientLeave: (clientSocket, isClose=false) ->
+        if not isClose and clientSocket.identity.getUserID() is @creatorID
+            # Disallow permanent leaving on channels created by the client
+            @_sendToSocket(clientSocket, 'leave_fail', 'Cannot leave own channels')
+        else
+            @removeClient(clientSocket, isClose)
+
+    _handleClientDisconnect: (clientSocket) ->
+        # Immediately unregister listeners
+        @_unregisterListeners(clientSocket)
+        # Delay disconnect for configured time - This will allow to rejoin before disconnect is executed
+        delay_promise = Q.delay(Config.CLIENTS_DISCONNECT_DELAY)
+        delay_promise = delay_promise.then =>
+            @removeClient(clientSocket, true, true)
+        delay_promise.done()
+
+    _handleClientDeleteRequest: (clientSocket) ->
+        if clientSocket.identity.getUserID() isnt @creatorID
+            @_sendToSocket(clientSocket, 'delete_fail', 'Can only delete own channels')
+        else if @getNumberOfClients() > 1
+            @_sendToSocket(clientSocket, 'delete_fail', 'Can only delete empty channels')
+        else
+            @_deleteByClient(clientSocket)
 
 
     #
@@ -252,7 +366,7 @@ class Channel
                     clientIdentity = clientSocket.identity
                     clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
         else
-            clientsMap = @uniqueClientsMap
+            clientsMap = @uniqueClientsMap or {}
 
         return clientsMap
 
@@ -268,7 +382,6 @@ class Channel
                 userList.push(clientIdentity.toData())
 
         return userList
-
 
 
 

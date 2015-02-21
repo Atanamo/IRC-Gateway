@@ -13,8 +13,8 @@ Database = require './database'
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
-BotChannel = require './botchannel'
-Bot = require './bot'
+## Configure global libraries
+Q.longStackSupport = Config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
 
 ## Create library API objects
 app = express()
@@ -39,8 +39,8 @@ class Gateway
 
     constructor: ->
         @_bindServerEvents()
-        @socketHandler = new SocketHandler()
         @botManager = new BotManager()
+        @socketHandler = new SocketHandler(@botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
         ## Register http server events
@@ -74,7 +74,7 @@ class Gateway
             return @botManager.start()
 
         # Start listening for socket.io emits and for HTTP requests
-        startupPromise.then =>
+        startupPromise = startupPromise.then =>
             log.info 'Start listening...'
             server.listen(Config.WEB_SERVER_PORT)
 
