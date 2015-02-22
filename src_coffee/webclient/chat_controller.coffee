@@ -1,12 +1,7 @@
 
 # Controller class to handle communication with server
 class this.ChatController
-
     socketHandler: null
-
-    CHANNEL_NAME_MIN_LENGTH = 4
-    CHANNEL_NAME_MAX_LENGTH = 20
-    CHANNEL_PASSWORD_MIN_LENGTH = 5
 
     serverIP: ''
     serverPort: 0
