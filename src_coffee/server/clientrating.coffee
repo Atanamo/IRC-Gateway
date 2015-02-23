@@ -2,63 +2,54 @@
 ## Abstraction to store and recognize flooding by a client.
 ##
 class ClientFloodingRating
-    clientSocket: null
-    ratingEntries: null   # Array of: [*{'timestamp', 'size'}]
+    floodingRecognizedCallback: null
+    ratingEntries: null   # Array of: [*{'timestamp', 'weight'}]
 
-    # Describes a rate limit of 1mb/s:
-    LIMIT_SIZE = 1048576  # Maximum number of bytes/characters
-    TIME_INTERVAL = 1000  # Interval in milliseconds
+    LIMIT_WEIGHT = 33     # Maximum total weight in interval
+    TIME_INTERVAL = 3000  # Interval in milliseconds
 
-    constructor: (@clientSocket) ->
+    constructor: (@floodingRecognizedCallback) ->
         @ratingEntries = []
 
-    _addRatingEntry: (size) ->
-        newEntry = 
+    _addRatingEntry: (newWeight) ->
+        @ratingEntries.push
             timestamp: Date.now()
-            size: size
-        @ratingEntries.push(newEntry)
-        return newEntry
+            weight: newWeight
+        return
 
-    _getEntriesWithinInterval: ->
-        # Collect entries created within interval
+    _calculateTotalWeightOfLatestEntries: ->
         intervalEntries = []
         nowTimestamp = Date.now()
+        totalWeight = 0
 
         for currEntry in @ratingEntries by -1
-            if nowTimestamp - currEntry.timestamp < TIME_INTERVAL  # Must be younger than interval time
-                intervalEntries.push(currEntry)
+            if nowTimestamp - currEntry.timestamp <= TIME_INTERVAL  # Must be younger than interval time
+                intervalEntries.unshift(currEntry)  # Collect entries created within interval in chronological
+                totalWeight += currEntry.weight     # Sum up weight of entries in interval
+            else
+                # Break at first entry outside interval
+                break
 
-        return intervalEntries
+        # Update ratings array
+        @ratingEntries = intervalEntries
 
-    _getCalculatedTotalSize: (entries) ->
-        totalSize = 0
-        for currEntry in entries by 1
-            totalSize += currEntry.size
-        return totalSize
+        return totalWeight
 
+    checkForFlooding: (eventWeight) ->
+        @_addRatingEntry(eventWeight)
 
-    checkForFlooding: (chunk) ->
-        @_addRatingEntry(chunk.length)
-        
-        # Remove outdated entries / update array
-        @ratingEntries = @_getEntriesWithinInterval()
-
-        # Sum up size of entries in interval
-        totalSize = @_getCalculatedTotalSize(@ratingEntries)
+        # Collect entries in interval and sum up their weight
+        totalWeight = @_calculateTotalWeightOfLatestEntries()
 
         # Check limit
-        if totalSize > LIMIT_SIZE
-            clientSocket.disconnect()  # TODO: Disconnect due to flooding.
+        if totalWeight > LIMIT_WEIGHT
+            @floodingRecognizedCallback?()
             return false
 
         return true
 
-    destroy: ->
-        @clientSocket = null
-        @ratingEntries = null
-
 
 
 ## Export class
-module.exports = ClientFloodingProtection
+module.exports = ClientFloodingRating
 

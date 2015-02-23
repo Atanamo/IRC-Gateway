@@ -4,9 +4,10 @@ socketio = require 'socket.io'
 
 ## Include app modules
 Config = require './config'
-ClientIdentity = require './clientidentity'
 Channel = require './channel'
 BotChannel = require './botchannel'
+ClientIdentity = require './clientidentity'
+ClientFloodingRating = require './clientrating'
 
 
 ## Abstraction of a handler for common client request on a socket.io socket.
@@ -40,10 +41,16 @@ class SocketHandler
 
     _handleClientConnect: (clientSocket) =>
         log.debug 'Client connected...'
+        # Add flooding rating object
+        floodingCallback = =>
+            @_handleClientFlooding(clientSocket)
+        clientSocket.rating = new ClientFloodingRating(floodingCallback)
+        clientSocket.rating.checkForFlooding(2)
         # Bind socket events to new client
         @_bindSocketClientEvents(clientSocket)
 
     _handleClientDisconnect: (clientSocket) =>
+        return if clientSocket.isDisconnected
         log.debug 'Client disconnected...'
         clientSocket.isDisconnected = true
         # Deregister listeners
@@ -51,10 +58,22 @@ class SocketHandler
         clientSocket.removeAllListeners 'auth'
         clientSocket.removeAllListeners 'join'
 
-    _handleClientAuthRequest: (clientSocket, authData) =>
-        log.debug 'Client requests auth...'
-        return if clientSocket.identity?
+    _handleClientFlooding: (clientSocket) =>
+        return if clientSocket.isDisconnected
+        log.info "Disconnecting client '#{clientSocket.identity?.getName()}' due to flooding!"
+        clientSocket.emit 'forced_disconnect', 'Recognized flooding attack'
+        clientSocket.emit 'disconnect'
+        clientSocket.disconnect(false)  # Disconnect without closing connection (avoids automatic reconnects)
 
+    _handleClientAuthRequest: (clientSocket, authData) =>
+        return unless clientSocket.rating.checkForFlooding((if clientSocket.hasTriedAuth then 14 else 1))
+        return if clientSocket.identity?
+        log.debug 'Client requests auth...'
+
+        # Flag socket to have tried auth at least once
+        clientSocket.hasTriedAuth = true
+
+        # Set start values
         userID = authData.userID
         gameID = authData.gameID
         securityToken = authData.token
@@ -112,6 +131,7 @@ class SocketHandler
 
     _handleClientChannelJoin: (clientSocket, channelData) =>
         return unless clientSocket.identity?
+        return unless clientSocket.rating.checkForFlooding(7)
 
         gameID = clientSocket.identity.getGameID()
         requestedChannelTitle = channelData?.title or null

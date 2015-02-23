@@ -304,16 +304,21 @@ class Channel
     # May be overridden
     # @protected
     _handleClientMessage: (clientSocket, messageText) ->
+        return unless clientSocket.rating.checkForFlooding(8)
         log.debug "Client message to '#{@name}':", messageText
         messageText = messageText?.trim() or ''
         return if messageText is ''
         @_sendMessageToRoom(clientSocket.identity, messageText)
 
     _handleClientHistoryRequest: (clientSocket) =>
+        flagName = 'hasHistory_' + @name
+        return unless clientSocket.rating.checkForFlooding((if clientSocket[flagName] then 10 else 1))
         log.debug "Client requests chat history for '#{@name}'"
+        clientSocket[flagName] = true  # Flag socket to have requested history at least once
         @_sendHistoryToSocket(clientSocket)
 
     _handleClientLeave: (clientSocket, isClose=false) ->
+        return unless clientSocket.rating.checkForFlooding(3)
         if not isClose and clientSocket.identity.getUserID() is @creatorID
             # Disallow permanent leaving on channels created by the client
             @_sendToSocket(clientSocket, 'leave_fail', 'Cannot leave own channels')
@@ -330,6 +335,7 @@ class Channel
         delay_promise.done()
 
     _handleClientDeleteRequest: (clientSocket) ->
+        return unless clientSocket.rating.checkForFlooding(4)
         if clientSocket.identity.getUserID() isnt @creatorID
             @_sendToSocket(clientSocket, 'delete_fail', 'Can only delete own channels')
         else if @getNumberOfClients() > 1

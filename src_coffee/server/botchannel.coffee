@@ -148,6 +148,7 @@ class BotChannel extends Channel
 
     # @override
     _handleClientMessage: (clientSocket, messageText) =>
+        return unless clientSocket.rating.checkForFlooding(8)
         log.debug "Client message to IRC (#{@ircChannelName}):", messageText
         botID = clientSocket.identity.getGameID() or -1
         targetBot = @botList[botID]
