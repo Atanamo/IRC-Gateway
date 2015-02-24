@@ -43,6 +43,8 @@ class this.Translation
         'msg.user_left_channel.part.reasonless': '$user$ left the channel'
         'msg.user_left_channel.quit.reasoned': '$user$ has quit, message: $reason$'
         'msg.user_left_channel.quit.reasonless': '$user$ has quit'
+        'msg.user_left_channel.close.reasoned': '$user$ left by closing the channel tab, reason: $reason$'  # Should not be required
+        'msg.user_left_channel.close.reasonless': '$user$ left by closing the channel tab'
         'msg.user_kicked_from_channel': '$user$ has been kicked from channel by $actor$, reason: $reason$'
         'msg.user_killed_from_server': '$user$ has been kicked from server by $actor$, reason: $reason$'
         'msg.user_list_changed': 'The list of users has changed because of an unknown event for user $user$'
@@ -80,7 +82,7 @@ class this.Translation
         'server_msg.cannot_leave_own_channels': 'Selbst erstellte Channels k&ouml;nnen nicht verlassen werden!'
         'server_msg.can_only_delete_own_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn sie selbst erstellt wurden!'
         'server_msg.can_only_delete_empty_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn keine anderen User beigetreten sind (selbst wenn offline)!'
-        'server_msg.recognized_flooding_attack': 'Du wurdest wegen Spamming-Verdacht vom Server geworfen!'
+        'server_msg.recognized_flooding_attack': 'Du wurdest wegen Spamming-Verdachts vom Server geworfen!'
 
         'manage_msg.loading_start': 'Initialisierung l&auml;uft...'
         'manage_msg.connect_success': 'Verbindung zum Server hergestellt!'
@@ -108,6 +110,8 @@ class this.Translation
         'msg.user_left_channel.part.reasonless': '$user$ hat den Channel verlassen'
         'msg.user_left_channel.quit.reasoned': '$user$ ist offline gegangen: $reason$'
         'msg.user_left_channel.quit.reasonless': '$user$ ist offline gegangen'
+        'msg.user_left_channel.close.reasoned': '$user$ hat den Channel durch Schlie&szlig;en des Tabs verlassen, Grund: $reason$'  # Should not be required
+        'msg.user_left_channel.close.reasonless': '$user$ hat den Channel durch Schlie&szlig;en des Tabs verlassen'
         'msg.user_kicked_from_channel': '$user$ wurde von $actor$ aus dem Channel gekickt, Grund: $reason$'
         'msg.user_killed_from_server': '$user$ wurde von $actor$ vom Server geworfen, Grund: $reason$'
         'msg.user_list_changed': 'Die Userliste hat sich wegen einem Ereignis zu Benutzer $user$ aktualisiert'

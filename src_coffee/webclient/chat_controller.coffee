@@ -366,7 +366,7 @@ class this.ChatController
             when 'join'
                 noticeText = Translation.get('msg.user_joined_channel', user: userName)
 
-            when 'part', 'quit'
+            when 'part', 'quit', 'close'
                 if reasonText?
                     noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasoned", user: userName, reason: reasonText)
                 else

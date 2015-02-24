@@ -163,7 +163,7 @@ class Channel
             if @isPublic
                 @_sendUserNumberToRoom()
             else
-                leaveAction = if isDisconnect then 'quit' else 'part'
+                leaveAction = if isDisconnect then 'quit' else (if isClose then 'close' else 'part')
                 @_sendUserChangeToRoom('remove', leaveAction, clientSocket.identity)
                 @_sendUserListToRoom()
 
