@@ -23,7 +23,7 @@
     "npm": ">= 1.0.0"
   },
   "scripts": {
-    "preinstall": "npm install coffee-script -g",
+    "preinstall": "npm install coffee-script@1.9.0 -g",
     "install": "cake build"
   },
   "dependencies": {
@@ -34,7 +34,7 @@
     "mysql": "~2.5.0"
   },
   "devDependencies": {
-    "coffee-script": ">= 1.7.0"
+    "coffee-script": "1.9.0"
   },
   "bundleDependencies": [],
   "private": true,
