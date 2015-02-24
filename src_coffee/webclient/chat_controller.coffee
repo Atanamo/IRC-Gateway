@@ -315,11 +315,19 @@ class this.ChatController
 
     handleChannelUserList: (channel, clientList) ->
         tabPage = @_getChannelTabPage(channel)
+
+        # Sort users by name
+        sortedClientList = clientList.sort (firstData, secondData) ->
+            return -1 if firstData.name?.toLowerCase() < secondData.name?.toLowerCase()
+            return 1
+
+        # Add user list(s) to GUI list
         @_clearUserListOfTab(tabPage)
         clientsNumber = 0
-        for identityData in clientList
+        for identityData in sortedClientList
             @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
             clientsNumber++ unless identityData.isIrcClient
+
         # Show list and number of players, if joined players are not hidden (number not zero)
         if clientsNumber isnt 0
             tabPage.find(@gui.tabPagesUsersIngame).show()
