@@ -41,6 +41,9 @@ module.exports =
     MAX_CHANNELS_PER_CLIENT: 3      # Maximum number of channels a client/user is allowed to create
     MAX_BOTS: 5                     # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
 
+    FLOODRATE_TIME_INTERVAL: 3000   # Interval in milliseconds, to be used for flooding protection: To recognize flooding, only client requests not older than this value are totaled up
+    FLOODRATE_LIMIT_WEIGHT: 33      # Maximum total "weight" of client requests in time interval - A client is kicked, if he exceeds the limit
+
     BOT_RECONNECT_DELAY: 61000      # Delay time in milliseconds, for reconnecting to server, when connection has been refused
     BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
     BOT_USERNAME_PATTERN: "#{botName}_<id>"                   # The user name of the Bot on IRC, with <id> as a placeholder for the game ID

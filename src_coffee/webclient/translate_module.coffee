@@ -15,6 +15,7 @@ class this.Translation
         'server_msg.cannot_leave_own_channel': 'Self-created channels can not be leaved!'
         'server_msg.can_only_delete_own_channels': 'A channel can only be deleted, if it has been created by yourself!'
         'server_msg.can_only_delete_empty_channels': 'A channel can only be deleted, if no other users are joined to it (even if offline)!'
+        'server_msg.recognized_flooding_attack': 'You were kicked from the server because of spamming suspicion!'
 
         'manage_msg.loading_start': 'Loading...'
         'manage_msg.connect_success': 'Connection established!'
@@ -79,6 +80,7 @@ class this.Translation
         'server_msg.cannot_leave_own_channels': 'Selbst erstellte Channels k&ouml;nnen nicht verlassen werden!'
         'server_msg.can_only_delete_own_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn sie selbst erstellt wurden!'
         'server_msg.can_only_delete_empty_channels': 'Channels k&ouml;nnen nur gel&ouml;scht werden, wenn keine anderen User beigetreten sind (selbst wenn offline)!'
+        'server_msg.recognized_flooding_attack': 'Du wurdest wegen Spamming-Verdacht vom Server geworfen!'
 
         'manage_msg.loading_start': 'Initialisierung l&auml;uft...'
         'manage_msg.connect_success': 'Verbindung zum Server hergestellt!'

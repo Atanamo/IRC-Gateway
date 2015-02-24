@@ -10,6 +10,7 @@ class this.SocketClient
     instanceData: null
     identityData: null
     lastMessageSentStamp: 0
+    isDisonnected: true
 
     constructor: (@chatController, @serverIP, @serverPort, @instanceData) ->
 
@@ -21,6 +22,7 @@ class this.SocketClient
         @socket.on 'connect', @_handleServerConnect         # Build-in event
         @socket.on 'disconnect', @_handleServerDisconnect   # Build-in event
         @socket.on 'error', @_handleServerDisconnect        # Build-in event
+        @socket.on 'forced_disconnect', @_handleServerDisconnect
 
         @socket.on 'auth_ack', @_handleServerAuthAck
         @socket.on 'auth_fail', @_handleServerAuthFail
@@ -49,11 +51,14 @@ class this.SocketClient
     #
 
     _handleServerConnect: =>
+        @isDisonnected = false
         @chatController.handleServerMessage(Translation.get('manage_msg.connect_success'))
         @chatController.handleServerMessage(Translation.get('manage_msg.auth_start'))
         @_sendAuthRequest()
 
     _handleServerDisconnect: (errorMsg) =>
+        return if @isDisonnected
+        @isDisonnected = true
         @identityData = null
         if errorMsg?
             serverText = Translation.getForServerMessage(errorMsg)
