@@ -1,12 +1,16 @@
 
+## Include app modules
+Config = require './config'
+
+
 ## Abstraction to store and recognize flooding by a client.
 ##
 class ClientFloodingRating
     floodingRecognizedCallback: null
-    ratingEntries: null   # Array of: [*{'timestamp', 'weight'}]
+    ratingEntries: null   # Array of objects: {'timestamp', 'weight'}*
 
-    LIMIT_WEIGHT = 33     # Maximum total weight in interval
-    TIME_INTERVAL = 3000  # Interval in milliseconds
+    TIME_INTERVAL = Config.FLOODRATE_TIME_INTERVAL  # Interval in milliseconds
+    LIMIT_WEIGHT = Config.FLOODRATE_LIMIT_WEIGHT    # Maximum total weight in interval
 
     constructor: (@floodingRecognizedCallback) ->
         @ratingEntries = []
