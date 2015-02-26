@@ -204,7 +204,7 @@ class this.SocketClient
 
         if identData.isIrcClient and identData.idGame
             fullText = data[textProperty]
-            matchData = fullText.match(/<([^> ]+)>[: ]/)
+            matchData = fullText.match(/<([^>]+)>[: ]/)
 
             if matchData?.length
                 inlineText = matchData[0]

@@ -31,9 +31,9 @@ class Channel
     constructor: (data) ->
         @_updateUniqueClientsMap()  # Initialize map of unique clients
 
-        @name = data.name or @name
+        @name = String(data.name or @name)
         @creatorID = data.creator_id or @creatorID
-        @title = data.title or @name
+        @title = String(data.title or @name)
         @isPublic = data.is_public or @isPublic
         @isCustom = @name.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
 

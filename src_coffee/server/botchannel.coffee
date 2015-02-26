@@ -27,8 +27,8 @@ class BotChannel extends Channel
 
     constructor: (data, @isPermanent) ->
         super
-        @ircChannelName = data.irc_channel or @ircChannelName
-        @ircChannelPassword = data.password or @ircChannelPassword
+        @ircChannelName = String(data.irc_channel or @ircChannelName)
+        @ircChannelPassword = String(data.password or '') or @ircChannelPassword
         @gameID = data.game_id or @gameID
         @botList = {}
         @ircUserList = {}
