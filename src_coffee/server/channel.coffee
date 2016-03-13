@@ -94,7 +94,7 @@ class Channel
         clientSocket.removeListener 'disconnect', clientSocket[@listenerNameDisconnect]
 
     addClient: (clientSocket, isRejoin=false) ->
-        return false if clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is already joined to channel
+        return false if @_hasJoinedSocket(clientSocket)  # Cancel, if socket is already joined to channel
 
         log.debug "Adding client '#{clientSocket.identity.getName()}' to channel '#{@name}'"
 
@@ -139,7 +139,7 @@ class Channel
 
     removeClient: (clientSocket, isClose=false, isDisconnect=false) ->
         # Cancel, if socket is not joined to channel (but force on disconnect)
-        return false if not isDisconnect and clientSocket.rooms.indexOf(@name) < 0
+        return false if not isDisconnect and not @_hasJoinedSocket(clientSocket)
 
         log.debug "Removing client #{clientSocket.identity.getName()} from channel '#{@name}' (by close: #{isClose})"
 
@@ -178,7 +178,7 @@ class Channel
 
     # @protected
     _deleteByClient: (clientSocket, customRoutine=null) ->
-        return false unless clientSocket.rooms.indexOf(@name) >= 0  # Cancel, if socket is not joined to channel
+        return false unless @_hasJoinedSocket(clientSocket)  # Cancel, if socket is not joined to channel
 
         log.debug "Deleting channel '#{@name}' by client #{clientSocket.identity.getName()}"
 
@@ -350,6 +350,10 @@ class Channel
 
     _getCurrentTimestamp: ->
         return (new Date()).getTime()
+
+    _hasJoinedSocket: (clientSocket) ->
+        #return clientSocket.rooms.indexOf(@name) >= 0  # Working till v1.3.x, then rooms changed to a map
+        return clientSocket.rooms[@name]?
 
     _hasUniqueClient: (clientSocket) ->
         clientIdentity = clientSocket.identity
