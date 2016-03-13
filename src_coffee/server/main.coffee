@@ -43,15 +43,17 @@ class Gateway
         @socketHandler = new SocketHandler(@botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
+        serverRootDir = process.cwd()
+
         ## Register http server events
         app.get '/', (request, response) ->
-            response.sendfile "./index.html"
+            response.sendFile "index.html", {root: serverRootDir}
 
         app.get '/js/:file', (request, response) ->
             filename = request.params.file
-            log.info 'Requested script file: ' + filename
+            log.info 'Requested script file:', filename
 
-            response.sendfile "./src_js/webclient/#{filename}", null, (err) ->
+            response.sendFile filename, {root: "#{serverRootDir}/src_js/webclient/"}, (err) ->
                 if err? then response.send 'File not found'
 
         server.on 'close', ->
