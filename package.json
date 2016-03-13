@@ -23,18 +23,18 @@
     "npm": ">= 1.0.0"
   },
   "scripts": {
-    "preinstall": "npm install coffee-script@1.9.0 -g",
+    "preinstall": "npm install coffee-script@1.10.0 -g",
     "install": "cake build"
   },
   "dependencies": {
-    "q": "~1.0.1",
-    "express": "~3.2.6",
-    "socket.io": "~1.1.0",
-    "irc": "~0.3.7",
-    "mysql": "~2.5.0"
+    "q": "~1.4.1",
+    "express": "~4.13.0",
+    "socket.io": "~1.3.7",
+    "irc": "~0.4.1",
+    "mysql": "~2.10.2"
   },
   "devDependencies": {
-    "coffee-script": "1.9.0"
+    "coffee-script": "1.10.0"
   },
   "bundleDependencies": [],
   "private": true,
