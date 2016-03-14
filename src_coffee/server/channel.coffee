@@ -192,13 +192,9 @@ class Channel
         @_sendToRoom('deleted', deleteInfo, false)
 
         # Kick all sockets out of room
-        clientMetaList = io.sockets.adapter.rooms[@name]
-
-        for clientID of clientMetaList
-            currClientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
-            if currClientSocket?
-                @_unregisterListeners(currClientSocket)
-                currClientSocket.leave(@name)
+        @_iterateEachJoinedSocket (currClientSocket) =>
+            @_unregisterListeners(currClientSocket)
+            currClientSocket.leave(@name)
 
         # Update the list of unique identities (Should now be empty)
         @_updateUniqueClientsMap()
@@ -365,16 +361,10 @@ class Channel
 
     _getUniqueClientsMap: (forceUpdate=false) ->
         if forceUpdate
-            #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
-            clientMetaList = io.sockets.adapter.rooms[@name]
             clientsMap = {}
-
-            for clientID of clientMetaList
-                clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
-
-                if clientSocket?
-                    clientIdentity = clientSocket.identity
-                    clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
+            @_iterateEachJoinedSocket (clientSocket) =>
+                clientIdentity = clientSocket.identity
+                clientsMap[clientIdentity.getGlobalID()] = clientIdentity if clientIdentity?
         else
             clientsMap = @uniqueClientsMap or {}
 
@@ -392,6 +382,17 @@ class Channel
                 userList.push(clientIdentity.toData())
 
         return userList
+
+    _iterateEachJoinedSocket: (iterationCallback) ->
+        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
+        clientMetaList = io.sockets.adapter.rooms[@name]
+        clientMetaList = clientMetaList?.sockets or clientMetaList or {}  # There's no sockets property till v0.3.x
+
+        for clientID of clientMetaList
+            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+
+            # Call back on every real socket
+            iterationCallback(clientSocket) if clientSocket?
 
 
 
