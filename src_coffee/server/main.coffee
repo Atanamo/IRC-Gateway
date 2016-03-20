@@ -19,8 +19,8 @@ Q.longStackSupport = Config.DEBUG_ENABLED  # On debug mode, enable better stack 
 
 ## Create library API objects
 httpsOptions =
-    key: fs.readFileSync('./certs/server.key')
-    cert: fs.readFileSync('./certs/server.crt')
+    cert: fs.readFileSync(Config.SSL_CERT_PATH)
+    key: fs.readFileSync(Config.SSL_KEY_PATH)
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance

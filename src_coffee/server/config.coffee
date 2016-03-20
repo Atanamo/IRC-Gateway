@@ -31,6 +31,8 @@ module.exports =
     REQUIRE_CHANNEL_PW: false  # Set to true, to force clients to set a password when creating a channel (The password then must be at least 3 digits long)
 
     WEB_SERVER_PORT: 8050  # The port of the webserver started by this app
+    SSL_CERT_PATH: './certs/server.crt'  # The ssl certificate to use for the https webserver
+    SSL_KEY_PATH: './certs/server.key'   # The uncrypted private key file of the ssl certificate
 
     CLIENT_AUTH_SECRET: 'SECRET_2'  # A secret string to be used as part of the security token (The token needs to be sent from a client on login)
 
