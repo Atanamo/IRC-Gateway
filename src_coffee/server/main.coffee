@@ -1,6 +1,7 @@
 
 ## Include libraries
-http = require 'http'
+fs = require 'fs'
+https = require 'https'
 express = require 'express'
 socketio = require 'socket.io'
 Q = require 'q'
@@ -17,12 +18,16 @@ BotManager = require './botmanager'
 Q.longStackSupport = Config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
 
 ## Create library API objects
+httpsOptions =
+    key: fs.readFileSync('./certs/server.key')
+    cert: fs.readFileSync('./certs/server.crt')
+
 app = express()
-server = http.createServer(app)    # Create HTTP server instance
-io = socketio.listen(server)       # Listen for Websocket requests on server
+server = https.createServer(httpsOptions, app)  # Create HTTP server instance
+io = socketio.listen(server)  # Listen for Websocket requests on server
 
 ## Create app objects
-db = new Database()                # Create database wrapper object
+db = new Database()           # Create database wrapper object
 log = Logger
 
 ## Set object to global scope
