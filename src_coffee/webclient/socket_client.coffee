@@ -17,9 +17,11 @@ class this.SocketClient
     start: ->
         console.debug "Connecting to: #{@serverIP}:#{@serverPort}"
 
-        @socket = io.connect("#{@serverIP}:#{@serverPort}")
+        @socket = io.connect("#{@serverIP}:#{@serverPort}", reconnectionDelay: 5000)
 
         @socket.on 'connect', @_handleServerConnect         # Build-in event
+        @socket.on 'connect_error', @_handleServerConnectError      # Build-in event
+        @socket.on 'connect_timeout', @_handleServerConnectTimeout  # Build-in event
         @socket.on 'disconnect', @_handleServerDisconnect   # Build-in event
         @socket.on 'error', @_handleServerDisconnect        # Build-in event
         @socket.on 'forced_disconnect', @_handleServerDisconnect
@@ -55,6 +57,14 @@ class this.SocketClient
         @chatController.handleServerMessage(Translation.get('manage_msg.connect_success'))
         @chatController.handleServerMessage(Translation.get('manage_msg.auth_start'))
         @_sendAuthRequest()
+
+    _handleServerConnectError: (errorObj) =>
+        errorObj ?= message: 'Unknown connect error'
+        console.error 'Connecting error:', "'#{errorObj.message}'", (errorObj.type or '')
+
+    _handleServerConnectTimeout: (errorObj) =>
+        errorObj ?= message: 'Timeout!'
+        @_handleServerConnectError(errorObj)
 
     _handleServerDisconnect: (errorMsg) =>
         return if @isDisonnected
