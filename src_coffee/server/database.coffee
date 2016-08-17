@@ -239,6 +239,7 @@ class Database
                 FROM `#{Config.SQL_TABLES.GAMES_LIST}`
                 WHERE `Status`>=0 AND `Status`<4
                    OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
+                   OR `Status`>=5 AND `Status`<7
                 ORDER BY `Status` ASC, `ID` ASC
                 LIMIT #{Config.MAX_BOTS}
               "
