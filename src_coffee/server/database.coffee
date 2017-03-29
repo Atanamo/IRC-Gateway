@@ -126,20 +126,20 @@ class Database
         err.isValidation = true
         return err
 
-    _get_hash_value: (original_val) ->
+    _getHashValue: (original_val) ->
         hashingStream = crypto.createHash('md5')
         hashingStream.update(original_val);
         return hashingStream.digest('hex')
 
-    _get_game_db_name: (gameMetaData) ->
+    _getGameDatabaseName: (gameMetaData) ->
         return "#{Config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
 
-    _get_game_table_name: (gameMetaData, tablePostfix) ->
+    _getGameTableName: (gameMetaData, tablePostfix) ->
         return "#{Config.SQL_TABLES.PREFIX_GAME_TABLE}#{gameMetaData.game_id}#{tablePostfix}"
 
     # Returns the current security token for the given player. This token must be send on auth request by the client.
-    _get_security_token: (idUser, playerData) ->
-        return @_get_hash_value("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
+    _getSecurityToken: (idUser, playerData) ->
+        return @_getHashValue("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
 
     # Checks the given data for being valid to be passed to `createChannelByData()` and throws an error, if validation fails.
     # @param channelData [object] A data map with the channel data.
@@ -388,8 +388,8 @@ class Database
 
         # Read data of given player in given game
         promise = promise.then (gameData) =>
-            gameDatabase = @_get_game_db_name(gameData)
-            playersTable = @_get_game_table_name(gameData, Config.SQL_TABLES.POSTFIX_GAME_PLAYERS)
+            gameDatabase = @_getGameDatabaseName(gameData)
+            playersTable = @_getGameTableName(gameData, Config.SQL_TABLES.POSTFIX_GAME_PLAYERS)
             sql = "
                     SELECT `ID` AS `game_identity_id`, `Folkname` AS `game_identity_name`, `LastActivityStamp` AS `activity_stamp`
                     FROM `#{gameDatabase}`.`#{playersTable}`
@@ -403,7 +403,7 @@ class Database
                 idGame: idGame
                 idUser: idUser
                 name: playerData.game_identity_name
-                token: @_get_security_token(idUser, playerData)
+                token: @_getSecurityToken(idUser, playerData)
             }
 
         return promise
