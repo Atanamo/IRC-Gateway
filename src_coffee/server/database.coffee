@@ -134,8 +134,8 @@ class Database
     _getGameDatabaseName: (gameMetaData) ->
         return "#{Config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
 
-    _getGameTableName: (gameMetaData, tablePostfix) ->
-        return "#{Config.SQL_TABLES.PREFIX_GAME_TABLE}#{gameMetaData.game_id}#{tablePostfix}"
+    _getGameTableName: (gameMetaData, tableNameSkeleton) ->
+        return tableNameSkeleton.replace('<id>', gameMetaData.game_id)
 
     # Returns the current security token for the given player. This token must be send on auth request by the client.
     _getSecurityToken: (idUser, playerData) ->
@@ -389,11 +389,14 @@ class Database
         # Read data of given player in given game
         promise = promise.then (gameData) =>
             gameDatabase = @_getGameDatabaseName(gameData)
-            playersTable = @_getGameTableName(gameData, Config.SQL_TABLES.POSTFIX_GAME_PLAYERS)
+            playerIdentitiesTable = @_getGameTableName(gameData, Config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
             sql = "
-                    SELECT `ID` AS `game_identity_id`, `Folkname` AS `game_identity_name`, `LastActivityStamp` AS `activity_stamp`
-                    FROM `#{gameDatabase}`.`#{playersTable}`
-                    WHERE `UserID`=#{@_toQuery(idUser)}
+                    SELECT `I`.`ID` AS `game_identity_id`, `I`.`Folkname` AS `game_identity_name`, `I`.`LastActivityStamp` AS `activity_stamp`
+                    FROM `#{Config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
+                    JOIN `#{gameDatabase}`.`#{playerIdentitiesTable}` AS `I`
+                      ON `I`.`ID`=`PG`.`FolkID`
+                    WHERE `PG`.`GalaxyID`=#{@_toQuery(idGame)}
+                      AND `PG`.`UserID`=#{@_toQuery(idUser)}
                   "
             return @_readSimpleData(sql, true)
 

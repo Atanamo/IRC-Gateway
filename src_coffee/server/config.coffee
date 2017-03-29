@@ -77,8 +77,8 @@ module.exports =
 
     SQL_TABLES:
         GAMES_LIST: 'game_worlds'                # The name of the table in common db, which contains the list of game worlds
-        PREFIX_GAME_TABLE: 'game_'               # The name prefix of tables in game db, which contain data of a game world's contents
-        POSTFIX_GAME_PLAYERS: '_players'         # The name postfix of the game table, which contains the list of a game world's players
+        PLAYER_GAMES: 'player_games'             # The name of the table in common db, which maps a player to a game world (and an identity)
+        GAME_PLAYER_IDENTITIES: 'game_<id>_identities'  # The name of the table in game db, which contains the player identities of a related game (With <id> as a placeholder for the game ID)
 
         CHANNEL_LIST: 'chat - channels'          # The name of the table for storing non-game/custom channels (Must be created, see database_setup.sql)
         CHANNEL_JOININGS: 'chat - channeljoins'  # The name of the table for storing user joins to custom channels (Must be created, see database_setup.sql)
