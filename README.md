@@ -16,3 +16,46 @@ This way, on IRC there is only one bot for each game world. The bot represents a
 
 
 (*) Note, that for developing purposes game worlds might be called "galaxies" inside the project, due to the terminology of SGR.
+
+
+
+Installation
+============
+
+* Download the project sources
+* Set up the database on a MySQL server. Sadly, this is tricky and requires code modifications...
+  * All database interaction is done in following file: ./src_coffee/server/database.coffee
+  * Have a look at the file and change the queries (and/or config) to match your environment:
+  * You have to modify all queries containing `Config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
+  * All additional tables the chat system requires can be set up using the following file: ./setup_migration.sql
+* Navigate to the project directory (on shell), then run:
+* `$ npm install`
+
+
+Demo page
+=========
+
+The project contains a very simple `index.html` as demo page.
+
+Before running anything, make sure you have set up the project following the installation instructions.
+Then you have to start the chat server (including a web server): 
+
+``$ node ./src_js/server/main.js``
+
+Afterwards, you can open your browser and load the page on localhost. But note the server runs on SSL protocol.
+So based on the default settings in the server's config file, you have to browse following address:
+
+> https://localhost:8050
+
+
+Changing config
+===============
+
+* Edit the server settings in: `./src_coffee/server/config.coffee`
+* Rebuild the JavaScript code (transcompile CoffeeScript code): 
+ 	``$ cake build``
+* Run server:
+	``$ node ./src_js/server/main.js``
+
+
+
