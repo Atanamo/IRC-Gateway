@@ -377,6 +377,7 @@ class Database
     # @param idGame [int] The id of the player's game world as given by a client on logon.
     # @return [promise] A promise, resolving to a data map with keys 
     #   `name` (The player's name for the chat), 
+    #   `title` (An optional more detail name for the chat, defaults to the name), 
     #   `id` (The id of the player for the chat), 
     #   `idGame` (Should equal idGame), 
     #   `idUser` (The id of the player's account) and 
@@ -400,12 +401,35 @@ class Database
                   "
             return @_readSimpleData(sql, true)
 
+        # Read an identity sub id for cases where the fetched game identity is used by more than one player
         promise = promise.then (playerData) =>
+            sql = "
+                    SELECT `UserID` AS `user_id`
+                    FROM `#{Config.SQL_TABLES.PLAYER_GAMES}`
+                    WHERE `GalaxyID`=#{@_toQuery(idGame)}
+                      AND `FolkID`=#{@_toQuery(playerData.game_identity_id)}
+                    ORDER BY `UserID` ASC
+                  "
+            innerPromise = @_readMultipleData(sql)
+            innerPromise = innerPromise.then (identityPlayersListdata) =>
+                if identityPlayersListdata.length > 1
+                    playerItem = identityPlayersListdata.find (item, idx) ->
+                        return ("#{item.user_id}" is "#{idUser}")
+                    playerIndex = identityPlayersListdata.indexOf(playerItem)
+                    playerData.game_identity_sub_id = playerIndex + 1  # Add sub id to result data
+                return playerData
+            return innerPromise
+
+        # Build final result
+        promise = promise.then (playerData) =>
+            idSub = playerData.game_identity_sub_id or 0
+            nameNumber = if idSub then "\##{idSub}" else ''
             return {
-                id: playerData.game_identity_id
+                id: "#{playerData.game_identity_id}_#{idSub}"
                 idGame: idGame
                 idUser: idUser
-                name: playerData.game_identity_name
+                name: "#{playerData.game_identity_name} #{nameNumber}".trim()
+                title: "#{playerData.game_identity_name} - Player #{nameNumber}" if nameNumber
                 token: @_getSecurityToken(idUser, playerData)
             }
 

@@ -31,6 +31,7 @@ class ClientIdentity
             return new ClientIdentity
                 id: data.id
                 name: data.name
+                title: data.title
                 idGame: data.idGame
                 idUser: data.idUser
                 securityToken: data.token
