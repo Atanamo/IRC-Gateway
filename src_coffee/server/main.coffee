@@ -82,7 +82,7 @@ class Gateway
 
         # Start listening for socket.io emits and for HTTP requests
         startupPromise = startupPromise.then =>
-            log.info 'Start listening...'
+            log.info "Start listening on port #{Config.WEB_SERVER_PORT}..."
             server.listen(Config.WEB_SERVER_PORT)
 
         # End chain to observe errors
