@@ -31,10 +31,10 @@ db = new Database()           # Create database wrapper object
 log = Logger
 
 ## Set object to global scope
-GLOBAL.Q = Q
-GLOBAL.io = io
-GLOBAL.db = db
-GLOBAL.log = log
+global.Q = Q
+global.io = io
+global.db = db
+global.log = log
 
 
 ## Main class
