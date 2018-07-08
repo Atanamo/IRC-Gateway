@@ -119,7 +119,7 @@ class SchizoBot
     getNickName: ->
         return @nickName
 
-    getGameTitle: ->
+    getDetailName: ->
         return @gameData.title
 
     getWebChannelList: ->
