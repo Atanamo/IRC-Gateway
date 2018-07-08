@@ -111,6 +111,7 @@ class BotManager
         intervalFunc = => 
             @_manageBotsByGames()
         timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
+        clearInterval(@watcherTimer) if @watcherTimer?  # Clear old timer
         @watcherTimer = setInterval(intervalFunc, timerMilliSeconds)
 
     _manageBotsByGames: ->
