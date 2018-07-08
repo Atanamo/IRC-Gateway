@@ -228,7 +228,7 @@ class SchizoBot
         return if @_checkRespondForGalaxyName(message, respondFunc)
         return if @_checkRespondForGalaxyStatus(message, respondFunc)
         return if @_checkRespondForGalaxyRound(message, respondFunc)
-        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc)
+        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc, channel)
         return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
         return if @_checkRespondForConnectTime(message, respondFunc)
         return if @_checkRespondForVersion(message, respondFunc)
@@ -305,7 +305,7 @@ class SchizoBot
             return true
         return false
 
-    _checkRespondForNumberOfGalaxyClients: (message, respondFunc) ->
+    _checkRespondForNumberOfGalaxyClients: (message, respondFunc, channelName) ->
         if message.indexOf('players?') > -1
             channelName = channelName or Object.keys(@botChannelList)[0]
             clientsNum = 0
