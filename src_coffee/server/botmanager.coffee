@@ -25,9 +25,12 @@ class BotManager
         singleChannelsPromise = @_setupSingleBotChannels()
 
         # Setup the bots
-        botsPromise = @_setupBots()
+        botsPromise = @_destroyBots(@botList)  # Guard call: Destroy any bots created before
         botsPromise = botsPromise.then =>
-            return @_startBots(@botList)
+            return @_setupBots()
+        botsPromise = botsPromise.then (botList) =>
+            @botList = botList  # Set new list of bots
+            return @_startBots(botList)
 
         # After bots startup: Add them to their channels
         botsPromise.then =>
@@ -65,13 +68,17 @@ class BotManager
     _setupBots: ->
         promise = db.getBotRepresentedGames()
         promise = promise.then (gamesList) =>
+            botList = {}
+
             for gameData in gamesList 
                 # Create bot
                 bot = new Bot(gameData)
 
                 # Store bot by game id
                 gameID = bot.getID()
-                @botList[gameID] = bot
+                botList[gameID] = bot
+
+            return botList
 
         return promise
 
@@ -203,7 +210,7 @@ class BotManager
         return Q.all(promises)
 
     _destroyBot: (bot) ->
-        # Remove bot reference
+        # Remove bot reference in main list
         delete @botList[bot.getID()]
 
         # Remove bot from its channels (This is an optional soft shutdown action: Stopping the bot does the same on quit)
