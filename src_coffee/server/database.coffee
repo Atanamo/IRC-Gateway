@@ -29,6 +29,7 @@ class Database
             user: Config.SQL_USER
             password: Config.SQL_PASSWORD
             database: Config.SQL_DATABASE_COMMON
+            charset: 'UTF8MB4_GENERAL_CI'
             socketPath: Config.SQL_SOCKET_PATH
 
         @connection.connect (err) =>
@@ -467,7 +468,12 @@ class Database
         channelID = 0
         if channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
             channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
-        serialEventData = JSON.stringify(eventData)
+
+        try
+            serialEventData = JSON.stringify(eventData)
+        catch
+            log.warn 'Could not serializy json string!', 'Database message logging'
+            serialEventData = '{}'
 
         @_doTransaction =>
             sql = "
