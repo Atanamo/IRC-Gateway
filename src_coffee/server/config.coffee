@@ -18,8 +18,8 @@ ircGlobalChannel = '#irc_gateway_test'
 # Bot sub config
 botNickPrefix = '_Game'       # Prefix for bot's nick name on IRC
 botName = 'GameCommBot'       # Bot's official name
-botVersion = 'v1.2'           # Bot's version number string
-botLastUpdate = '2015-02-13'  # Update info for bot version
+botVersion = 'v1.3'           # Bot's version number string
+botLastUpdate = '2018-07-08'  # Update info for bot version
 
 
 ## Main config

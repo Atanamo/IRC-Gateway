@@ -69,6 +69,9 @@ class Channel
     # Client management
     #
 
+    isCustomChannel: ->
+        return @isCustom
+
     getNumberOfClients: ->
         clientsMap = @_getUniqueClientsMap()
         return Object.keys(clientsMap).length
@@ -243,9 +246,15 @@ class Channel
 
             # Send history
             @_sendToSocket(clientSocket, 'history_start', markerData)
+
             for logEntry in logListData
-                eventData = JSON.parse(logEntry.event_data)
-                clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
+                try
+                    eventData = JSON.parse(logEntry.event_data)
+                    clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
+                catch 
+                    log.error 'Could not parse history entry!', "Channel '#{@name}'"
+                    log.info "Corrupt json string: '#{logEntry.event_data}'"
+
             @_sendToSocket(clientSocket, 'history_end', markerData)
 
     # @protected

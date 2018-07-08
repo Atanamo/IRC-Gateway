@@ -228,7 +228,7 @@ class SchizoBot
         return if @_checkRespondForGalaxyName(message, respondFunc)
         return if @_checkRespondForGalaxyStatus(message, respondFunc)
         return if @_checkRespondForGalaxyRound(message, respondFunc)
-        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc)
+        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc, channel)
         return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
         return if @_checkRespondForConnectTime(message, respondFunc)
         return if @_checkRespondForVersion(message, respondFunc)
@@ -305,25 +305,27 @@ class SchizoBot
             return true
         return false
 
-    _checkRespondForNumberOfGalaxyClients: (message, respondFunc) ->
+    _checkRespondForNumberOfGalaxyClients: (message, respondFunc, channelName=null) ->
         if message.indexOf('players?') > -1
-            channelName = channelName or Object.keys(@botChannelList)[0]
-            clientsNum = 0
+            channelName = channelName or @_getGlobalBotChannelName()
             if channelName?
                 botChannel = @botChannelList[channelName]
                 clientsNum = botChannel.getNumberOfBotDependentClients(@gameData.id)
-            respondFunc("Galaxy players in #{channelName} = #{clientsNum}")
+                respondFunc("Galaxy players in #{channelName} = #{clientsNum}")
+            else
+                respondFunc("Cannot find channel to check galaxy players for!")
             return true
         return false
 
     _checkRespondForNumberOfClients: (message, respondFunc, channelName) ->
         if message.indexOf('users?') > -1
-            channelName = channelName or Object.keys(@botChannelList)[0]
-            clientsNum = 0
+            channelName = channelName or @_getGlobalBotChannelName()
             if channelName?
                 botChannel = @botChannelList[channelName]
                 clientsNum = botChannel.getNumberOfClients()
-            respondFunc("Total players in #{channelName} = #{clientsNum}")
+                respondFunc("Total players in #{channelName} = #{clientsNum}")
+            else
+                respondFunc("Cannot find channel to check total players for!")
             return true
         return false
 
@@ -468,6 +470,11 @@ class SchizoBot
 
     _isChannelMaster: (channelName) ->
         return @masterChannelList[channelName] or false
+
+    _getGlobalBotChannelName: ->
+        for key, channel of @botChannelList
+            return key if channel.isGlobalChannel()
+        return null
 
 
 

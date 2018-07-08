@@ -77,8 +77,8 @@ class SocketHandler
         userID = authData.userID
         gameID = authData.gameID
         securityToken = authData.token
-        authPromise = Q.fcall =>
-            throw db.createValidationError('Invalid user data')
+
+        authPromise = null
 
         # Check auth data
         if userID? and gameID?
@@ -89,6 +89,9 @@ class SocketHandler
                 if Config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
                     throw db.createValidationError('Invalid token')
                 return clientIdentity
+        else
+            authPromise = Q.fcall =>
+                throw db.createValidationError('Invalid user data')
 
         # Handle auth success/fail
         authPromise = authPromise.then (clientIdentity) =>

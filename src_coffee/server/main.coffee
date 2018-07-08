@@ -97,6 +97,9 @@ class Gateway
             log.error err, 'process'
             process.exit(err.code or 99)
 
+        process.on 'unhandledRejection', (err) =>
+            log.error err, 'unhandled promise rejection'
+
     _shutdown: ->
         @botManager.shutdown()
         db.disconnect()
