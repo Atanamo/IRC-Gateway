@@ -91,6 +91,11 @@ class BotChannel extends Channel
                 @removeBot(bot, false)
         return super(clientSocket, customRoutine)
 
+    isGlobalChannel: ->
+        # The global channel is the only BotChannel, which is not custom
+        # (But there is a non-bot channel, which is not custom: The default game-specific channel)
+        return not @isCustomChannel() and @isPermanent
+
     getIrcChannelName: ->
         return @ircChannelName
 

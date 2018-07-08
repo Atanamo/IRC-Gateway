@@ -69,6 +69,9 @@ class Channel
     # Client management
     #
 
+    isCustomChannel: ->
+        return @isCustom
+
     getNumberOfClients: ->
         clientsMap = @_getUniqueClientsMap()
         return Object.keys(clientsMap).length
