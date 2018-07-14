@@ -167,7 +167,7 @@ class BotManager
 
         # Destroy bots to end
         promise = promise.then =>
-            return @_destroyBots(endBotsList)
+            return @_destroyBots(endBotsList, true)
 
         # Start new bots
         promise = promise.then =>
@@ -224,12 +224,12 @@ class BotManager
         return channel.addBot(bot)
 
 
-    _destroyBots: (botList) ->
+    _destroyBots: (botList, deleteChannels=false) ->
         promises = for gameID, bot of botList
             do (gameID, bot) =>
                 destroy_promise = @_destroyBot(bot, gameID)
                 destroy_promise.then =>
-                    db.deleteChannelsByGame(gameID)
+                    db.deleteChannelsByGame(gameID) if deleteChannels
                 return destroy_promise
         return Q.all(promises)
 
