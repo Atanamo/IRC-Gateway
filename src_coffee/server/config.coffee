@@ -41,7 +41,8 @@ module.exports =
     MAX_CHANNEL_LOGS: 100           # Maximum number of logs per channel in database - This controls the max size of the chat logs table
     MAX_CHANNEL_LOGS_TO_CLIENT: 50  # Maximum number of channel logs for a client - This controls the max length of a channel's chat history a client can request
     MAX_CHANNELS_PER_CLIENT: 3      # Maximum number of channels a client/user is allowed to create
-    MAX_BOTS: 5                     # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds)
+    MAX_BOTS: 0                     # Maximum number of simultaneously existing bots - Use this, to obey connection limits to IRC server (Will also limit number of chats for game worlds).
+                                    # Set it to 0 or less, to enable the mono-bot - The mono-bot represents all game worlds at once and thus relays chats in a more general way.
 
     FLOODRATE_TIME_INTERVAL: 3000   # Interval in milliseconds, to be used for flooding protection: To recognize flooding, only client requests not older than this value are totaled up
     FLOODRATE_LIMIT_WEIGHT: 33      # Maximum total "weight" of client requests in time interval - A client is kicked, if he exceeds the limit

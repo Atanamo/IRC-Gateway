@@ -11,12 +11,14 @@ Bot = require './bot'
 ##
 class BotManager
     isManaging: false
+    hasBotPerGame: false
     watcherTimer: null
 
     botList: null
     globalChannel: null
 
     constructor: ->
+        @hasBotPerGame = (Config.MAX_BOTS > 0)  # TODO: Config, etc
         @botList = {}
 
     start: =>
