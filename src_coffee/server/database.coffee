@@ -246,9 +246,10 @@ class Database
               "
         return @_readMultipleData(sql)
 
-    # Returns a list of channels, which should be mirrored to IRC - each by only one bot. This excludes the global channel.
+    # Returns a list of channels, which should be mirrored to IRC, but each belong to only one game.
+    # This excludes the global channel.
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
-    #   `game_id` (The id of the game, the bot to be used belongs to),
+    #   `game_id` (The id of the game, the channel belongs to),
     #   `creator_id` (The id of the user, who created the channel),
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
@@ -256,7 +257,7 @@ class Database
     #   `irc_channel` (The exact name of the IRC channel to mirror) and
     #   `is_public` (TRUE, if the channel is meant to be public and therefor joined players have to be hidden; else FALSE).
     #   The list may be empty, if no appropriate channels exist.
-    getSingleBotChannels: ->
+    getGameBoundBotChannels: ->
         sql = "
                 SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
                        `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
@@ -267,7 +268,8 @@ class Database
               "
         return @_readMultipleData(sql)
 
-    # Returns the data for the global channel, which should be mirrored to IRC by multiple bots.
+    # Returns the data for the global channel, which should be mirrored to IRC for every game world.
+    # Thus, if not using the mono-bot, it will contain multiple bots.
     # @return [promise] A promise, resolving to a data map with keys
     #   `name` (The unique name of the channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),

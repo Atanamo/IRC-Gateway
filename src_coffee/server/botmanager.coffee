@@ -22,7 +22,7 @@ class BotManager
     start: =>
         # Setup bot channels
         globalChannelPromise = @_setupGlobalBotChannel()
-        singleChannelsPromise = @_setupSingleBotChannels()
+        gameChannelsPromise = @_setupGameBoundBotChannels()
 
         # Setup the bots
         botsPromise = @_destroyBots(@botList)  # Guard call: Destroy any bots created before
@@ -39,15 +39,15 @@ class BotManager
             globalChannelPromise.then (globalChannel) =>
                 @_addBotsToGlobalChannel(globalChannel, @botList)
 
-            singleChannelsPromise.then (singleChannels) =>
-                @_addBotsToSingleChannels(singleChannels, @botList)
+            gameChannelsPromise.then (gameChannels) =>
+                @_addBotsToGameChannels(gameChannels, @botList)
 
             @_startGameWatcher()
 
         # End chain to observe errors
         botsPromise.done()
 
-        return Q.all([globalChannelPromise, singleChannelsPromise])
+        return Q.all([globalChannelPromise, gameChannelsPromise])
 
     # Used by SocketHandler as callback to add a bot to a new channel 
     # (Therefor must be bound to BotManager instance)
@@ -90,8 +90,8 @@ class BotManager
             return @globalChannel
         return promise
 
-    _setupSingleBotChannels: ->
-        promise = db.getSingleBotChannels()
+    _setupGameBoundBotChannels: ->
+        promise = db.getGameBoundBotChannels()
         promise = promise.then (channelList) =>
             log.info 'Creating additional bot channels...' if channelList?.length
             # Create every bot channel and push to result array
@@ -185,9 +185,9 @@ class BotManager
                 joinPromise = joinPromise.then =>
                     return @_addBotToChannel(bot, globalChannel)
 
-    _addBotsToSingleChannels: (singleChannels, botList) ->
+    _addBotsToGameChannels: (gameChannels, botList) ->
         # For each channel, add its appropriate single bot to it
-        for channel in singleChannels
+        for channel in gameChannels
             gameID = channel.getGameID()
             bot = botList[gameID]
             if bot?
