@@ -230,6 +230,9 @@ class Database
         return promise
 
     # Returns the list of game worlds, which each have a bot to use for bot-channels.
+    # If the mono-bot is configured, returns the list of all game worlds having a chat.
+    # This list is also used to manage the lifetime of corresponding channels and its logs
+    # by the game lookup interval.
     # @return [promise] A promise, resolving to a list of data maps, each having keys 
     #   `id` (The unique id of the game world) and
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
@@ -242,8 +245,9 @@ class Database
                    OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
                    OR `Status`>=5 AND `Status`<7
                 ORDER BY `Status` ASC, `ID` ASC
-                LIMIT #{Config.MAX_BOTS}
               "
+        if Config.MAX_BOTS > 0
+            sql += " LIMIT #{Config.MAX_BOTS} "
         return @_readMultipleData(sql)
 
     # Returns a list of channels, which should be mirrored to IRC, but each belong to only one game.

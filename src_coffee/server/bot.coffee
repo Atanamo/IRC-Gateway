@@ -84,13 +84,16 @@ class SchizoBot
         @client.addListener "ctcp-version", @_handleIrcVersionRequestViaCTCP
 
 
+    # TODO: Overwrite for MonoBot
     start: (channelList) ->
-        log.info "Connecting bot '#{@nickName}'..."
-        @client.connect (data) =>
-            log.info "Bot '#{@nickName}' connected succesfully!"
-            #@connectionDeferred.resolve()
+        if @connectionDeferred.promise.isPending()
+            log.info "Connecting bot '#{@nickName}'..."
+            @client.connect (data) =>
+                log.info "Bot '#{@nickName}' connected succesfully!"
+                #@connectionDeferred.resolve()
         return @connectionDeferred.promise
 
+    # TODO: Overwrite for MonoBot
     stop: ->
         stopDeferred = Q.defer()
         log.info "Stopping bot '#{@nickName}'..."

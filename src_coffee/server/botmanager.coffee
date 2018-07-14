@@ -24,12 +24,17 @@ class BotManager
     start: =>
         # Setup bot channels
         globalChannelPromise = @_setupGlobalBotChannel()
+        globalChannelPromise.then (globalChannel) =>
+            @globalChannel = globalChannel
         gameChannelsPromise = @_setupGameBoundBotChannels()
 
         # Setup the bots
         botsPromise = @_destroyBots(@botList)  # Guard call: Destroy any bots created before
         botsPromise = botsPromise.then =>
-            return @_setupBots()
+            if @hasBotPerGame
+                return @_setupBots()
+            else
+                return @_setupMonoBot()
         botsPromise = botsPromise.then (botList) =>
             @botList = botList  # Set new list of bots
             return @_startBots(botList)
@@ -84,12 +89,28 @@ class BotManager
 
         return promise
 
+    _setupMonoBot: ->
+        # Create the bot
+        bot = new Bot(  # TODO
+            id: 'mono'
+            title: 'Multiverse'
+        )
+
+        # Store mono-bot by each game id
+        promise = db.getBotRepresentedGames()
+        promise = promise.then (gamesList) =>
+            botList = {}
+            for gameData in gamesList 
+                botList[gameData.id] = bot
+            return botList
+
+        return promise
+
     _setupGlobalBotChannel: ->
         promise = db.getGlobalChannelData()
         promise = promise.then (channelData) =>
             log.info 'Creating global channel...'
-            @globalChannel = BotChannel.getInstance(channelData, true)
-            return @globalChannel
+            return BotChannel.getInstance(channelData, true)
         return promise
 
     _setupGameBoundBotChannels: ->
@@ -114,7 +135,7 @@ class BotManager
             @_manageBotsByGames()
         timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
         clearInterval(@watcherTimer) if @watcherTimer?  # Clear old timer
-        @watcherTimer = setInterval(intervalFunc, timerMilliSeconds)
+        @watcherTimer = setInterval(intervalFunc, timerMilliSeconds) if timerMilliSeconds > 0
 
     _manageBotsByGames: ->
         newBotsList = {}
@@ -154,7 +175,7 @@ class BotManager
 
         # Join new bots to channels
         promise = promise.then =>
-            @_addBotsToGlobalChannel(@globalChannel, newBotsList)
+            @_addBotsToGlobalChannel(@globalChannel, newBotsList) if @globalChannel
             @isManaging = false
             log.debug 'Finished managing bots!'
 
@@ -206,15 +227,15 @@ class BotManager
     _destroyBots: (botList) ->
         promises = for gameID, bot of botList
             do (gameID, bot) =>
-                destroy_promise = @_destroyBot(bot)
+                destroy_promise = @_destroyBot(bot, gameID)
                 destroy_promise.then =>
                     db.deleteChannelsByGame(gameID)
                 return destroy_promise
         return Q.all(promises)
 
-    _destroyBot: (bot) ->
+    _destroyBot: (bot, gameID) ->
         # Remove bot reference in main list
-        delete @botList[bot.getID()]
+        delete @botList[gameID]
 
         # Remove bot from its channels (This is an optional soft shutdown action: Stopping the bot does the same on quit)
         promise = Q()
