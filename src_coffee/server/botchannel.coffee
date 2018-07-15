@@ -155,9 +155,13 @@ class BotChannel extends Channel
     _handleClientMessage: (clientSocket, messageText) =>
         return unless clientSocket.rating.checkForFlooding(8)
         log.debug "Client message to IRC (#{@ircChannelName}):", messageText
-        botID = clientSocket.identity.getGameID() or -1
 
-        targetBot = @botList[botID]  # TODO
+        targetBot = 
+            if Object.keys(@botList).length is 1 and @botList['MONO_BOT']?
+                @botList['MONO_BOT']
+            else
+                targetBotID = clientSocket.identity.getGameID() or -1
+                @botList[targetBotID]
 
         return unless targetBot?
 

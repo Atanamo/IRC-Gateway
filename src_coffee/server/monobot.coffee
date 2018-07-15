@@ -20,7 +20,7 @@ class MonoBot extends AbstractBot
 
         # TODO
         @gameData =
-            id: 'mono'
+            id: 'MONO_BOT'
             title: 'Multiverse'
 
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
