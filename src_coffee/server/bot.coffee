@@ -19,27 +19,21 @@ Config = require './config'
 ##
 class SchizoBot
 
-    gameData: null
-    nickName: ''
-    userName: ''
-    realName: ''
+    nickName: 'SchizoBot'
+    userName: 'SchizoBot'
+    realName: 'SchizoBot'
 
     client: null
     botChannelList: null
     masterChannelList: null
     connectionDeferred: null
     connectDateTime: null
+    hasCallToStart: false
 
-    constructor: (@gameData) ->
+    constructor: ->
         @botChannelList = {}
         @masterChannelList = {}
         @connectionDeferred = Q.defer()
-
-        @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
-        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, @gameData.id)
-        @realName = Config.BOT_REALNAME_PATTERN
-        @realName = @realName.replace(/<id>/i, @gameData.id)
-        @realName = @realName.replace(/<name>/i, @gameData.title)
 
         log.info "Creating bot '#{@nickName}'..."
 
@@ -84,31 +78,41 @@ class SchizoBot
         @client.addListener "ctcp-version", @_handleIrcVersionRequestViaCTCP
 
 
-    # TODO: Overwrite for MonoBot
     start: (channelList) ->
-        if @connectionDeferred.promise.isPending()
+        if @connectionDeferred.promise.isPending() and not @hasCallToStart
+            @hasCallToStart = true
             log.info "Connecting bot '#{@nickName}'..."
             @client.connect (data) =>
                 log.info "Bot '#{@nickName}' connected succesfully!"
                 #@connectionDeferred.resolve()
         return @connectionDeferred.promise
 
-    # TODO: Overwrite for MonoBot
+    # May be overridden
     stop: ->
-        stopDeferred = Q.defer()
         log.info "Stopping bot '#{@nickName}'..."
+        return @_disconnectFromChannels(
+            disconnectServer: true
+        )
+
+    _disconnectFromChannels: ({disconnectServer, filterGameID}) ->
+        stopDeferred = Q.defer()
         quitMessage = Config.BOT_QUIT_MESSAGE
 
         # Inform bot's web channels (in case, they weren't informed before)
         for key, channel of @botChannelList
+            if filterGameID? and filterGameID isnt channel.getGameID()
+                continue
             channel.handleBotQuit(this, quitMessage)
 
         # Disconnect from server
-        @client.disconnect quitMessage, =>
-            log.info "Bot '#{@nickName}' has disconnected!"
-            # Create new connection deferred
-            @connectionDeferred = Q.defer()
-            # Resolve stop deferred
+        if disconnectServer
+            @client.disconnect quitMessage, =>
+                log.info "Bot '#{@nickName}' has disconnected!"
+                # Create new connection deferred
+                @connectionDeferred = Q.defer()
+                # Resolve stop deferred
+                stopDeferred.resolve()
+        else
             stopDeferred.resolve()
 
         return stopDeferred.promise
@@ -116,14 +120,17 @@ class SchizoBot
     getConnectionPromise: ->
         return @connectionDeferred.promise
 
+    # @abstract
     getID: ->
-        return @gameData.id
+        return -1
 
+    # @abstract
     getNickName: ->
         return @nickName
 
+    # @abstract
     getDetailName: ->
-        return @gameData.title
+        return @realName
 
     getWebChannelList: ->
         return @botChannelList
@@ -151,6 +158,7 @@ class SchizoBot
                 log.debug "Welcome message for bot '#{@nickName}':", welcomeMessage
             if confirmedNick?
                 @nickName = confirmedNick
+        @hasCallToStart = false
         @connectDateTime = new Date()
         @connectionDeferred.resolve()
 

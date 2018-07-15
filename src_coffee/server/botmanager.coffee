@@ -2,7 +2,8 @@
 ## Include app modules
 Config = require './config'
 BotChannel = require './botchannel'
-Bot = require './bot'
+GameBot = require './gamebot'
+MonoBot = require './monobot'
 
 
 ## Abstraction of a service for watching existence of games.
@@ -18,7 +19,7 @@ class BotManager
     globalChannel: null
 
     constructor: ->
-        @hasBotPerGame = (Config.MAX_BOTS > 0)  # TODO: Config, etc
+        @hasBotPerGame = (Config.MAX_BOTS > 0)
         @botList = {}
 
     start: =>
@@ -79,7 +80,7 @@ class BotManager
 
             for gameData in gamesList 
                 # Create bot
-                bot = new Bot(gameData)
+                bot = new GameBot(gameData)
 
                 # Store bot by game id
                 gameID = bot.getID()
@@ -91,10 +92,7 @@ class BotManager
 
     _setupMonoBot: ->
         # Create the bot
-        bot = new Bot(  # TODO
-            id: 'mono'
-            title: 'Multiverse'
-        )
+        bot = MonoBot.getInstance()
 
         # Store mono-bot by each game id
         promise = db.getBotRepresentedGames()
@@ -143,7 +141,7 @@ class BotManager
 
         return if @isManaging
         @isManaging = true
-        log.debug 'Starting managing bots...'
+        log.debug 'Starting managing bots by games...'
 
         # Copy all old bots
         for key, bot of @botList
@@ -157,7 +155,12 @@ class BotManager
 
                 # Create bot of new game
                 unless @botList[gameID]?
-                    bot = new Bot(gameData)
+                    bot = 
+                        if @hasBotPerGame
+                            new GameBot(gameData)
+                        else
+                            MonoBot.getInstance()
+
                     newBotsList[gameID] = bot
                     @botList[gameID] = bot
 
@@ -177,7 +180,7 @@ class BotManager
         promise = promise.then =>
             @_addBotsToGlobalChannel(@globalChannel, newBotsList) if @globalChannel
             @isManaging = false
-            log.debug 'Finished managing bots!'
+            log.debug 'Finished managing bots by games!'
 
         # End chain to observe errors
         promise.done()
@@ -239,19 +242,12 @@ class BotManager
 
         # Remove bot from its channels (This is an optional soft shutdown action: Stopping the bot does the same on quit)
         promise = Q()
-        #promise = @_removeBotFromChannels(bot)
 
         # Finally disconnect the bot
         promise = promise.then =>
-            return bot.stop()
+            return bot.stop(gameID)
 
         return promise
-
-    _removeBotFromChannels: (bot) ->
-        channelList = bot.getWebChannelList()
-        promises = for key, channel of channelList
-            channel.removeBot(bot)
-        return Q.all(promises)
 
 
 
