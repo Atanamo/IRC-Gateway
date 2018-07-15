@@ -465,7 +465,7 @@ class SchizoBot
         if @botChannelList[ircChannelName]?
             @masterChannelList[ircChannelName] = true
 
-    handleWebClientMessage: (channelName, senderIdentity, rawMessage) ->
+    handleWebClientMessage: (channelName, senderIdentity, rawMessage, mirrorBack) ->
         clientNick = senderIdentity.getName()
         messageText = "<#{clientNick}>: #{rawMessage}"
 
@@ -473,7 +473,8 @@ class SchizoBot
         @client.say(channelName, messageText) unless @getConnectionPromise().isPending()
 
         # Mirror to web channel, if no other bot (the master) is triggering the message though observing
-        @_sendMessageToWebChannel(channelName, @nickName, messageText) if @_isChannelMaster(channelName)
+        if mirrorBack and @_isChannelMaster(channelName)
+            @_sendMessageToWebChannel(channelName, @nickName, messageText)
 
     isWebChannelMaster: (botChannel) ->
         ircChannelName = botChannel.getIrcChannelName()

@@ -156,17 +156,24 @@ class BotChannel extends Channel
         return unless clientSocket.rating.checkForFlooding(8)
         log.debug "Client message to IRC (#{@ircChannelName}):", messageText
 
+        hasMonoBot = (Object.keys(@botList).length is 1 and @botList['MONO_BOT']?)
+        sendToRoom = hasMonoBot
+
+        # Send directly to room
+        if sendToRoom
+            messageText = messageText?.trim() or ''
+            @_sendMessageToRoom(clientSocket.identity, messageText)
+
+        # Send to IRC channel
         targetBot = 
-            if Object.keys(@botList).length is 1 and @botList['MONO_BOT']?
+            if hasMonoBot
                 @botList['MONO_BOT']
             else
                 targetBotID = clientSocket.identity.getGameID() or -1
                 @botList[targetBotID]
 
-        return unless targetBot?
-
-        # Send to IRC channel
-        targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText)
+        if targetBot?
+            targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText, not sendToRoom) 
 
 
     #
