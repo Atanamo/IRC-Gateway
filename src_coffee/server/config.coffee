@@ -18,8 +18,8 @@ ircGlobalChannel = '#irc_gateway_test'
 # Bot sub config
 botNickPrefix = '_Game'       # Prefix for bot's nick name on IRC
 botName = 'GameCommBot'       # Bot's official name
-botVersion = 'v1.3'           # Bot's version number string
-botLastUpdate = '2018-07-08'  # Update info for bot version
+botVersion = 'v2.0'           # Bot's version number string
+botLastUpdate = '2018-07-15'  # Update info for bot version
 
 
 ## Main config
@@ -48,9 +48,9 @@ module.exports =
     FLOODRATE_LIMIT_WEIGHT: 33      # Maximum total "weight" of client requests in time interval - A client is kicked, if he exceeds the limit
 
     BOT_RECONNECT_DELAY: 61000      # Delay time in milliseconds, for reconnecting to server, when connection has been refused
-    BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID
-    BOT_USERNAME_PATTERN: "#{botName}_<id>"                   # The user name of the Bot on IRC, with <id> as a placeholder for the game ID
-    BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name
+    BOT_NICK_PATTERN: "#{botNickPrefix}<id>"                  # The nick name of the Bot on IRC, with <id> as a placeholder for the game ID (if not using mono-bot)
+    BOT_USERNAME_PATTERN: "#{botName}_<id>"                   # The user name of the Bot on IRC, with <id> as a placeholder for the game ID (if not using mono-bot)
+    BOT_REALNAME_PATTERN: "<name> - #{botName} <id>"          # The real name of the Bot on IRC, with <id> and <name> as placeholders for the game ID and name (if not using mono-bot)
     BOT_VERSION_STRING: "#{botName}, #{botVersion} " +        # The version string of the Bot, for requests on IRC
                         "(Last update: #{botLastUpdate}) " +
                         "-- Created 2014 by Atanamo"

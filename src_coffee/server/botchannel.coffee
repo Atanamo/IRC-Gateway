@@ -264,7 +264,7 @@ class BotChannel extends Channel
             identityData = clientIdentity.toData()
 
             if botDetailNames[nickName]?  
-                # Append detail name to full name, if user is a bot
+                # Append detail name to full name, if user is a corresponding bot
                 identityData.title += ' - ' + botDetailNames[nickName]
 
             userList.push(identityData)

@@ -13,9 +13,6 @@ AbstractBot = require './bot'
 class GameBot extends AbstractBot
 
     gameData: null
-    nickName: ''
-    userName: ''
-    realName: ''
 
     constructor: (@gameData) ->
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)

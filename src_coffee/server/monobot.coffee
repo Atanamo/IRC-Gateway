@@ -10,24 +10,15 @@ AbstractBot = require './bot'
 class MonoBot extends AbstractBot
     @_instance: null
 
-    gameData: null
-    nickName: ''
-    userName: ''
-    realName: ''
-
     constructor: (arg=null) ->
         return if arg?
 
-        # TODO
-        @gameData =
-            id: 'MONO_BOT'
-            title: 'Multiverse'
-
-        @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
-        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, @gameData.id)
+        @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, '')
+        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, '')
         @realName = Config.BOT_REALNAME_PATTERN
-        @realName = @realName.replace(/<id>/i, @gameData.id)
-        @realName = @realName.replace(/<name>/i, @gameData.title)
+        @realName = @realName.replace(/<id>/i, '')
+        @realName = @realName.replace(/<name>/i, 'Multiverse')
+        @realName = @realName.trim()
 
         # Create client instance
         super()
@@ -47,7 +38,7 @@ class MonoBot extends AbstractBot
 
     # @override
     getID: ->
-        return @gameData.id
+        return 'MONO_BOT'
 
     # @override
     getNickName: ->
@@ -55,7 +46,7 @@ class MonoBot extends AbstractBot
 
     # @override
     getDetailName: ->
-        return @gameData.title
+        return ''
 
 
 # Export class
