@@ -236,10 +236,7 @@ class SchizoBot
 
         # Check for a bot command
         return if @_checkRespondForHelp(message, queryRespondFunc)  # Always respond to query
-        return if @_checkRespondForGalaxyName(message, respondFunc)
-        return if @_checkRespondForGalaxyStatus(message, respondFunc)
-        return if @_checkRespondForGalaxyRound(message, respondFunc)
-        return if @_checkRespondForNumberOfGalaxyClients(message, respondFunc, channel)
+        return if @_checkRespondForCustomBotCommand(message, respondFunc, channel)
         return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
         return if @_checkRespondForConnectTime(message, respondFunc)
         return if @_checkRespondForVersion(message, respondFunc)
@@ -294,37 +291,32 @@ class SchizoBot
     # Bot command routines
     #
 
-    _checkRespondForGalaxyName: (message, respondFunc) ->
-        if message.indexOf('galaxy?') > -1
-            respondFunc('Galaxy = ' + @gameData.title)
-            return true
+    # @abstract
+    _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
         return false
 
-    _checkRespondForGalaxyStatus: (message, respondFunc) ->
-        if message.indexOf('status?') > -1
-            promise = db.getGameStatus(@gameData.id)
-            promise.then (statusText) =>
-                respondFunc("Status (#{@gameData.title}) = #{statusText}")
-            return true
-        return false
+    # May be overridden
+    # @protected
+    _checkRespondForHelp: (message, respondFunc, commandsList=[]) ->
+        if message.indexOf('help') > -1
+            commandsList = commandsList.concat [
+                    command: 'users?'
+                    description: 'How many players are currently online (on the channel)?'
+                ,
+                    command: 'uptime'
+                    description: 'Prints you my time of operation'
+                ,
+                    command: 'version'
+                    description: 'Prints you my version info'
+                ,
+                    command: 'help'
+                    description: 'Prints you this help (in the query)'
+            ]
 
-    _checkRespondForGalaxyRound: (message, respondFunc) ->
-        if message.indexOf('round?') > -1 or message.indexOf('ticks?') > -1
-            promise = db.getGameRound(@gameData.id)
-            promise.then (roundNum) =>
-                respondFunc("Round (#{@gameData.title}) = #{roundNum}")
-            return true
-        return false
+            commandStrings = commandsList.map (item) ->
+                "#{item.command}  ---  #{item.description}\n"
 
-    _checkRespondForNumberOfGalaxyClients: (message, respondFunc, channelName=null) ->
-        if message.indexOf('players?') > -1
-            channelName = channelName or @_getGlobalBotChannelName()
-            if channelName?
-                botChannel = @botChannelList[channelName]
-                clientsNum = botChannel.getNumberOfBotDependentClients(@gameData.id)
-                respondFunc("Galaxy players in #{channelName} = #{clientsNum}")
-            else
-                respondFunc("Cannot find channel to check galaxy players for!")
+            respondFunc('I understand following commands:\n' + commandStrings.join(''))
             return true
         return false
 
@@ -355,22 +347,6 @@ class SchizoBot
     _checkRespondForVersion: (message, respondFunc) ->
         if message.indexOf('version') > -1
             respondFunc('Version = ' + Config.BOT_VERSION_STRING)
-            return true
-        return false
-
-    _checkRespondForHelp: (message, respondFunc) ->
-        if message.indexOf('help') > -1
-            commandsText = ''
-            commandsText += 'galaxy?  ---  What is the name of my galaxy?\n'
-            commandsText += 'status?  ---  What is the status of my galaxy?\n'
-            commandsText += 'round?  ---  How many rounds did my galaxy run yet?\n'
-            commandsText += 'ticks?  ---  See "round?"\n'
-            commandsText += 'players?  ---  How many players of my galaxy are currently online (on the channel)?\n'
-            commandsText += 'users?  ---  How many players are currently online (on the channel)?\n'
-            commandsText += 'uptime  ---  Prints you my time of operation\n'
-            commandsText += 'version  ---  Prints you my version info\n'
-            commandsText += 'help  ---  Prints you this help (in the query)\n'
-            respondFunc('I understand following commands:\n' + commandsText)
             return true
         return false
 
