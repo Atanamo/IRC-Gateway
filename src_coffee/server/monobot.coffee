@@ -80,6 +80,51 @@ class MonoBot extends AbstractBot
             return super(senderIdentity, rawMessage)
 
 
+    #
+    # Bot command routines
+    #
+
+    # @override
+    _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
+        return (
+            #@_checkRespondForGalaxiesOverview(message, respondFunc) or
+            @_checkRespondForNumbersOfGalaxyClients(message, respondFunc, channelName)
+        )
+
+    # @override
+    _checkRespondForHelp: (message, respondFunc) ->
+        commandsList = [
+                command: 'players?'
+                description: 'How many players per galaxy are currently online (on the channel)?'
+        ]
+        super(message, respondFunc, commandsList)
+
+    _checkRespondForNumbersOfGalaxyClients: (message, respondFunc, channelName=null) ->
+        if message.indexOf('players?') > -1
+            channelName = channelName or @_getGlobalBotChannelName()
+
+            if channelName?
+                botChannel = @botChannelList[channelName]
+                answerLines = []
+
+                for gameID in Object.keys(@gamesMap)
+                    if botChannel.isGlobalChannel() or "#{botChannel.getGameID()}" is "#{gameID}"
+                        clientsNum = botChannel.getNumberOfBotDependentClients(gameID)
+                        gameTitle = @gamesMap[gameID] or "##{gameID}"
+                        answerLines.push("#{gameTitle} = #{clientsNum}") if clientsNum > 0
+
+                if answerLines.length > 0
+                    infoLines = answerLines.join('\n')
+                    respondFunc("Galaxy players in #{channelName}...\n#{infoLines}")
+                else
+                    respondFunc("Currently no players online in #{channelName}")
+
+            else
+                respondFunc("Cannot find channel to check galaxy players for!")
+            return true
+        return false
+
+
 
 # Export class
 module.exports = MonoBot

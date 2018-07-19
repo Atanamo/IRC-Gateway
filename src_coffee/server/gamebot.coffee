@@ -59,7 +59,7 @@ class GameBot extends AbstractBot
                 description: 'How many rounds did my galaxy run yet?'
             ,
                 command: 'ticks?'
-                description: 'See "round?'
+                description: 'See "round?"'
             ,
                 command: 'players?'
                 description: 'How many players of my galaxy are currently online (on the channel)?'
