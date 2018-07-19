@@ -442,8 +442,7 @@ class SchizoBot
             @masterChannelList[ircChannelName] = true
 
     handleWebClientMessage: (channelName, senderIdentity, rawMessage, mirrorBack) ->
-        clientNick = senderIdentity.getName()
-        messageText = "<#{clientNick}>: #{rawMessage}"
+        messageText = @_getIrcMessageRepresentingWebClientUser(senderIdentity, rawMessage)
 
         # Post to IRC, if client is connected
         @client.say(channelName, messageText) unless @getConnectionPromise().isPending()
@@ -463,6 +462,11 @@ class SchizoBot
         for key, channel of @botChannelList
             return key if channel.isGlobalChannel()
         return null
+
+    # May be overridden
+    _getIrcMessageRepresentingWebClientUser: (senderIdentity, rawMessage) ->
+        clientNick = senderIdentity.getName()
+        return "<#{clientNick}>: #{rawMessage}"
 
 
 

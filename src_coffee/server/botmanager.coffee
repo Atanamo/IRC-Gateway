@@ -97,6 +97,10 @@ class BotManager
         # Store mono-bot by each game id
         promise = db.getBotRepresentedGames()
         promise = promise.then (gamesList) =>
+            # Set initial list of games
+            bot.updateGamesList(gamesList)
+
+            # Store the bot for each game (makes handling easier)
             botList = {}
             for gameData in gamesList 
                 botList[gameData.id] = bot
@@ -166,6 +170,12 @@ class BotManager
 
                 # Remove bot of existing game from end list
                 delete endBotsList[gameID]
+
+            # Only for mono-bot: Set list of games at once
+            unless @hasBotPerGame
+                bot = MonoBot.getInstance()
+                bot.updateGamesList(gamesList)
+
             return
 
         # Destroy bots to end

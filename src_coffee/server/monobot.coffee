@@ -10,8 +10,12 @@ AbstractBot = require './bot'
 class MonoBot extends AbstractBot
     @_instance: null
 
+    gamesMap: null
+
     constructor: (arg=null) ->
-        return if arg?
+        return if arg?  # Ensure to not create a bot when gameData is passed-in
+
+        @gamesMap = {};
 
         @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, '')
         @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, '')
@@ -47,6 +51,34 @@ class MonoBot extends AbstractBot
     # @override
     getDetailName: ->
         return ''
+
+    #
+    # Specific API of Mono-Bot
+    #
+
+    updateGamesList: (gamesList) ->
+        # Convert list to map of id to title
+        @gamesMap = gamesList.reduce((map, item) ->
+            map[item.id or 'no_id'] = item.title or ''
+            return map
+        , {})
+
+
+    #
+    # BotChannel handling
+    #
+
+    # @override
+    _getIrcMessageRepresentingWebClientUser: (senderIdentity, rawMessage) ->
+        clientNick = senderIdentity.getName()
+        gameID = senderIdentity.getGameID()
+        gameTitle = @gamesMap[gameID]
+
+        if gameTitle
+            return "#{gameTitle}: <#{clientNick}> #{rawMessage}"
+        else
+            return super(senderIdentity, rawMessage)
+
 
 
 # Export class
