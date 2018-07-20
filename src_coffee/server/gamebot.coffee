@@ -40,9 +40,7 @@ class GameBot extends AbstractBot
     # @override
     _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
         return (
-            @_checkRespondForGameName(message, respondFunc) or
-            @_checkRespondForGameStatus(message, respondFunc) or
-            @_checkRespondForGameRound(message, respondFunc) or
+            @_checkRespondForGameInfo(message, respondFunc) or
             @_checkRespondForNumberOfGameClients(message, respondFunc, channelName)
         )
 
@@ -50,41 +48,34 @@ class GameBot extends AbstractBot
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
                 command: 'game?'
-                description: "What is the name of my #{Config.BOT_GAME_LABEL}?"
+                description: "What is the name and status of my #{Config.BOT_GAME_LABEL}?"
             ,
                 command: 'status?'
-                description: "What is the status of my #{Config.BOT_GAME_LABEL}?"
-            ,
-                command: 'round?'
-                description: "How many rounds did my #{Config.BOT_GAME_LABEL} run yet?"
-            ,
-                command: 'ticks?'
-                description: 'See "round?"'
+                description: 'See "games?"'
             ,
                 command: 'players?'
                 description: "How many players of my #{Config.BOT_GAME_LABEL} are currently online (on the channel)?"
         ]
         super(message, respondFunc, commandsList)
 
-    _checkRespondForGameName: (message, respondFunc) ->
-        if message.indexOf('game?') > -1
-            respondFunc("Name of #{Config.BOT_GAME_LABEL} = #{@gameData.title}")
-            return true
-        return false
+    _checkRespondForGameInfo: (message, respondFunc) ->
+        if message.indexOf('game?') > -1 or message.indexOf('status?') > -1
+            promise = db.getGameStatuses([@gameData.id])
+            promise.then (gameStatusesList) =>
+                gameData = {}
+                if gameStatusesList.length > 0
+                    gameData = gameStatusesList[0]
+                    delete gameData.id
 
-    _checkRespondForGameStatus: (message, respondFunc) ->
-        if message.indexOf('status?') > -1
-            promise = db.getGameStatus(@gameData.id)
-            promise.then (statusText) =>
-                respondFunc("Status (#{@gameData.title}) = #{statusText}")
-            return true
-        return false
+                pairList = Object.keys(gameData).map (key) ->
+                    title = key.trim().charAt(0).toUpperCase() + key.slice(1)
+                    value = gameData[key]
+                    return "#{title} = #{value}"
+                pairList.unshift("Game = #{@gameData.title}")
 
-    _checkRespondForGameRound: (message, respondFunc) ->
-        if message.indexOf('round?') > -1 or message.indexOf('ticks?') > -1
-            promise = db.getGameRound(@gameData.id)
-            promise.then (roundNum) =>
-                respondFunc("Round (#{@gameData.title}) = #{roundNum}")
+                pairsString = pairList.join(';  ')
+                respondFunc(pairsString)
+
             return true
         return false
 
