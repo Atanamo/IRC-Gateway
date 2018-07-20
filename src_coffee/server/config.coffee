@@ -55,6 +55,7 @@ module.exports =
                         "(Last update: #{botLastUpdate}) " +
                         "-- Created 2014 by Atanamo"
 
+    BOT_GAME_LABEL: 'game-world'    # A lower-case label used by the bot to commonly name its game world (For example 'game-instance', 'map', 'galaxy', etc.). Used for some bot commands.
     BOT_LEAVE_MESSAGE: 'Oh, cruel world... My time has come to leave, goodbye!'  # Bot message on channel part
     BOT_QUIT_MESSAGE: 'Oh, cruel world... My time has come to leave, goodbye!'   # Bot message on server quit
 

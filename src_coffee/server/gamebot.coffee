@@ -40,39 +40,39 @@ class GameBot extends AbstractBot
     # @override
     _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
         return (
-            @_checkRespondForGalaxyName(message, respondFunc) or
-            @_checkRespondForGalaxyStatus(message, respondFunc) or
-            @_checkRespondForGalaxyRound(message, respondFunc) or
-            @_checkRespondForNumberOfGalaxyClients(message, respondFunc, channelName)
+            @_checkRespondForGameName(message, respondFunc) or
+            @_checkRespondForGameStatus(message, respondFunc) or
+            @_checkRespondForGameRound(message, respondFunc) or
+            @_checkRespondForNumberOfGameClients(message, respondFunc, channelName)
         )
 
     # @override
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
-                command: 'galaxy?'
-                description: 'What is the name of my galaxy?'
+                command: "#{Config.BOT_GAME_LABEL}?"
+                description: "What is the name of my #{Config.BOT_GAME_LABEL}?"
             ,
                 command: 'status?'
-                description: 'What is the status of my galaxy?'
+                description: "What is the status of my #{Config.BOT_GAME_LABEL}?"
             ,
                 command: 'round?'
-                description: 'How many rounds did my galaxy run yet?'
+                description: "How many rounds did my #{Config.BOT_GAME_LABEL} run yet?"
             ,
                 command: 'ticks?'
                 description: 'See "round?"'
             ,
                 command: 'players?'
-                description: 'How many players of my galaxy are currently online (on the channel)?'
+                description: "How many players of my #{Config.BOT_GAME_LABEL} are currently online (on the channel)?"
         ]
         super(message, respondFunc, commandsList)
 
-    _checkRespondForGalaxyName: (message, respondFunc) ->
-        if message.indexOf('galaxy?') > -1
-            respondFunc('Galaxy = ' + @gameData.title)
+    _checkRespondForGameName: (message, respondFunc) ->
+        if message.indexOf("#{Config.BOT_GAME_LABEL}?") > -1
+            respondFunc("Name of #{Config.BOT_GAME_LABEL} = #{@gameData.title}")
             return true
         return false
 
-    _checkRespondForGalaxyStatus: (message, respondFunc) ->
+    _checkRespondForGameStatus: (message, respondFunc) ->
         if message.indexOf('status?') > -1
             promise = db.getGameStatus(@gameData.id)
             promise.then (statusText) =>
@@ -80,7 +80,7 @@ class GameBot extends AbstractBot
             return true
         return false
 
-    _checkRespondForGalaxyRound: (message, respondFunc) ->
+    _checkRespondForGameRound: (message, respondFunc) ->
         if message.indexOf('round?') > -1 or message.indexOf('ticks?') > -1
             promise = db.getGameRound(@gameData.id)
             promise.then (roundNum) =>
@@ -88,15 +88,15 @@ class GameBot extends AbstractBot
             return true
         return false
 
-    _checkRespondForNumberOfGalaxyClients: (message, respondFunc, channelName=null) ->
+    _checkRespondForNumberOfGameClients: (message, respondFunc, channelName=null) ->
         if message.indexOf('players?') > -1
             channelName = channelName or @_getGlobalBotChannelName()
             if channelName?
                 botChannel = @botChannelList[channelName]
                 clientsNum = botChannel.getNumberOfBotDependentClients(@gameData.id)
-                respondFunc("Galaxy players in #{channelName} = #{clientsNum}")
+                respondFunc("Players of my #{Config.BOT_GAME_LABEL} in #{channelName} = #{clientsNum}")
             else
-                respondFunc("Cannot find channel to check galaxy players for!")
+                respondFunc("Cannot find channel to check #{Config.BOT_GAME_LABEL} players for!")
             return true
         return false
 
