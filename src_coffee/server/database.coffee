@@ -232,46 +232,6 @@ class Database
 
         return promise
 
-    # Returns the status (textual or numerical) for the given game world. This is used by a bot on game status request.
-    # @param idGame [int] The id of the game world.
-    # @return [promise] A promise, resolving to the game's status.
-    #   If the read data set is empty, the promise is rejected. 
-    getGameStatus: (idGame) ->
-        sql = "
-                SELECT `Status` AS `status`
-                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
-                WHERE `ID`=#{@_toQuery(idGame)}
-              "
-        promise = @_readSimpleData(sql, true)
-        promise = promise.then (data) =>
-            return data?.status
-        promise = promise.then (statusID) =>
-            # Fetch text for status
-            textData =
-                '-1': 'Not released yet'
-                '0': 'Not started yet'
-                '1': 'Running'
-                '2': 'Paused'
-                '3': 'Finished / Terminated'
-                '4': 'Evaluated and archived'
-            return textData[String(statusID)]
-        return promise
-
-    # Returns the current round number for the given game world. This is used by a bot on game round request.
-    # @param idGame [int] The id of the game world.
-    # @return [promise] A promise, resolving to the game's round number.
-    #   If the read data set is empty, the promise is rejected. 
-    getGameRound: (idGame) ->
-        sql = "
-                SELECT `Round` AS `round`
-                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
-                WHERE `ID`=#{@_toQuery(idGame)}
-              "
-        promise = @_readSimpleData(sql, true)
-        promise = promise.then (data) =>
-            return data?.round
-        return promise
-
     # Returns the list of game worlds, which each have a bot to use for bot-channels.
     # If the mono-bot is configured, returns the list of all game worlds having a chat.
     # This list is also used to manage the lifetime of corresponding channels and its logs
