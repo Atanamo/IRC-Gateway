@@ -49,7 +49,7 @@ class GameBot extends AbstractBot
     # @override
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
-                command: "#{Config.BOT_GAME_LABEL}?"
+                command: 'game?'
                 description: "What is the name of my #{Config.BOT_GAME_LABEL}?"
             ,
                 command: 'status?'
@@ -67,7 +67,7 @@ class GameBot extends AbstractBot
         super(message, respondFunc, commandsList)
 
     _checkRespondForGameName: (message, respondFunc) ->
-        if message.indexOf("#{Config.BOT_GAME_LABEL}?") > -1
+        if message.indexOf('game?') > -1
             respondFunc("Name of #{Config.BOT_GAME_LABEL} = #{@gameData.title}")
             return true
         return false
