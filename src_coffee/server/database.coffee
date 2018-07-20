@@ -189,6 +189,49 @@ class Database
               "
         return @_readSimpleData(sql, true)
 
+    # Returns the status information for each of the given list of game worlds.
+    # This is used by a bot on request of one or more game statuses.
+    # @param idList [array] An array of integers, each defining the id of a game world.
+    # @return [promise] A promise, resolving to a list of data maps.
+    #   Each data map must have at least the key `id` to reference the corresponding game world.
+    #   The bot will output any further values of a data map as a game's status information.
+    #   (The key of each of these values is used to label the value on output.)
+    #   The list may be empty, if none of the given games could be found.
+    getGameStatuses: (idList=[]) ->
+        # Convert given array to string of comma-separated values
+        idListSanitized = idList.map (idGame) =>
+            @_toQuery(idGame)
+        idListString = idListSanitized.join(',')
+
+        # Read the status values for each game
+        sql = "
+                SELECT `ID` as `id`, `Status` AS `status`, `Round` AS `rounds`
+                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                WHERE `ID` IN (#{idListString})
+                ORDER BY `Status` ASC, `ID` DESC
+              "
+        promise = @_readMultipleData(sql)
+        promise = promise.then (dataList) =>
+            statusTexts =
+                '-1': 'Not released yet'
+                '0': 'Not started yet'
+                '1': 'Running'
+                '2': 'Paused'
+                '3': 'Finished / Terminated'
+                '4': 'Evaluated and archived'
+                '5': 'Running (aftermath)'
+                '6': 'Paused (aftermath)'
+                '7': 'Terminated and closed'
+
+            # Fetch text for each status
+            resultData = dataList.map (data) ->
+                statusID = String(data?.status)
+                data.status = statusTexts[statusID] or 'Unknown status'
+                return data
+            return resultData
+
+        return promise
+
     # Returns the status (textual or numerical) for the given game world. This is used by a bot on game status request.
     # @param idGame [int] The id of the game world.
     # @return [promise] A promise, resolving to the game's status.

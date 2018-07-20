@@ -87,41 +87,73 @@ class MonoBot extends AbstractBot
     # @override
     _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
         return (
-            #@_checkRespondForGamesOverview(message, respondFunc) or
+            @_checkRespondForGamesOverview(message, respondFunc) or
             @_checkRespondForNumbersOfGameClients(message, respondFunc, channelName)
         )
 
     # @override
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
+                command: 'games?'
+                description: "What is the status of each #{Config.BOT_GAME_LABEL} I represent?"
+            ,
+                command: 'status?'
+                description: 'See "games?"'
+            ,
                 command: 'players?'
                 description: "How many players per #{Config.BOT_GAME_LABEL} are currently online (on the channel)?"
         ]
         super(message, respondFunc, commandsList)
 
-    _checkRespondForNumbersOfGalaxyClients: (message, respondFunc, channelName=null) ->
+    _checkRespondForGamesOverview: (message, respondFunc) ->
+        if message.indexOf('games?') > -1 or message.indexOf('status?') > -1
+            promise = db.getGameStatuses(Object.keys(@gamesMap))
+            promise.then (gameStatusesList) =>
+                if gameStatusesList.length > 0
+                    gameLines = gameStatusesList.map (gameData) =>
+                        gameTitle = @gamesMap[gameData.id] or "##{gameID}"
+                        delete gameData.id
+
+                        pairList = Object.keys(gameData).map (key) ->
+                            title = key.trim().charAt(0).toUpperCase() + key.slice(1)
+                            value = gameData[key]
+                            return "[#{title}: #{value}]"
+                        pairsString = pairList.join('  ')
+
+                        return "#{gameTitle} =  #{pairsString}"
+
+                    infoLines = gameLines.join('\n')
+                    respondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
+
+                else
+                    respondFunc('Currently no games available')
+
+            return true
+        return false
+
     _checkRespondForNumbersOfGameClients: (message, respondFunc, channelName=null) ->
         if message.indexOf('players?') > -1
             channelName = channelName or @_getGlobalBotChannelName()
 
             if channelName?
                 botChannel = @botChannelList[channelName]
-                answerLines = []
+                gameLines = []
 
-                for gameID in Object.keys(@gamesMap)
+                for gameID, gameTitle of @gamesMap
                     if botChannel.isGlobalChannel() or "#{botChannel.getGameID()}" is "#{gameID}"
                         clientsNum = botChannel.getNumberOfBotDependentClients(gameID)
                         gameTitle = @gamesMap[gameID] or "##{gameID}"
-                        answerLines.push("#{gameTitle} = #{clientsNum}") if clientsNum > 0
+                        gameLines.push("#{gameTitle} = #{clientsNum}") if clientsNum > 0
 
-                if answerLines.length > 0
-                    infoLines = answerLines.join('\n')
+                if gameLines.length > 0
+                    infoLines = gameLines.join('\n')
                     respondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
                 else
                     respondFunc("Currently no players online in #{channelName}")
 
             else
                 respondFunc("Cannot find channel to check #{Config.BOT_GAME_LABEL} players for!")
+
             return true
         return false
 
