@@ -121,7 +121,7 @@ class MonoBot extends AbstractBot
                             return "[#{title}: #{value}]"
                         pairsString = pairList.join('  ')
 
-                        return "#{gameTitle} =  #{pairsString}"
+                        return "- #{gameTitle} =  #{pairsString}"
 
                     infoLines = gameLines.join('\n')
 
@@ -149,7 +149,7 @@ class MonoBot extends AbstractBot
                     if botChannel.isGlobalChannel() or "#{botChannel.getGameID()}" is "#{gameID}"
                         clientsNum = botChannel.getNumberOfBotDependentClients(gameID)
                         gameTitle = @gamesMap[gameID] or "##{gameID}"
-                        gameLines.push("#{gameTitle} = #{clientsNum}") if clientsNum > 0
+                        gameLines.push("- #{gameTitle} = #{clientsNum}") if clientsNum > 0
 
                 if gameLines.length > 0
                     infoLines = gameLines.join('\n')
