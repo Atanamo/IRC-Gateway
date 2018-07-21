@@ -71,11 +71,10 @@ class MonoBot extends AbstractBot
     # @override
     _getIrcMessageRepresentingWebClientUser: (senderIdentity, rawMessage) ->
         clientNick = senderIdentity.getName()
-        gameID = senderIdentity.getGameID()
-        gameTitle = @gamesMap[gameID]
+        gameTitle = senderIdentity.getGameTag()
 
         if gameTitle
-            return "#{gameTitle}: <#{clientNick}> #{rawMessage}"
+            return "<#{clientNick} | #{gameTitle}>:  #{rawMessage}"
         else
             return super(senderIdentity, rawMessage)
 

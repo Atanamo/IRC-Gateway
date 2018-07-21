@@ -48,14 +48,20 @@ class ClientIdentity
     getID: ->
         return @id
 
-    getGameID: ->
-        return @idGame
+    getGlobalID: ->
+        return "#{@idGame}_#{@id}"
 
     getUserID: ->
         return @idUser
 
-    getGlobalID: ->
-        return "#{@idGame}_#{@id}"
+    getGameID: ->
+        return @idGame
+
+    getGameTitle: ->
+        return @gameTitle
+
+    getGameTag: ->
+        return @gameTag
 
     toData: ->
         # Filter idUser and securityToken, because these must be secret to clients
