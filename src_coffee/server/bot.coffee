@@ -236,7 +236,7 @@ class SchizoBot
 
         # Check for a bot command
         return if @_checkRespondForHelp(message, queryRespondFunc)  # Always respond to query
-        return if @_checkRespondForCustomBotCommand(message, respondFunc, channel)
+        return if @_checkRespondForCustomBotCommand(message, respondFunc, queryRespondFunc, channel)
         return if @_checkRespondForNumberOfClients(message, respondFunc, channel)
         return if @_checkRespondForConnectTime(message, respondFunc)
         return if @_checkRespondForVersion(message, respondFunc)

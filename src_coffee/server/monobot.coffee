@@ -85,10 +85,10 @@ class MonoBot extends AbstractBot
     #
 
     # @override
-    _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
+    _checkRespondForCustomBotCommand: (message, respondFunc, queryRespondFunc, channelName) ->
         return (
-            @_checkRespondForGamesOverview(message, respondFunc) or
-            @_checkRespondForNumbersOfGameClients(message, respondFunc, channelName)
+            @_checkRespondForGamesOverview(message, respondFunc, queryRespondFunc) or
+            @_checkRespondForNumbersOfGameClients(message, respondFunc, queryRespondFunc, channelName)
         )
 
     # @override
@@ -105,7 +105,7 @@ class MonoBot extends AbstractBot
         ]
         super(message, respondFunc, commandsList)
 
-    _checkRespondForGamesOverview: (message, respondFunc) ->
+    _checkRespondForGamesOverview: (message, respondFunc, queryRespondFunc) ->
         if message.indexOf('games?') > -1 or message.indexOf('status?') > -1
             promise = db.getGameStatuses(Object.keys(@gamesMap))
             promise.then (gameStatusesList) =>
@@ -123,19 +123,24 @@ class MonoBot extends AbstractBot
                         return "#{gameTitle} =  #{pairsString}"
 
                     infoLines = gameLines.join('\n')
-                    respondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
+
+                    # Output to query, if too many lines
+                    if gameLines.length > 3
+                        queryRespondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
+                    else
+                        respondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
 
                 else
-                    respondFunc('Currently no games available')
+                    respondFunc('Currently no game information available')
 
             return true
         return false
 
-    _checkRespondForNumbersOfGameClients: (message, respondFunc, channelName=null) ->
+    _checkRespondForNumbersOfGameClients: (message, respondFunc, queryRespondFunc, channelName=null) ->
         if message.indexOf('players?') > -1
             channelName = channelName or @_getGlobalBotChannelName()
 
-            if channelName?
+            if @botChannelList[channelName]?
                 botChannel = @botChannelList[channelName]
                 gameLines = []
 
@@ -147,7 +152,13 @@ class MonoBot extends AbstractBot
 
                 if gameLines.length > 0
                     infoLines = gameLines.join('\n')
-                    respondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
+
+                    # Output to query, if too many lines
+                    if gameLines.length > 3
+                        queryRespondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
+                    else
+                        respondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
+
                 else
                     respondFunc("Currently no players online in #{channelName}")
 

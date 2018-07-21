@@ -38,7 +38,7 @@ class GameBot extends AbstractBot
     #
 
     # @override
-    _checkRespondForCustomBotCommand: (message, respondFunc, channelName) ->
+    _checkRespondForCustomBotCommand: (message, respondFunc, queryRespondFunc, channelName) ->
         return (
             @_checkRespondForGameInfo(message, respondFunc) or
             @_checkRespondForNumberOfGameClients(message, respondFunc, channelName)
