@@ -187,8 +187,9 @@ class BotChannel extends Channel
         # Try to find bot (if message has been sent by one) and set its game id for additional information to clients
         botGameID = null
         for botID, bot of @botList
-            if bot.getNickName() is senderNickName.replace(/^[@+]/, '')
-                botGameID = botID
+            if botID isnt 'MONO_BOT'  # The mono-bot does not represent a single game, so handle it as normal nick
+                if bot.getNickName() is senderNickName.replace(/^[@+]/, '')
+                    botGameID = botID
         # Create sender identity and distribute message
         senderIdentity = ClientIdentity.createFromIrcNick(senderNickName, botGameID)
         @_sendMessageToRoom(senderIdentity, messageText)
