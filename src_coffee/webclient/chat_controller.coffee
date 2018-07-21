@@ -38,6 +38,7 @@ class this.ChatController
         tabPagesChannelNameBox: '.chatChannelName'
         tabPagesChannelNameValue: '.chatChannelName .value'
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
+        tabPageGlobalChannel: '#tabsystem .tabsystemViewport > div[data-global]'
         tabPageServer: '#tabPageServer'
         tabPageSkeleton: '#tabPageSkeleton'
         unreadTabMarker: '.newEntriesCounter'
@@ -231,6 +232,7 @@ class this.ChatController
         tabPage = @_getChannelTabPage(channel)
         channelTitle = data?.title or channel
         ircChannelName = data.ircChannelName or null
+        isGlobalChannel = data.isGlobal or false
         isNewTab = (tabPage?.length is 0)
 
         if isNewTab
@@ -247,6 +249,7 @@ class this.ChatController
             tabSkeleton = @ui.tabPageSkeleton.clone()
             tabSkeleton.attr('id', tabID)
             tabSkeleton.attr('data-channel', channel)
+            tabSkeleton.attr('data-global', isGlobalChannel) if isGlobalChannel
 
             # Add tab to DOM
             @ui.tabsystemViewport.append(tabSkeleton)
@@ -447,7 +450,14 @@ class this.ChatController
             messagesElem = tabPage.find(@gui.tabPagesUsersIngame)
         messagesElem.append(itemElem)
 
-    _appendMessageToTab: (tabPage, timestamp, {text, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn}) ->
+    _appendMessageToTab: (tabPage, timestamp, {text, gameTag, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn, isIrcSender}) ->
+        # On global channel (multi-game channel): Append game tag to name of ingame-sender
+        if not isIrcSender
+            isGlobalChannel = (tabPage.get?(0) is @ui.tabPageGlobalChannel.get?(0))
+            if isGlobalChannel and gameTag
+                sender = "#{sender} (#{gameTag})"
+
+        # Determine style classes
         styleClasses = 'message'
 
         if isOwn
@@ -461,6 +471,7 @@ class this.ChatController
         else if isMentioningOwn
             styleClasses += ' mentioning'
 
+        # Put all together
         options =
             styleClasses: styleClasses
             mainAuthor: sender
@@ -470,7 +481,7 @@ class this.ChatController
         @_scrollToBottomOfTab(tabPage)
 
     _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, {isOwn, isSentByUser}={}) ->
-        noticeText = "** #{noticeText}" unless tabPage is @ui.tabPageServer  # Prefix notices except for server tab
+        noticeText = "** #{noticeText}" unless tabPage.get?(0) is @ui.tabPageServer.get?(0)  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
         styleClasses = 'notice'
         styleClasses += ' own' if isOwn

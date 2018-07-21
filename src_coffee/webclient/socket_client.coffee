@@ -224,6 +224,8 @@ class this.SocketClient
 
     _simplifyUserIdentityData: (data, nameProperty='sender', extractInlineAuthor=false) ->
         data.isOwn = @_isOwnUser(data, nameProperty)
+        data.isIrcSender = data[nameProperty]?.isIrcClient or false
+        data.gameTag = data[nameProperty]?.gameTag or ''
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
 
     _addContentMetaInfo: (data, addressTextProperty='text') ->
