@@ -241,16 +241,24 @@ class Database
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   The list may be empty, if there are no games at all.
     getBotRepresentedGames: ->
-        sql = "
-                SELECT `ID` AS `id`, `Galaxyname` AS `title`
-                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
-                WHERE `Status`>=0 AND `Status`<4
-                   OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
-                   OR `Status`>=5 AND `Status`<7
-                ORDER BY `Status` ASC, `ID` ASC
-              "
         if Config.MAX_BOTS > 0
-            sql += " LIMIT #{Config.MAX_BOTS} "
+            sql = "
+                    SELECT `ID` AS `id`, `Galaxyname` AS `title`
+                    FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                    WHERE `Status`>=0 AND `Status`<4
+                       OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
+                       OR `Status`>=5 AND `Status`<7
+                    ORDER BY `Status` ASC, `ID` ASC
+                    LIMIT #{Config.MAX_BOTS}
+                "
+        else
+            sql = "
+                    SELECT `ID` AS `id`, `Galaxyname` AS `title`
+                    FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                    WHERE `Status`>=0 AND `Status`<7
+                       OR `Status`=7 AND IFNULL(`FinishDateTime`, 0) >= (NOW() - INTERVAL 60 DAY)
+                    ORDER BY `Status` ASC, `ID` ASC
+                "
         return @_readMultipleData(sql)
 
     # Returns a list of channels, which should be mirrored to IRC, but each belong to only one game.
