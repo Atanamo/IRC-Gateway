@@ -486,6 +486,9 @@ class this.ChatController
         @_scrollToBottomOfTab(tabPage)
 
     _appendEntryToTab: (tabPage, entryTimestamp, entryType, entryText, options) ->
+        # Regard line-breaks in text (e.g. because of command-responses of mono-bot)
+        textLines = String(entryText).replace('\r', '').split('\n')
+
         # Build new list item
         itemElem = $('<li/>')
         itemElem.attr('data-item', entryType)
@@ -512,9 +515,15 @@ class this.ChatController
 
             spanElem.append(': ')
 
-        spanElem = $('<span/>').addClass('content')
-        spanElem.text(entryText)
-        itemElem.append(spanElem)
+        contentElem = $('<span/>').addClass('content')
+        if textLines.length > 1
+            textLines.forEach (line) ->
+                lineElem = $('<div/>').addClass('line')
+                lineElem.text(line)
+                contentElem.append(lineElem)
+        else
+            contentElem.text(textLines[0])
+        itemElem.append(contentElem)
 
         # Append item to list
         messagesElem = tabPage.find(@gui.tabPagesMessages)
