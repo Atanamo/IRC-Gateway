@@ -9,6 +9,8 @@ class ClientIdentity
     idUser: 0
     name: 'Unknown'
     title: null
+    gameTitle: ''
+    gameTag: null
     isIrcClient: false
     securityToken: ''
 
@@ -16,6 +18,7 @@ class ClientIdentity
         for key, val of data
             @[key] = val
         @title = @name unless @title?
+        @gameTag = @gameTitle unless @gameTag?
 
     @createFromIrcNick: (nickName, idGame=null) ->
         identObj = new ClientIdentity
@@ -30,10 +33,12 @@ class ClientIdentity
         promise = promise.then (data) =>
             return new ClientIdentity
                 id: data.id
-                name: data.name
-                title: data.title
                 idGame: data.idGame
                 idUser: data.idUser
+                name: data.name
+                title: data.title
+                gameTitle: data.gameTitle
+                gameTag: data.gameTag
                 securityToken: data.token
         return promise
 
@@ -59,6 +64,8 @@ class ClientIdentity
             @idGame
             @name
             @title
+            @gameTitle
+            @gameTag
             @isIrcClient
         }
 

@@ -138,6 +138,13 @@ class Database
     _getGameTableName: (gameMetaData, tableNameSkeleton) ->
         return tableNameSkeleton.replace('<id>', gameMetaData.game_id)
 
+    _getShortenedGameTitle: (fullGameTitle) ->
+        shortTitle = String(fullGameTitle)
+        # Remove sub names (like 'Spiral'), but leave anything after a space (mostly numbers)
+        shortTitle = shortTitle.replace(/(-[^- ]+)/, '')
+        shortTitle = shortTitle.replace(/[\*]+/, '')  # Remove special marking chars
+        return shortTitle
+
     # Returns the current security token for the given player. This token must be send on auth request by the client.
     _getSecurityToken: (idUser, playerData) ->
         return @_getHashValue("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
@@ -393,12 +400,14 @@ class Database
     # Returns the saved identification data for the given player in the given game.
     # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
     # @param idGame [int] The id of the player's game world as given by a client on logon.
-    # @return [promise] A promise, resolving to a data map with keys 
-    #   `name` (The player's name for the chat), 
-    #   `title` (An optional more detail name for the chat, defaults to the name), 
+    # @return [promise] A promise, resolving to a data map with keys
     #   `id` (The id of the player for the chat), 
-    #   `idGame` (Should equal idGame), 
-    #   `idUser` (The id of the player's account) and 
+    #   `idGame` (Should equal given idGame), 
+    #   `idUser` (The id of the player's account),
+    #   `name` (The player's name for the chat), 
+    #   `title` (An optional more detail name for the chat, will default to the name), 
+    #   `gameTitle` (The full name of the player's game world), 
+    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name), 
     #   `token` (The security token for the player).
     #   If the read data set is empty, the promise is rejected.
     getClientIdentityData: (idUser, idGame) ->
@@ -410,7 +419,10 @@ class Database
             gameDatabase = @_getGameDatabaseName(gameData)
             playerIdentitiesTable = @_getGameTableName(gameData, Config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
             sql = "
-                    SELECT `I`.`ID` AS `game_identity_id`, `I`.`Folkname` AS `game_identity_name`, `I`.`LastActivityStamp` AS `activity_stamp`
+                    SELECT `I`.`ID` AS `game_identity_id`,
+                           `I`.`Folkname` AS `game_identity_name`,
+                           `I`.`LastActivityStamp` AS `activity_stamp`,
+                           #{@_toQuery(gameData.game_title)} AS `game_title`
                     FROM `#{Config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
                     JOIN `#{gameDatabase}`.`#{playerIdentitiesTable}` AS `I`
                       ON `I`.`ID`=`PG`.`FolkID`
@@ -448,6 +460,8 @@ class Database
                 idUser: idUser
                 name: "#{playerData.game_identity_name} #{nameNumber}".trim()
                 title: "#{playerData.game_identity_name} - Player #{nameNumber}" if nameNumber
+                gameTitle: playerData.game_title
+                gameTag: @_getShortenedGameTitle(playerData.game_title)
                 token: @_getSecurityToken(idUser, playerData)
             }
 
