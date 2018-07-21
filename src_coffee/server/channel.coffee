@@ -96,7 +96,7 @@ class Channel
         clientSocket.removeAllListeners @eventNameHistory
         clientSocket.removeListener 'disconnect', clientSocket[@listenerNameDisconnect]
 
-    addClient: (clientSocket, isRejoin=false) ->
+    addClient: (clientSocket, isRejoin=false, additionalChannelInfo={}) ->
         return false if @_hasJoinedSocket(clientSocket)  # Cancel, if socket is already joined to channel
 
         log.debug "Adding client '#{clientSocket.identity.getName()}' to channel '#{@name}'"
@@ -108,7 +108,8 @@ class Channel
             creatorID: @creatorID
             isPublic: @isPublic
             isCustom: @isCustom
-            ircChannelName: @ircChannelName  # Only available, when called from sub class BotChannel
+            isGlobal: additionalChannelInfo.isGlobalChannel or false
+            ircChannelName: additionalChannelInfo.ircChannelName or null
 
         @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
         clientSocket.join(@name)                             # Join client to room of channel

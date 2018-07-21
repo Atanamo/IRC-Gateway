@@ -48,7 +48,10 @@ class BotChannel extends Channel
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
-        super(clientSocket, isRejoin)
+        additionalChannelInfo =
+            isGlobalChannel: @isGlobalChannel()
+            ircChannelName: @ircChannelName
+        super(clientSocket, isRejoin, additionalChannelInfo)
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
@@ -159,7 +162,7 @@ class BotChannel extends Channel
         hasMonoBot = (Object.keys(@botList).length is 1 and @botList['MONO_BOT']?)
         sendToRoom = hasMonoBot
 
-        # Send directly to room
+        # May send directly to room
         if sendToRoom
             messageText = messageText?.trim() or ''
             @_sendMessageToRoom(clientSocket.identity, messageText)
