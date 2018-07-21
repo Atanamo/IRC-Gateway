@@ -344,7 +344,7 @@ class this.ChatController
         @_setUserNumberToTab(tabPage, clientsNumber)
 
 
-    handleChannelTopic: (channel, timestamp, {topic, author, isIrcSender, isInitial}) ->
+    handleChannelTopic: (channel, timestamp, {topic, author, isFromIrc, isInitial}) ->
         tabPage = @_getChannelTabPage(channel)
 
         if isInitial
@@ -352,7 +352,7 @@ class this.ChatController
             @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
         else
             if author?
-                author = @_getUserLabeledForIRC(tabPage, author, isIrcSender)
+                author = @_getUserLabeledForIRC(tabPage, author, isFromIrc)
                 noticeText = Translation.get('msg.new_channel_topic.authored', topic: topic, author: author)
             else
                 noticeText = Translation.get('msg.new_channel_topic.authorless', topic: topic)
@@ -366,7 +366,7 @@ class this.ChatController
 
         noticeText = ''
         detailsData = data.details or {}
-        userName = @_getUserLabeledForIRC(tabPage, data.user, data.isIrcSender)
+        userName = @_getUserLabeledForIRC(tabPage, data.user, data.isFromIrc)
         reasonText = detailsData.reason
 
         switch data.action
@@ -401,11 +401,11 @@ class this.ChatController
         @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText, data)
         @_addNewEntryMarkToTab(tabPage, data, noticeText)
 
-    handleChannelModeChange: (channel, timestamp, {actor, isIrcSender, mode, enabled, argument}) ->
+    handleChannelModeChange: (channel, timestamp, {actor, isFromIrc, mode, enabled, argument}) ->
         tabPage = @_getChannelTabPage(channel)
 
         actor = "-#{Translation.get('info.unknown')}-" unless actor?
-        actor = @_getUserLabeledForIRC(tabPage, actor, isIrcSender)
+        actor = @_getUserLabeledForIRC(tabPage, actor, isFromIrc)
 
         modeText = if enabled then "+#{mode}" else "-#{mode}"
         modeEvent = if argument? then "#{modeText} #{argument}" else modeText
@@ -463,9 +463,9 @@ class this.ChatController
             messagesElem = tabPage.find(@gui.tabPagesUsersIngame)
         messagesElem.append(itemElem)
 
-    _appendMessageToTab: (tabPage, timestamp, {text, gameID, gameTag, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn, isIrcSender}) ->
+    _appendMessageToTab: (tabPage, timestamp, {text, gameID, gameTag, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn, isFromIrc}) ->
         # May append sender name by a tag
-        if isIrcSender
+        if isFromIrc
             # Append irc tag, but only if not a game bot
             sender = @_getUserLabeledForIRC(tabPage, sender, not gameID)
         else
