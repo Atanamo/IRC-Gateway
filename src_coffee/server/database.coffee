@@ -195,7 +195,7 @@ class Database
     # @return [promise] A promise, resolving to a list of data maps.
     #   Each data map must have at least the key `id` to reference the corresponding game world.
     #   The bot will output any further values of a data map as a game's status information.
-    #   (The key of each of these values is used to label the value on output.)
+    #   (The key of each of these values is used to label the value on output. Underscores are replaced by spaces.)
     #   The list may be empty, if none of the given games could be found.
     getGameStatuses: (idList=[]) ->
         # Convert given array to string of comma-separated values

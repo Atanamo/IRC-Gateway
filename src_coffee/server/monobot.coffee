@@ -116,6 +116,7 @@ class MonoBot extends AbstractBot
 
                         pairList = Object.keys(gameData).map (key) ->
                             title = key.trim().charAt(0).toUpperCase() + key.slice(1)
+                            title = title.replace('_', ' ')
                             value = gameData[key]
                             return "[#{title}: #{value}]"
                         pairsString = pairList.join('  ')
