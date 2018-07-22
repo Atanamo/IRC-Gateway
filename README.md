@@ -26,7 +26,9 @@ Installation
 * Set up the database on a MySQL server. Sadly, this is tricky and requires code modifications...
   * All database interaction is done in following file: `./src_coffee/server/database.coffee`
   * Have a look at the file and change the queries (and/or config) to match your environment:
-  * You have to modify all queries containing `Config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
+  * Set up your database configuration by editing the file `./src_coffee/server/config.custom.coffee`
+  * In the database file, you have to modify at least the method/queries
+    containing `Config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
   * All additional tables the chat system requires can be set up using the following file: `./setup_migration.sql`
 * Navigate to the project directory (on shell), then run:
 * `$ npm install`
@@ -51,8 +53,10 @@ So based on the default settings in the server's config file, you have to browse
 Changing config
 ===============
 
-* Edit the server settings in: `./src_coffee/server/config.coffee`
-* Rebuild the JavaScript code (transcompile CoffeeScript code): 
+* Overwrite the default settings:
+  * Add/set your overwrite settings here: `./src_coffee/server/config.custom.coffee`
+  * Look-up documentation of all settings here: `./src_coffee/server/config.default.coffee`
+* Rebuild the JavaScript code (transcompile CoffeeScript code):
  	``$ cake build``
 * Run server:
 	``$ node ./src_js/server/main.js``
