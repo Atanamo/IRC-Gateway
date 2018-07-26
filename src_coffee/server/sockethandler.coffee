@@ -19,12 +19,20 @@ ClientFloodingRating = require './clientrating'
 ## To be used as singleton.
 ##
 class SocketHandler
+    socketServer: null
+    isActive: false
 
-    constructor: (addGameBotToChannelCallback) ->
+    constructor: (socketServer, addGameBotToChannelCallback) ->
+        @socketServer = socketServer
         @_addGameBotToChannel = addGameBotToChannelCallback
+        @_bindSocketGlobalEvents(@socketServer)
 
-    start: (socketServer) ->
-        @_bindSocketGlobalEvents(socketServer)
+    start: ->
+        @isActive = true
+
+    stop: ->
+        @isActive = false
+        @socketServer.close()  # Stop socket.io
 
     _bindSocketGlobalEvents: (socketServer) ->
         # Register common websocket events
@@ -43,6 +51,7 @@ class SocketHandler
         clientSocket.on 'join', (channelData) => @_handleClientChannelJoin(clientSocket, channelData)
 
     _handleClientConnect: (clientSocket) =>
+        return unless @isActive
         log.debug 'Client connected...'
         # Add flooding rating object
         floodingCallback = =>

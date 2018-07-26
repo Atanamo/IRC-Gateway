@@ -38,7 +38,7 @@ class Gateway
     constructor: ->
         @_bindServerEvents()
         @botManager = new BotManager()
-        @socketHandler = new SocketHandler(@botManager.addGameBotToChannel)
+        @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
         serverRootDir = process.cwd()
@@ -66,7 +66,7 @@ class Gateway
         @_setupProcess()
 
         # Register for socket events (But don't start listening)
-        @socketHandler.start(socketServer)
+        @socketHandler.start()
 
         # Connect database
         log.info 'Connecting database...'
@@ -104,11 +104,21 @@ class Gateway
     _shutdown: (callback=null) ->
         promise = @botManager.shutdown()
         promise = promise.then =>
+            # Wait some additional time to allow sending quit messages
+            delayDeferred = Q.defer()
+            setTimeout(=>
+                delayDeferred.resolve()
+            , 500)
+            return delayDeferred.promise
+        promise = promise.then =>
+            server.close()  # Stop accepting new connections
+            @socketHandler.stop()  # Stop socket.io
+        promise = promise.then =>
             # Wait some additional time to allow finishing database queries
             delayDeferred = Q.defer()
             setTimeout(=>
                 delayDeferred.resolve()
-            , 1500)
+            , Config.CLIENTS_DISCONNECT_DELAY + 1500)
             return delayDeferred.promise
         promise = promise.then =>
             return db.disconnect()
