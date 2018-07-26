@@ -1,10 +1,10 @@
 
 //var createGateway = require('irc-gateway');
-var createGateway = require('../src_js/server/index');
+var setupGateway = require('../src_js/server/index');
 
 var config = require('./custom_config')
 
-var gateway = createGateway(config);
+var gateway = setupGateway(config);
 
 gateway.start();
 
