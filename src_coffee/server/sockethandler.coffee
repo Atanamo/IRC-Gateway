@@ -4,6 +4,8 @@ Q = require 'q'
 
 ## Include app modules
 log = require './logger'
+db = require './database'
+
 Config = require './config'
 Channel = require './channel'
 BotChannel = require './botchannel'

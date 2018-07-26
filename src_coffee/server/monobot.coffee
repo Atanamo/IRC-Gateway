@@ -1,6 +1,8 @@
 
 # Include app modules
 log = require './logger'
+db = require './database'
+
 Config = require './config'
 AbstractBot = require './bot'
 

@@ -4,7 +4,9 @@ Q = require 'q'
 
 ## Include app modules
 log = require './logger'
+db = require './database'
 socketServer = require './socketserver'
+
 Config = require './config'
 
 

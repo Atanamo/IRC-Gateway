@@ -685,6 +685,6 @@ class Database
 
 
 
-## Export class
-module.exports = Database
+## Export as singleton
+module.exports = new Database()
 

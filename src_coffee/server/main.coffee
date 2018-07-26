@@ -7,10 +7,10 @@ express = require 'express'
 
 ## Include app modules
 log = require './logger'
+db = require './database'
 socketioWrapper = require './socketserver'
 
 Config = require './config'
-Database = require './database'
 
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
@@ -26,16 +26,6 @@ httpsOptions =
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
 socketServer = socketioWrapper.bindToWebserver(server)  # Listen for Websocket requests on server
-
-
-## Create app objects
-db = new Database()           # Create database wrapper object
-
-
-
-## Set object to global scope
-global.db = db
-
 
 
 ## Main class
