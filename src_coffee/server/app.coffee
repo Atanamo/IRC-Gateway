@@ -59,7 +59,9 @@ class Gateway
 
 
     start: ->
-        return if isStarted
+        if isStarted
+            log.error 'Gateway not stopped yet, cannot restart!', 'gateway main'
+            return
         isStarted = true
 
         ## Start the chat gateway ##
@@ -84,10 +86,12 @@ class Gateway
         # End chain to observe errors
         startupPromise.done()
 
-    stop: (callback) ->
+    stop: (callback=null) ->
         return unless isStarted
-        @_shutdown(callback)
-        isStarted = false
+        shutdownCallback = =>
+            isStarted = false
+            callback?()
+        @_shutdown(shutdownCallback)
 
     _setupProcess: ->
         process.on 'exit', (code) =>
@@ -101,7 +105,7 @@ class Gateway
         process.on 'unhandledRejection', (err) =>
             log.error err, 'unhandled promise rejection'
 
-    _shutdown: (callback=null) ->
+    _shutdown: (callback) ->
         promise = @botManager.shutdown()
         promise = promise.then =>
             # Wait some additional time to allow sending quit messages
