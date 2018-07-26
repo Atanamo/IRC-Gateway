@@ -97,7 +97,5 @@ class Gateway
 
 
 
-# Run main class
-main = new Gateway()
-main.start()
-
+## Export class
+module.exports = Gateway

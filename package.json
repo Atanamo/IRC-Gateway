@@ -1,5 +1,5 @@
 {
-  "name": "IRC-Gateway",
+  "name": "irc-gateway",
   "version": "1.3.1",
   "description": "The IRC Gateway server and client for the game SG-Realities",
   "keywords": [
@@ -22,6 +22,7 @@
     "node": ">= 6.0.0",
     "npm": ">= 3.0.0"
   },
+  "main": "src_js/server/index.js",
   "scripts": {
     "preinstall": "npm install coffee-script@1.12.7 -g",
     "install": "cake build"
@@ -37,6 +38,5 @@
     "coffee-script": "1.12.7"
   },
   "bundleDependencies": [],
-  "private": true,
-  "main": "src_js/main.js"
+  "private": true
 }
