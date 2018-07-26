@@ -3,10 +3,11 @@
 Q = require 'q'
 
 ## Include app modules
+config = require './config'
 log = require './logger'
 db = require './database'
 
-Config = require './config'
+## Include app classes
 Channel = require './channel'
 BotChannel = require './botchannel'
 ClientIdentity = require './clientidentity'
@@ -98,7 +99,7 @@ class SocketHandler
             authPromise = authPromise.fail (err) =>
                 throw db.createValidationError('Unknown user')  # Overwrite error
             authPromise = authPromise.then (clientIdentity) =>
-                if Config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
+                if config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
                     throw db.createValidationError('Invalid token')
                 return clientIdentity
         else
@@ -200,7 +201,7 @@ class SocketHandler
         # Check limit of created channels
         countPromise = db.getClientCreatedChannelsCount(clientIdentity)
         countPromise = countPromise.then (channelsCount) =>
-            if channelsCount >= Config.MAX_CHANNELS_PER_CLIENT
+            if channelsCount >= config.MAX_CHANNELS_PER_CLIENT
                 throw db.createValidationError('Reached channel limit')
             return true
 

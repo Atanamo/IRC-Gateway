@@ -3,10 +3,11 @@
 Q = require 'q'
 
 ## Include app modules
+config = require './config'
 log = require './logger'
 db = require './database'
 
-Config = require './config'
+## Include app classes
 BotChannel = require './botchannel'
 GameBot = require './gamebot'
 MonoBot = require './monobot'
@@ -25,7 +26,7 @@ class BotManager
     globalChannel: null
 
     constructor: ->
-        @hasBotPerGame = (Config.MAX_BOTS > 0)
+        @hasBotPerGame = (config.MAX_BOTS > 0)
         @botList = {}
 
     start: =>
@@ -146,7 +147,7 @@ class BotManager
     _startGameWatcher: ->
         intervalFunc = =>
             @_manageBotsByGames()
-        timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
+        timerMilliSeconds = config.GAMES_LOOKUP_INTERVAL * 1000
         clearInterval(@watcherTimer) if @watcherTimer?  # Clear old timer
         @watcherTimer = setInterval(intervalFunc, timerMilliSeconds) if timerMilliSeconds > 0
 

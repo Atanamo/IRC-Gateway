@@ -6,22 +6,22 @@ https = require 'https'
 express = require 'express'
 
 ## Include app modules
+config = require './config'
 log = require './logger'
 db = require './database'
 socketioWrapper = require './socketserver'
 
-Config = require './config'
-
+## Include app classes
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
 ## Configure global libraries
-Q.longStackSupport = Config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
+Q.longStackSupport = config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
 
 ## Create library API objects
 httpsOptions =
-    cert: fs.readFileSync(Config.SSL_CERT_PATH)
-    key: fs.readFileSync(Config.SSL_KEY_PATH)
+    cert: fs.readFileSync(config.SSL_CERT_PATH)
+    key: fs.readFileSync(config.SSL_KEY_PATH)
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
@@ -80,8 +80,8 @@ class Gateway
 
         # Start listening for socket.io emits and for HTTP requests
         startupPromise = startupPromise.then =>
-            log.info "Start listening on port #{Config.WEB_SERVER_PORT}..."
-            server.listen(Config.WEB_SERVER_PORT)
+            log.info "Start listening on port #{config.WEB_SERVER_PORT}..."
+            server.listen(config.WEB_SERVER_PORT)
 
         # End chain to observe errors
         startupPromise.done()
@@ -122,7 +122,7 @@ class Gateway
             delayDeferred = Q.defer()
             setTimeout(=>
                 delayDeferred.resolve()
-            , Config.CLIENTS_DISCONNECT_DELAY + 1500)
+            , config.CLIENTS_DISCONNECT_DELAY + 1500)
             return delayDeferred.promise
         promise = promise.then =>
             return db.disconnect()

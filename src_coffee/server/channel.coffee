@@ -3,11 +3,10 @@
 Q = require 'q'
 
 ## Include app modules
+config = require './config'
 log = require './logger'
 db = require './database'
 socketServer = require './socketserver'
-
-Config = require './config'
 
 
 ## Basic abstraction of a socket.io room.
@@ -42,7 +41,7 @@ class Channel
         @creatorID = data.creator_id or @creatorID
         @title = String(data.title or @name)
         @isPublic = data.is_public or @isPublic
-        @isCustom = @name.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
+        @isCustom = @name.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
 
         log.debug "Creating new channel '#{@name}'"
 
@@ -346,7 +345,7 @@ class Channel
         # Immediately unregister listeners
         @_unregisterListeners(clientSocket)
         # Delay disconnect for configured time - This will allow to rejoin before disconnect is executed
-        delay_promise = Q.delay(Config.CLIENTS_DISCONNECT_DELAY)
+        delay_promise = Q.delay(config.CLIENTS_DISCONNECT_DELAY)
         delay_promise = delay_promise.then =>
             @removeClient(clientSocket, true, true)
         delay_promise.done()

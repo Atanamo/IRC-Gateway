@@ -5,8 +5,8 @@ mysql = require 'mysql'
 crypto = require 'crypto'
 
 ## Include app modules
+config = require './config'
 log = require './logger'
-Config = require './config'
 
 
 ## Abstraction of database interactions: Wraps the database of choice.
@@ -26,13 +26,13 @@ class Database
 
         ## Open connection to database
         @connection = mysql.createConnection
-            host: Config.SQL_HOST
-            port: Config.SQL_PORT
-            user: Config.SQL_USER
-            password: Config.SQL_PASSWORD
-            database: Config.SQL_DATABASE_COMMON
+            host: config.SQL_HOST
+            port: config.SQL_PORT
+            user: config.SQL_USER
+            password: config.SQL_PASSWORD
+            database: config.SQL_DATABASE_COMMON
             charset: 'UTF8MB4_GENERAL_CI'
-            socketPath: Config.SQL_SOCKET_PATH
+            socketPath: config.SQL_SOCKET_PATH
 
         @connection.connect (err) =>
             if err
@@ -135,7 +135,7 @@ class Database
         return hashingStream.digest('hex')
 
     _getGameDatabaseName: (gameMetaData) ->
-        return "#{Config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
+        return "#{config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
 
     _getGameTableName: (gameMetaData, tableNameSkeleton) ->
         return tableNameSkeleton.replace('<id>', gameMetaData.game_id)
@@ -149,7 +149,7 @@ class Database
 
     # Returns the current security token for the given player. This token must be send on auth request by the client.
     _getSecurityToken: (idUser, playerData) ->
-        return @_getHashValue("#{Config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
+        return @_getHashValue("#{config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
 
     # Checks the given data for being valid to be passed to `createChannelByData()` and throws an error, if validation fails.
     # @param channelData [object] A data map with the channel data.
@@ -170,7 +170,7 @@ class Database
         unless 4 <= channelData.title.length <= 30
             throw @createValidationError('Illegal length of channel name')
 
-        if Config.REQUIRE_CHANNEL_PW and 2 >= channelData.password.length
+        if config.REQUIRE_CHANNEL_PW and 2 >= channelData.password.length
             throw @createValidationError('Channel password too short')
 
         unless channelData.password.length <= 20
@@ -193,7 +193,7 @@ class Database
     _getGameData: (idGame) ->
         sql = "
                 SELECT `ID` AS `game_id`, `RealityID` AS `database_id`, `Galaxyname` AS `game_title`
-                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                FROM `#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID`=#{@_toQuery(idGame)}
               "
         return @_readSimpleData(sql, true)
@@ -215,7 +215,7 @@ class Database
         # Read the status values for each game
         sql = "
                 SELECT `ID` as `id`, `Status` AS `status`, `Round` AS `rounds`
-                FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                FROM `#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID` IN (#{idListString})
                 ORDER BY `Status` ASC, `ID` DESC
               "
@@ -250,20 +250,20 @@ class Database
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   The list may be empty, if there are no games at all.
     getBotRepresentedGames: ->
-        if Config.MAX_BOTS > 0
+        if config.MAX_BOTS > 0
             sql = "
                     SELECT `ID` AS `id`, `Galaxyname` AS `title`
-                    FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                    FROM `#{config.SQL_TABLES.GAMES_LIST}`
                     WHERE `Status`>=0 AND `Status`<4
                        OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
                        OR `Status`>=5 AND `Status`<7
                     ORDER BY `Status` ASC, `ID` ASC
-                    LIMIT #{Config.MAX_BOTS}
+                    LIMIT #{config.MAX_BOTS}
                 "
         else
             sql = "
                     SELECT `ID` AS `id`, `Galaxyname` AS `title`
-                    FROM `#{Config.SQL_TABLES.GAMES_LIST}`
+                    FROM `#{config.SQL_TABLES.GAMES_LIST}`
                     WHERE `Status`>=0 AND `Status`<7
                        OR `Status`=7 AND IFNULL(`FinishDateTime`, 0) >= (NOW() - INTERVAL 60 DAY)
                     ORDER BY `Status` ASC, `ID` ASC
@@ -283,11 +283,11 @@ class Database
     #   The list may be empty, if no appropriate channels exist.
     getGameBoundBotChannels: ->
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
+                SELECT CONCAT(#{@_toQuery(config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
                        `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
                        `Title` AS `title`, `Password` AS `password`,
                        `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                 WHERE `IrcChannel` IS NOT NULL
               "
         return @_readMultipleData(sql)
@@ -303,9 +303,9 @@ class Database
     getGlobalChannelData: ->
         promise = Q.fcall =>
             return {
-                name: Config.INTERN_GLOBAL_CHANNEL_NAME
-                title: Config.INTERN_GLOBAL_CHANNEL_TITLE
-                irc_channel: Config.IRC_GLOBAL_CHANNEL
+                name: config.INTERN_GLOBAL_CHANNEL_NAME
+                title: config.INTERN_GLOBAL_CHANNEL_TITLE
+                irc_channel: config.IRC_GLOBAL_CHANNEL
                 is_public: true
             }
         return promise
@@ -324,11 +324,11 @@ class Database
     #   If the read data set is empty, the promise is rejected.
     getChannelDataByTitle: (idGame, channelTitle) ->
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
+                SELECT CONCAT(#{@_toQuery(config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
                        `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
                        `Title` AS `title`, `Password` AS `password`,
                        `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                 WHERE `GalaxyID`=#{@_toQuery(idGame)}
                   AND `Title` LIKE #{@_toQuery(channelTitle)}
               "
@@ -349,7 +349,7 @@ class Database
         gamePromise = @_getGameData(idGame)
         gamePromise = gamePromise.then (gameData) =>
             return {
-                name: "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameData.game_id}"
+                name: "#{config.INTERN_GAME_CHANNEL_PREFIX}#{gameData.game_id}"
                 title: gameData.game_title
                 is_public: true
             }
@@ -357,11 +357,11 @@ class Database
         # Read non-default channels
         idUser = clientIdentity.getUserID()
         sql = "
-                SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`,
+                SELECT CONCAT(#{@_toQuery(config.INTERN_NONGAME_CHANNEL_PREFIX)}, `C`.`ID`) AS `name`,
                        `C`.`CreatorUserID` AS `creator_id`, `C`.`Title` AS `title`,
                        `C`.`IrcChannel` AS `irc_channel`, `C`.`IsPublic` AS `is_public`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` AS `C`
-                JOIN `#{Config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
+                FROM `#{config.SQL_TABLES.CHANNEL_LIST}` AS `C`
+                JOIN `#{config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
                   ON `CJ`.`ChannelID`=`C`.`ID`
                 WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
                   AND `C`.`GalaxyID`=#{@_toQuery(idGame)}
@@ -390,7 +390,7 @@ class Database
         idUser = clientIdentity.getUserID()
         sql = "
                 SELECT COUNT(`ID`) AS `channels`
-                FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                 WHERE `GalaxyID`=#{@_toQuery(idGame)}
                   AND `CreatorUserID`=#{@_toQuery(idUser)}
               "
@@ -419,13 +419,13 @@ class Database
         # Read data of given player in given game
         promise = promise.then (gameData) =>
             gameDatabase = @_getGameDatabaseName(gameData)
-            playerIdentitiesTable = @_getGameTableName(gameData, Config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
+            playerIdentitiesTable = @_getGameTableName(gameData, config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
             sql = "
                     SELECT `I`.`ID` AS `game_identity_id`,
                            `I`.`Folkname` AS `game_identity_name`,
                            `I`.`LastActivityStamp` AS `activity_stamp`,
                            #{@_toQuery(gameData.game_title)} AS `game_title`
-                    FROM `#{Config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
+                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
                     JOIN `#{gameDatabase}`.`#{playerIdentitiesTable}` AS `I`
                       ON `I`.`ID`=`PG`.`FolkID`
                     WHERE `PG`.`GalaxyID`=#{@_toQuery(idGame)}
@@ -437,7 +437,7 @@ class Database
         promise = promise.then (playerData) =>
             sql = "
                     SELECT `UserID` AS `user_id`
-                    FROM `#{Config.SQL_TABLES.PLAYER_GAMES}`
+                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}`
                     WHERE `GalaxyID`=#{@_toQuery(idGame)}
                       AND `FolkID`=#{@_toQuery(playerData.game_identity_id)}
                     ORDER BY `UserID` ASC
@@ -482,10 +482,10 @@ class Database
         sql = "
                 (
                     SELECT `ChannelLogID` AS `id`, `EventTextID` AS `event_name`, `EventData` AS `event_data`, `Timestamp` AS `timestamp`
-                    FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                    FROM `#{config.SQL_TABLES.CHANNEL_LOGS}`
                     WHERE `ChannelTextID`=#{@_toQuery(channelName)}
                     ORDER BY `Timestamp` DESC
-                    LIMIT #{Config.MAX_CHANNEL_LOGS_TO_CLIENT}
+                    LIMIT #{config.MAX_CHANNEL_LOGS_TO_CLIENT}
                 )
                 ORDER BY `Timestamp` ASC
               "
@@ -499,8 +499,8 @@ class Database
     # @param eventData [object] A data map, containing the main data for the event (like message text or sender identity).
     logChannelMessage: (channelName, timestamp, eventName, eventData) ->
         channelID = 0
-        if channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
-            channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        if channelName.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
+            channelID = channelName.replace(config.INTERN_NONGAME_CHANNEL_PREFIX, '')
 
         try
             serialEventData = JSON.stringify(eventData)
@@ -511,16 +511,16 @@ class Database
         @_doTransaction =>
             sql = "
                     SELECT COALESCE(MAX(`ChannelLogID`), 0) AS `max_id`
-                    FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                    FROM `#{config.SQL_TABLES.CHANNEL_LOGS}`
                     WHERE `ChannelTextID`=#{@_toQuery(channelName)}
                   "
             promise = @_readSimpleData(sql, true)
             promise = promise.then (data) =>
                 maxLogID = data.max_id
                 nextLogID = maxLogID + 1
-                nextBufferID = (maxLogID % Config.MAX_CHANNEL_LOGS) + 1
+                nextBufferID = (maxLogID % config.MAX_CHANNEL_LOGS) + 1
                 sql = "
-                        REPLACE INTO `#{Config.SQL_TABLES.CHANNEL_LOGS}` SET
+                        REPLACE INTO `#{config.SQL_TABLES.CHANNEL_LOGS}` SET
                            `ChannelLogID`=#{@_toQuery(nextLogID)},
                            `ChannelBufferID`=#{@_toQuery(nextBufferID)},
                            `ChannelTextID`=#{@_toQuery(channelName)},
@@ -551,7 +551,7 @@ class Database
         userID = clientIdentity.getUserID()
         channelData.creator_id = userID
         sql = "
-                INSERT INTO `#{Config.SQL_TABLES.CHANNEL_LIST}` SET
+                INSERT INTO `#{config.SQL_TABLES.CHANNEL_LIST}` SET
                     `GalaxyID`=#{@_toQuery(channelData.game_id)},
                     `CreatorUserID`=#{@_toQuery(userID)},
                     `Title`=#{@_toQuery(channelData.title)},
@@ -565,18 +565,18 @@ class Database
             channelID = resultData.insertId
 
             # Add channel name to data object
-            channelName = "#{Config.INTERN_NONGAME_CHANNEL_PREFIX}#{channelID}"
+            channelName = "#{config.INTERN_NONGAME_CHANNEL_PREFIX}#{channelID}"
             channelData.name = channelName
 
             # Add irc channel name
             if channelData.is_for_irc
                 randomID = Math.floor(Math.random() * 1000)
-                ircChannelName = "#{Config.IRC_NONGAME_CHANNEL_PREFIX}#{channelID}_#{randomID}"
+                ircChannelName = "#{config.IRC_NONGAME_CHANNEL_PREFIX}#{channelID}_#{randomID}"
                 channelData.irc_channel = ircChannelName
 
                 # Save name of irc channel
                 sql = "
-                        UPDATE `#{Config.SQL_TABLES.CHANNEL_LIST}` SET
+                        UPDATE `#{config.SQL_TABLES.CHANNEL_LIST}` SET
                             `IrcChannel`=#{@_toQuery(ircChannelName)}
                         WHERE `ID`=#{@_toQuery(channelID)}
                       "
@@ -589,19 +589,19 @@ class Database
     # @param channelName [string] The internal name of the channel to delete.
     # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
     deleteChannel: (channelName) ->
-        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be deleted
-        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        return unless channelName.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be deleted
+        channelID = channelName.replace(config.INTERN_NONGAME_CHANNEL_PREFIX, '')
 
         # Delete channel logs
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                DELETE FROM `#{config.SQL_TABLES.CHANNEL_LOGS}`
                 WHERE `ChannelID`=#{@_toQuery(channelID)}
               "
         logsPromise = @_sendQuery(sql)
 
         # Delete channel joinings
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
+                DELETE FROM `#{config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `ChannelID`=#{@_toQuery(channelID)}
               "
         joinsPromise = @_sendQuery(sql)
@@ -609,7 +609,7 @@ class Database
         # Delete channels
         promise = Q.all([logsPromise, joinsPromise]).then =>
             sql = "
-                    DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    DELETE FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `ID`=#{@_toQuery(channelID)}
                   "
             return @_sendQuery(sql)
@@ -620,13 +620,13 @@ class Database
     # @param gameID [int] The id of the game world.
     # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
     deleteChannelsByGame: (gameID) ->
-        internalGameChannel = "#{Config.INTERN_GAME_CHANNEL_PREFIX}#{gameID}"
+        internalGameChannel = "#{config.INTERN_GAME_CHANNEL_PREFIX}#{gameID}"
 
         # Delete channel logs
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
+                DELETE FROM `#{config.SQL_TABLES.CHANNEL_LOGS}`
                 WHERE `ChannelID` IN (
-                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    SELECT `ID` FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                 )
                 OR `ChannelTextID`=#{@_toQuery(internalGameChannel)}
@@ -635,9 +635,9 @@ class Database
 
         # Delete channel joinings
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
+                DELETE FROM `#{config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `ChannelID` IN (
-                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    SELECT `ID` FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                 )
               "
@@ -646,7 +646,7 @@ class Database
         # Delete channels
         promise = Q.all([logsPromise, joinsPromise]).then =>
             sql = "
-                    DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
+                    DELETE FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                   "
             return @_sendQuery(sql)
@@ -658,11 +658,11 @@ class Database
     # @param channelName [string] The name of the channel.
     # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
     addClientToChannel: (clientIdentity, channelName) ->
-        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be joined explicitly
-        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        return unless channelName.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be joined explicitly
+        channelID = channelName.replace(config.INTERN_NONGAME_CHANNEL_PREFIX, '')
         userID = clientIdentity.getUserID()
         sql = "
-                INSERT INTO `#{Config.SQL_TABLES.CHANNEL_JOININGS}` SET
+                INSERT INTO `#{config.SQL_TABLES.CHANNEL_JOININGS}` SET
                     `UserID`=#{@_toQuery(userID)},
                     `ChannelID`=#{@_toQuery(channelID)}
               "
@@ -673,11 +673,11 @@ class Database
     # @param channelName [string] The name of the channel.
     # @return [promise] A promise to be resolved/rejected, when the operation has been finished or an error occured.
     removeClientFromChannel: (clientIdentity, channelName) ->
-        return unless channelName.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be parted explicitly
-        channelID = channelName.replace(Config.INTERN_NONGAME_CHANNEL_PREFIX, '')
+        return unless channelName.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0  # Only non-game channels can be parted explicitly
+        channelID = channelName.replace(config.INTERN_NONGAME_CHANNEL_PREFIX, '')
         userID = clientIdentity.getUserID()
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
+                DELETE FROM `#{config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `UserID`=#{@_toQuery(userID)}
                   AND `ChannelID`=#{@_toQuery(channelID)}
               "

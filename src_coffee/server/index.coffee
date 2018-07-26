@@ -2,18 +2,17 @@
 # Package main file
 #
 
-Config = require './config'
+config = require './config'
 
 
 gatewayInstance = null
 
-
 setupGateway = (customConfig) ->
     # Set up config
-    if Config._overwriteDefaults?
+    if config._overwriteDefaults?
         if customConfig?
-            Config._overwriteDefaults(customConfig)
-            Config._overwriteDefaults = null
+            config._overwriteDefaults(customConfig)
+            config._overwriteDefaults = null
         else
             console.error('\nMissing configuration settings for IRC gateway!\n')
     else if customConfig?
