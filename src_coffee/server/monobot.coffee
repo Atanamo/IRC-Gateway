@@ -43,6 +43,12 @@ class MonoBot extends AbstractBot
             filterGameID: gameID
         )
 
+    stopFinally: ->
+        log.info "Finally stopping bot '#{@nickName}'..."
+        return @_disconnectFromChannels(
+            disconnectServer: true
+        )
+
     # @override
     getID: ->
         return 'MONO_BOT'

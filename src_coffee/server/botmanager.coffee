@@ -73,6 +73,10 @@ class BotManager
     shutdown: =>
         clearInterval(@watcherTimer) if @watcherTimer?
         promise = @_destroyBots(@botList)
+        promise = promise.then =>
+            return if @hasBotPerGame
+            bot = MonoBot.getInstance()
+            return bot.stopFinally()
         return promise
 
 
