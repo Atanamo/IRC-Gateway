@@ -1,5 +1,6 @@
 
-# Include libraries
+## Include libraries
+Q = require 'q'
 socketio = require 'socket.io'
 
 ## Include app modules
@@ -179,7 +180,7 @@ class SocketHandler
             return if clientSocket.isDisconnected
             log.debug 'Client channel join rejected:', err.message
             # Emit join fail
-            clientSocket.emit 'join_fail', err.message  
+            clientSocket.emit 'join_fail', err.message
 
         # End chain to observe errors (non-validation-errors)
         promise.done()

@@ -1,4 +1,7 @@
 
+## Include libraries
+Q = require 'q'
+
 ## Include app modules
 Config = require './config'
 BotChannel = require './botchannel'
@@ -57,7 +60,7 @@ class BotManager
 
         return Q.all([globalChannelPromise, gameChannelsPromise])
 
-    # Used by SocketHandler as callback to add a bot to a new channel 
+    # Used by SocketHandler as callback to add a bot to a new channel
     # (Therefor must be bound to BotManager instance)
     addGameBotToChannel: (gameID, channel) =>
         bot = @botList[gameID]
@@ -78,7 +81,7 @@ class BotManager
         promise = promise.then (gamesList) =>
             botList = {}
 
-            for gameData in gamesList 
+            for gameData in gamesList
                 # Create bot
                 bot = new GameBot(gameData)
 
@@ -102,7 +105,7 @@ class BotManager
 
             # Store the bot for each game (makes handling easier)
             botList = {}
-            for gameData in gamesList 
+            for gameData in gamesList
                 botList[gameData.id] = bot
             return botList
 
@@ -133,7 +136,7 @@ class BotManager
     #
 
     _startGameWatcher: ->
-        intervalFunc = => 
+        intervalFunc = =>
             @_manageBotsByGames()
         timerMilliSeconds = Config.GAMES_LOOKUP_INTERVAL * 1000
         clearInterval(@watcherTimer) if @watcherTimer?  # Clear old timer
@@ -154,12 +157,12 @@ class BotManager
         # Check games
         promise = db.getBotRepresentedGames()
         promise = promise.then (gamesList) =>
-            for gameData in gamesList 
+            for gameData in gamesList
                 gameID = gameData.id
 
                 # Create bot of new game
                 unless @botList[gameID]?
-                    bot = 
+                    bot =
                         if @hasBotPerGame
                             new GameBot(gameData)
                         else
@@ -215,7 +218,7 @@ class BotManager
     _addBotsToGlobalChannel: (globalChannel, botList) ->
         # Add every bot to channel
         joinPromise = Q()
-        for key, bot of botList 
+        for key, bot of botList
             do (bot) =>
                 # Join bot as soon as previous bot has joined (To have clean logging order)
                 joinPromise = joinPromise.then =>

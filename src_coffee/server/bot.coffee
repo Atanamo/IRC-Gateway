@@ -1,8 +1,9 @@
 
-# Include libraries
+## Include libraries
+Q = require 'q'
 irc = require 'irc';
 
-# Include app modules
+## Include app modules
 Config = require './config'
 
 
@@ -13,8 +14,8 @@ Config = require './config'
 ## When an event on an IRC channel occurs, the bot forwards it to the associated BotChannel (If useful).
 ## The bot may also responds to a list of specified commands on an IRC channel or query.
 ##
-## For cases, where multiple bots are in the same channel, there is a master bot: 
-## Only the master bot is allowed to forward common IRC events to the BotChannel 
+## For cases, where multiple bots are in the same channel, there is a master bot:
+## Only the master bot is allowed to forward common IRC events to the BotChannel
 ## (Otherwise the same event would be triggered by each bot).
 ##
 class SchizoBot
@@ -272,7 +273,7 @@ class SchizoBot
         return unless targetNickOrChannel?            # Ignore broken ctcp messages
         checkMessage = rawMessage.toLowerCase().trim()
 
-        # Handle action command (/me) 
+        # Handle action command (/me)
         if checkMessage.indexOf('action') is 0
             actionText = rawMessage.replace(/^(action)/i, '').trim()  # Extract action text
             noticeText = "#{senderNick} #{actionText}"  # Build complete notice

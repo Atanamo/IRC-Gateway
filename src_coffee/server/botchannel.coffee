@@ -1,3 +1,5 @@
+## Include libraries
+Q = require 'q'
 
 ## Include app modules
 Config = require './config'
@@ -168,7 +170,7 @@ class BotChannel extends Channel
             @_sendMessageToRoom(clientSocket.identity, messageText)
 
         # Send to IRC channel
-        targetBot = 
+        targetBot =
             if hasMonoBot
                 @botList['MONO_BOT']
             else
@@ -176,7 +178,7 @@ class BotChannel extends Channel
                 @botList[targetBotID]
 
         if targetBot?
-            targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText, not sendToRoom) 
+            targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText, not sendToRoom)
 
 
     #
@@ -267,7 +269,7 @@ class BotChannel extends Channel
             clientIdentity = ClientIdentity.createFromIrcNick("#{userFlag}#{nickName}")
             identityData = clientIdentity.toData()
 
-            if botDetailNames[nickName]?  
+            if botDetailNames[nickName]?
                 # Append detail name to full name, if user is a corresponding bot
                 identityData.title += ' - ' + botDetailNames[nickName]
 

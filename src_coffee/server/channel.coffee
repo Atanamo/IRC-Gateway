@@ -1,4 +1,7 @@
 
+## Include libraries
+Q = require 'q'
+
 ## Include app modules
 Config = require './config'
 
@@ -252,7 +255,7 @@ class Channel
                 try
                     eventData = JSON.parse(logEntry.event_data)
                     clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
-                catch 
+                catch
                     log.error 'Could not parse history entry!', "Channel '#{@name}'"
                     log.info "Corrupt json string: '#{logEntry.event_data}'"
 
