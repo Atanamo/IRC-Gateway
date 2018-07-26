@@ -72,7 +72,8 @@ class BotManager
 
     shutdown: =>
         clearInterval(@watcherTimer) if @watcherTimer?
-        @_destroyBots(@botList)
+        promise = @_destroyBots(@botList)
+        return promise
 
 
     #

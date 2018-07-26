@@ -102,7 +102,7 @@ class SchizoBot
 
         # Inform bot's web channels (in case, they weren't informed before)
         for key, channel of @botChannelList
-            if filterGameID? and filterGameID isnt channel.getGameID()
+            if filterGameID? and "#{filterGameID}" isnt "#{channel.getGameID()}"
                 continue
             channel.handleBotQuit(this, quitMessage)
 

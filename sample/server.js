@@ -8,4 +8,8 @@ var gateway = setupGateway(config);
 
 gateway.start();
 
+// To stop the gateway:
+//gateway.stop();
+
+
 

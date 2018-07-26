@@ -30,6 +30,8 @@ socketServer = socketioWrapper.bindToWebserver(server)  # Listen for Websocket r
 
 ## Main class
 class Gateway
+    isStarted = false
+
     socketHandler: null
     botManager: null
 
@@ -57,6 +59,9 @@ class Gateway
 
 
     start: ->
+        return if isStarted
+        isStarted = true
+
         ## Start the chat gateway ##
         @_setupProcess()
 
@@ -79,6 +84,11 @@ class Gateway
         # End chain to observe errors
         startupPromise.done()
 
+    stop: (callback) ->
+        return unless isStarted
+        @_shutdown(callback)
+        isStarted = false
+
     _setupProcess: ->
         process.on 'exit', (code) =>
             log.info 'Exiting with code:', code
@@ -91,9 +101,20 @@ class Gateway
         process.on 'unhandledRejection', (err) =>
             log.error err, 'unhandled promise rejection'
 
-    _shutdown: ->
-        @botManager.shutdown()
-        db.disconnect()
+    _shutdown: (callback=null) ->
+        promise = @botManager.shutdown()
+        promise = promise.then =>
+            # Wait some additional time to allow finishing database queries
+            delayDeferred = Q.defer()
+            setTimeout(=>
+                delayDeferred.resolve()
+            , 1500)
+            return delayDeferred.promise
+        promise = promise.then =>
+            return db.disconnect()
+        promise = promise.then =>
+            callback?()
+        promise.done()
 
 
 
