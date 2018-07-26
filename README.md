@@ -29,7 +29,7 @@ Installation
   * Have a look at the file and change the queries (and/or config) to match your environment:
   * Set up your database configuration by editing the file `./src_coffee/server/config.custom.coffee`
   * In the database file, you have to modify at least the method/queries
-    containing `Config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
+    containing `config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
   * All additional tables the chat system requires can be set up using the following file: `./setup_migration.sql`
 * Navigate to the project directory (on shell), then run:
 * `$ npm install`

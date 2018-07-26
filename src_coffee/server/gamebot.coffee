@@ -1,8 +1,9 @@
 
 # Include app modules
+config = require './config'
 db = require './database'
 
-Config = require './config'
+## Include app classes
 AbstractBot = require './bot'
 
 
@@ -13,9 +14,9 @@ class GameBot extends AbstractBot
     gameData: null
 
     constructor: (@gameData) ->
-        @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
-        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, @gameData.id)
-        @realName = Config.BOT_REALNAME_PATTERN
+        @nickName = config.BOT_NICK_PATTERN.replace(/<id>/i, @gameData.id)
+        @userName = config.BOT_USERNAME_PATTERN.replace(/<id>/i, @gameData.id)
+        @realName = config.BOT_REALNAME_PATTERN
         @realName = @realName.replace(/<id>/i, @gameData.id)
         @realName = @realName.replace(/<name>/i, @gameData.title)
 
@@ -50,13 +51,13 @@ class GameBot extends AbstractBot
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
                 command: 'game?'
-                description: "What is the name and status of my #{Config.BOT_GAME_LABEL}?"
+                description: "What is the name and status of my #{config.BOT_GAME_LABEL}?"
             ,
                 command: 'status?'
                 description: 'See "games?"'
             ,
                 command: 'players?'
-                description: "How many players of my #{Config.BOT_GAME_LABEL} are currently online (on the channel)?"
+                description: "How many players of my #{config.BOT_GAME_LABEL} are currently online (on the channel)?"
         ]
         super(message, respondFunc, commandsList)
 
@@ -88,9 +89,9 @@ class GameBot extends AbstractBot
             if channelName?
                 botChannel = @botChannelList[channelName]
                 clientsNum = botChannel.getNumberOfBotDependentClients(@gameData.id)
-                respondFunc("Players of my #{Config.BOT_GAME_LABEL} in #{channelName} = #{clientsNum}")
+                respondFunc("Players of my #{config.BOT_GAME_LABEL} in #{channelName} = #{clientsNum}")
             else
-                respondFunc("Cannot find channel to check #{Config.BOT_GAME_LABEL} players for!")
+                respondFunc("Cannot find channel to check #{config.BOT_GAME_LABEL} players for!")
             return true
         return false
 

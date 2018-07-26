@@ -4,8 +4,8 @@ Q = require 'q'
 irc = require 'irc';
 
 ## Include app modules
+config = require './config'
 log = require './logger'
-Config = require './config'
 
 
 ## Abstraction of an IRC bot.
@@ -40,17 +40,17 @@ class SchizoBot
         log.info "Creating bot '#{@nickName}'..."
 
         # Create client instance (but dont connect)
-        @client = new irc.Client Config.IRC_SERVER_IP, @nickName,
-            port: Config.IRC_SERVER_PORT
+        @client = new irc.Client config.IRC_SERVER_IP, @nickName,
+            port: config.IRC_SERVER_PORT
             userName: @userName
             realName: @realName
             autoRejoin: true
             autoConnect: false                      # Dont connect on client instantiation
-            debug: Config.DEBUG_IRC_COMM
+            debug: config.DEBUG_IRC_COMM
             showErrors: true
             floodProtection: true                   # Protect the bot from beeing kicked, if users are flooding
             floodProtectionDelay: 100               # Delay time for messages to avoid flooding
-            retryDelay: Config.BOT_RECONNECT_DELAY  # Delay time for reconnects
+            retryDelay: config.BOT_RECONNECT_DELAY  # Delay time for reconnects
             stripColors: true                       # Strip mirc colors
 
         # Create listeners
@@ -98,7 +98,7 @@ class SchizoBot
 
     _disconnectFromChannels: ({disconnectServer, filterGameID}) ->
         stopDeferred = Q.defer()
-        quitMessage = Config.BOT_QUIT_MESSAGE
+        quitMessage = config.BOT_QUIT_MESSAGE
 
         # Inform bot's web channels (in case, they weren't informed before)
         for key, channel of @botChannelList
@@ -286,7 +286,7 @@ class SchizoBot
 
     _handleIrcVersionRequestViaCTCP: (senderNick, targetNickOrChannel) =>
         # This handler is specialized to a CTCP version request, but may could also be handled by @_handleIrcCommandViaCTCP()
-        @_respondToIrcViaCTCP(senderNick, 'version', Config.BOT_VERSION_STRING)
+        @_respondToIrcViaCTCP(senderNick, 'version', config.BOT_VERSION_STRING)
 
 
     #
@@ -348,7 +348,7 @@ class SchizoBot
 
     _checkRespondForVersion: (message, respondFunc) ->
         if message.indexOf('version') > -1
-            respondFunc('Version = ' + Config.BOT_VERSION_STRING)
+            respondFunc('Version = ' + config.BOT_VERSION_STRING)
             return true
         return false
 
@@ -411,7 +411,7 @@ class SchizoBot
 
             @client.join joinExpression, =>
                 # Set channel modes
-                if ircChannelName.indexOf(Config.IRC_NONGAME_CHANNEL_PREFIX) is 0
+                if ircChannelName.indexOf(config.IRC_NONGAME_CHANNEL_PREFIX) is 0
                     @_sendModeSettingToIrcChannel(ircChannelName, '+s')  # Set to secret
                 if ircChannelPassword?
                     @_sendModeSettingToIrcChannel(ircChannelName, '+k', ircChannelPassword)  # Set channel password
@@ -432,7 +432,7 @@ class SchizoBot
         promise = @getConnectionPromise()
         promise = promise.then =>
             log.info "Removing bot '#{@nickName}' from channel #{ircChannelName}..."
-            @client.part ircChannelName, Config.BOT_LEAVE_MESSAGE, ->
+            @client.part ircChannelName, config.BOT_LEAVE_MESSAGE, ->
                 partDeferred.resolve()
         promise.done()
 

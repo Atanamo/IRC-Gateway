@@ -1,9 +1,10 @@
 
 # Include app modules
+config = require './config'
 log = require './logger'
 db = require './database'
 
-Config = require './config'
+## Include app classes
 AbstractBot = require './bot'
 
 
@@ -20,9 +21,9 @@ class MonoBot extends AbstractBot
 
         @gamesMap = {};
 
-        @nickName = Config.BOT_NICK_PATTERN.replace(/<id>/i, '')
-        @userName = Config.BOT_USERNAME_PATTERN.replace(/<id>/i, '')
-        @realName = Config.BOT_REALNAME_PATTERN
+        @nickName = config.BOT_NICK_PATTERN.replace(/<id>/i, '')
+        @userName = config.BOT_USERNAME_PATTERN.replace(/<id>/i, '')
+        @realName = config.BOT_REALNAME_PATTERN
         @realName = @realName.replace(/<id>/i, '')
         @realName = @realName.replace(/<name>/i, 'Multiverse')
         @realName = @realName.trim()
@@ -103,13 +104,13 @@ class MonoBot extends AbstractBot
     _checkRespondForHelp: (message, respondFunc) ->
         commandsList = [
                 command: 'games?'
-                description: "What is the status of each #{Config.BOT_GAME_LABEL} I represent?"
+                description: "What is the status of each #{config.BOT_GAME_LABEL} I represent?"
             ,
                 command: 'status?'
                 description: 'See "games?"'
             ,
                 command: 'players?'
-                description: "How many players per #{Config.BOT_GAME_LABEL} are currently online (on the channel)?"
+                description: "How many players per #{config.BOT_GAME_LABEL} are currently online (on the channel)?"
         ]
         super(message, respondFunc, commandsList)
 
@@ -135,9 +136,9 @@ class MonoBot extends AbstractBot
 
                     # Output to query, if too many lines
                     if gameLines.length > 3
-                        queryRespondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
+                        queryRespondFunc("Status info per #{config.BOT_GAME_LABEL}...\n#{infoLines}")
                     else
-                        respondFunc("Status info per #{Config.BOT_GAME_LABEL}...\n#{infoLines}")
+                        respondFunc("Status info per #{config.BOT_GAME_LABEL}...\n#{infoLines}")
 
                 else
                     respondFunc('Currently no game information available')
@@ -164,15 +165,15 @@ class MonoBot extends AbstractBot
 
                     # Output to query, if too many lines
                     if gameLines.length > 3
-                        queryRespondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
+                        queryRespondFunc("Players per #{config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
                     else
-                        respondFunc("Players per #{Config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
+                        respondFunc("Players per #{config.BOT_GAME_LABEL} in #{channelName}...\n#{infoLines}")
 
                 else
                     respondFunc("Currently no players online in #{channelName}")
 
             else
-                respondFunc("Cannot find channel to check #{Config.BOT_GAME_LABEL} players for!")
+                respondFunc("Cannot find channel to check #{config.BOT_GAME_LABEL} players for!")
 
             return true
         return false

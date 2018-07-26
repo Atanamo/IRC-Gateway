@@ -11,5 +11,3 @@ gateway.start();
 // To stop the gateway:
 //gateway.stop();
 
-
-
