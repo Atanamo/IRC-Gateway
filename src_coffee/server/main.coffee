@@ -1,13 +1,13 @@
 
 ## Include libraries
+Q = require 'q'
 fs = require 'fs'
 https = require 'https'
 express = require 'express'
-socketio = require 'socket.io'
-Q = require 'q'
 
 ## Include app modules
 log = require './logger'
+socketioWrapper = require './socketserver'
 
 Config = require './config'
 Database = require './database'
@@ -25,7 +25,8 @@ httpsOptions =
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
-io = socketio.listen(server)  # Listen for Websocket requests on server
+socketServer = socketioWrapper.bindToWebserver(server)  # Listen for Websocket requests on server
+
 
 ## Create app objects
 db = new Database()           # Create database wrapper object
@@ -33,7 +34,6 @@ db = new Database()           # Create database wrapper object
 
 
 ## Set object to global scope
-global.io = io
 global.db = db
 
 
@@ -71,7 +71,7 @@ class Gateway
         @_setupProcess()
 
         # Register for socket events (But don't start listening)
-        @socketHandler.start()
+        @socketHandler.start(socketServer)
 
         # Connect database
         log.info 'Connecting database...'

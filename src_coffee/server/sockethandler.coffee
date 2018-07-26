@@ -1,7 +1,6 @@
 
 ## Include libraries
 Q = require 'q'
-socketio = require 'socket.io'
 
 ## Include app modules
 log = require './logger'
@@ -22,12 +21,12 @@ class SocketHandler
     constructor: (addGameBotToChannelCallback) ->
         @_addGameBotToChannel = addGameBotToChannelCallback
 
-    start: ->
-        @_bindSocketGlobalEvents()
+    start: (socketServer) ->
+        @_bindSocketGlobalEvents(socketServer)
 
-    _bindSocketGlobalEvents: ->
+    _bindSocketGlobalEvents: (socketServer) ->
         # Register common websocket events
-        io.sockets.on 'connection', @_handleClientConnect  # Build-in event
+        socketServer.sockets.on 'connection', @_handleClientConnect  # Build-in event
 
     _bindSocketClientEvents: (clientSocket) ->
         # Store callback for disconnect on socket
