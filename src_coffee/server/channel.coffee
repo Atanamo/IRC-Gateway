@@ -3,6 +3,7 @@
 Q = require 'q'
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 
 

@@ -4,6 +4,7 @@ Q = require 'q'
 irc = require 'irc';
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 
 

@@ -4,6 +4,7 @@ Q = require 'q'
 socketio = require 'socket.io'
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 Channel = require './channel'
 BotChannel = require './botchannel'

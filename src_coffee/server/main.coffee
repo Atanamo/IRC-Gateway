@@ -7,8 +7,9 @@ socketio = require 'socket.io'
 Q = require 'q'
 
 ## Include app modules
+log = require './logger'
+
 Config = require './config'
-Logger = require './logger'
 Database = require './database'
 
 SocketHandler = require './sockethandler'
@@ -28,12 +29,13 @@ io = socketio.listen(server)  # Listen for Websocket requests on server
 
 ## Create app objects
 db = new Database()           # Create database wrapper object
-log = Logger
+
+
 
 ## Set object to global scope
 global.io = io
 global.db = db
-global.log = log
+
 
 
 ## Main class

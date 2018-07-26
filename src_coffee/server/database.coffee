@@ -5,6 +5,7 @@ mysql = require 'mysql'
 crypto = require 'crypto'
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 
 

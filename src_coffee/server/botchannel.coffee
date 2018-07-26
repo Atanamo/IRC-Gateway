@@ -2,6 +2,7 @@
 Q = require 'q'
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 Channel = require './channel'
 ClientIdentity = require './clientidentity'

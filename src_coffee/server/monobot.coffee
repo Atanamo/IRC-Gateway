@@ -1,5 +1,6 @@
 
 # Include app modules
+log = require './logger'
 Config = require './config'
 AbstractBot = require './bot'
 
