@@ -1,9 +1,11 @@
 
 ## Include libraries
+Q = require 'q'
 mysql = require 'mysql'
 crypto = require 'crypto'
 
 ## Include app modules
+log = require './logger'
 Config = require './config'
 
 
@@ -183,11 +185,11 @@ class Database
 
     # Returns the data for the given game world.
     # @param idGame [int] The id of the game world.
-    # @return [promise] A promise, resolving to a data map with keys 
-    #   `game_id` (Should equal idGame), 
+    # @return [promise] A promise, resolving to a data map with keys
+    #   `game_id` (Should equal idGame),
     #   `database_id` (The id of the database, which stores the game tables) and
     #   `game_title` (The display name of the game world - is allowed to contain spaces, etc.).
-    #   If the read data set is empty, the promise is rejected. 
+    #   If the read data set is empty, the promise is rejected.
     _getGameData: (idGame) ->
         sql = "
                 SELECT `ID` AS `game_id`, `RealityID` AS `database_id`, `Galaxyname` AS `game_title`
@@ -243,7 +245,7 @@ class Database
     # If the mono-bot is configured, returns the list of all game worlds having a chat.
     # This list is also used to manage the lifetime of corresponding channels and its logs
     # by the game lookup interval.
-    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    # @return [promise] A promise, resolving to a list of data maps, each having keys
     #   `id` (The unique id of the game world) and
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   The list may be empty, if there are no games at all.
@@ -270,7 +272,7 @@ class Database
 
     # Returns a list of channels, which should be mirrored to IRC, but each belong to only one game.
     # This excludes the global channel.
-    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    # @return [promise] A promise, resolving to a list of data maps, each having keys
     #   `game_id` (The id of the game, the channel belongs to),
     #   `creator_id` (The id of the user, who created the channel),
     #   `name` (The unique name of a channel - used internally),
@@ -319,7 +321,7 @@ class Database
     #   `password` (The password for joining the channel - not encrypted),
     #   `irc_channel` (The exact name of the IRC channel to optionally mirror) and
     #   `is_public` (TRUE, if players joined to the channel should to be hidden; else FALSE).
-    #   If the read data set is empty, the promise is rejected. 
+    #   If the read data set is empty, the promise is rejected.
     getChannelDataByTitle: (idGame, channelTitle) ->
         sql = "
                 SELECT CONCAT(#{@_toQuery(Config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
@@ -334,7 +336,7 @@ class Database
 
     # Returns a list of channels, which were joined by the given client.
     # @param clientIdentity [ClientIdentity] The identity of the client to read the channels for.
-    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    # @return [promise] A promise, resolving to a list of data maps, each having keys
     #   `name` (The unique name of a channel - used internally),
     #   `title` (The display name of the channel - is allowed to contain spaces, etc.),
     #   `creator_id` (Optional: The id of the user, who created the channel),
@@ -401,13 +403,13 @@ class Database
     # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
     # @param idGame [int] The id of the player's game world as given by a client on logon.
     # @return [promise] A promise, resolving to a data map with keys
-    #   `id` (The id of the player for the chat), 
-    #   `idGame` (Should equal given idGame), 
+    #   `id` (The id of the player for the chat),
+    #   `idGame` (Should equal given idGame),
     #   `idUser` (The id of the player's account),
-    #   `name` (The player's name for the chat), 
-    #   `title` (An optional more detail name for the chat, will default to the name), 
-    #   `gameTitle` (The full name of the player's game world), 
-    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name), 
+    #   `name` (The player's name for the chat),
+    #   `title` (An optional more detail name for the chat, will default to the name),
+    #   `gameTitle` (The full name of the player's game world),
+    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name),
     #   `token` (The security token for the player).
     #   If the read data set is empty, the promise is rejected.
     getClientIdentityData: (idUser, idGame) ->
@@ -470,7 +472,7 @@ class Database
 
     # Returns a list of messages/channel events, which had been logged for the given channel.
     # @param channelName [string] The internal name of the channel.
-    # @return [promise] A promise, resolving to a list of data maps, each having keys 
+    # @return [promise] A promise, resolving to a list of data maps, each having keys
     #   `id` (The id of the list entry),
     #   `event_name` (The name of the logged channel event),
     #   `event_data` (The logged data for the event, serialized as JSON string - contains values like message text or sender identity) and
@@ -543,7 +545,7 @@ class Database
     #   `creator_id` (The id of the user, who created the channel - should equal user id of given identity),
     #   `name` (The unique name of the channel - used internally) and
     #   `irc_channel` (The exact name of an IRC channel to mirror - defaults to null, if `is_for_irc` was false).
-    #   If the channel could not be created, the promise is rejected. 
+    #   If the channel could not be created, the promise is rejected.
     createChannelByData: (clientIdentity, channelData) ->
         # Create the channel
         userID = clientIdentity.getUserID()
@@ -592,14 +594,14 @@ class Database
 
         # Delete channel logs
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` 
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
                 WHERE `ChannelID`=#{@_toQuery(channelID)}
               "
         logsPromise = @_sendQuery(sql)
 
         # Delete channel joinings
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}` 
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `ChannelID`=#{@_toQuery(channelID)}
               "
         joinsPromise = @_sendQuery(sql)
@@ -622,9 +624,9 @@ class Database
 
         # Delete channel logs
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}` 
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_LOGS}`
                 WHERE `ChannelID` IN (
-                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` 
+                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                 )
                 OR `ChannelTextID`=#{@_toQuery(internalGameChannel)}
@@ -633,9 +635,9 @@ class Database
 
         # Delete channel joinings
         sql = "
-                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}` 
+                DELETE FROM `#{Config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `ChannelID` IN (
-                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}` 
+                    SELECT `ID` FROM `#{Config.SQL_TABLES.CHANNEL_LIST}`
                     WHERE `GalaxyID`=#{@_toQuery(gameID)}
                 )
               "
@@ -683,6 +685,6 @@ class Database
 
 
 
-## Export class
-module.exports = Database
+## Export as singleton
+module.exports = new Database()
 

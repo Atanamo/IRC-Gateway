@@ -1,5 +1,8 @@
 
 # Include app modules
+log = require './logger'
+db = require './database'
+
 Config = require './config'
 AbstractBot = require './bot'
 
@@ -38,6 +41,12 @@ class MonoBot extends AbstractBot
         return @_disconnectFromChannels(
             disconnectServer: false
             filterGameID: gameID
+        )
+
+    stopFinally: ->
+        log.info "Finally stopping bot '#{@nickName}'..."
+        return @_disconnectFromChannels(
+            disconnectServer: true
         )
 
     # @override

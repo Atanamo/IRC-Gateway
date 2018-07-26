@@ -1,15 +1,16 @@
 
 ## Include libraries
+Q = require 'q'
 fs = require 'fs'
 https = require 'https'
 express = require 'express'
-socketio = require 'socket.io'
-Q = require 'q'
 
 ## Include app modules
+log = require './logger'
+db = require './database'
+socketioWrapper = require './socketserver'
+
 Config = require './config'
-Logger = require './logger'
-Database = require './database'
 
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
@@ -24,28 +25,20 @@ httpsOptions =
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
-io = socketio.listen(server)  # Listen for Websocket requests on server
-
-## Create app objects
-db = new Database()           # Create database wrapper object
-log = Logger
-
-## Set object to global scope
-global.Q = Q
-global.io = io
-global.db = db
-global.log = log
+socketServer = socketioWrapper.bindToWebserver(server)  # Listen for Websocket requests on server
 
 
 ## Main class
 class Gateway
+    isStarted = false
+
     socketHandler: null
     botManager: null
 
     constructor: ->
         @_bindServerEvents()
         @botManager = new BotManager()
-        @socketHandler = new SocketHandler(@botManager.addGameBotToChannel)
+        @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
         serverRootDir = process.cwd()
@@ -66,6 +59,11 @@ class Gateway
 
 
     start: ->
+        if isStarted
+            log.error 'Gateway not stopped yet, cannot restart!', 'gateway main'
+            return
+        isStarted = true
+
         ## Start the chat gateway ##
         @_setupProcess()
 
@@ -88,6 +86,13 @@ class Gateway
         # End chain to observe errors
         startupPromise.done()
 
+    stop: (callback=null) ->
+        return unless isStarted
+        shutdownCallback = =>
+            isStarted = false
+            callback?()
+        @_shutdown(shutdownCallback)
+
     _setupProcess: ->
         process.on 'exit', (code) =>
             log.info 'Exiting with code:', code
@@ -100,13 +105,32 @@ class Gateway
         process.on 'unhandledRejection', (err) =>
             log.error err, 'unhandled promise rejection'
 
-    _shutdown: ->
-        @botManager.shutdown()
-        db.disconnect()
+    _shutdown: (callback) ->
+        promise = @botManager.shutdown()
+        promise = promise.then =>
+            # Wait some additional time to allow sending quit messages
+            delayDeferred = Q.defer()
+            setTimeout(=>
+                delayDeferred.resolve()
+            , 500)
+            return delayDeferred.promise
+        promise = promise.then =>
+            server.close()  # Stop accepting new connections
+            @socketHandler.stop()  # Stop socket.io
+        promise = promise.then =>
+            # Wait some additional time to allow finishing database queries
+            delayDeferred = Q.defer()
+            setTimeout(=>
+                delayDeferred.resolve()
+            , Config.CLIENTS_DISCONNECT_DELAY + 1500)
+            return delayDeferred.promise
+        promise = promise.then =>
+            return db.disconnect()
+        promise = promise.then =>
+            callback?()
+        promise.done()
 
 
 
-# Run main class
-main = new Gateway()
-main.start()
-
+## Export class
+module.exports = Gateway

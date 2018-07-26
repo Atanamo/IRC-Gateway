@@ -1,8 +1,11 @@
 
-# Include libraries
-socketio = require 'socket.io'
+## Include libraries
+Q = require 'q'
 
 ## Include app modules
+log = require './logger'
+db = require './database'
+
 Config = require './config'
 Channel = require './channel'
 BotChannel = require './botchannel'
@@ -16,16 +19,24 @@ ClientFloodingRating = require './clientrating'
 ## To be used as singleton.
 ##
 class SocketHandler
+    socketServer: null
+    isActive: false
 
-    constructor: (addGameBotToChannelCallback) ->
+    constructor: (socketServer, addGameBotToChannelCallback) ->
+        @socketServer = socketServer
         @_addGameBotToChannel = addGameBotToChannelCallback
+        @_bindSocketGlobalEvents(@socketServer)
 
     start: ->
-        @_bindSocketGlobalEvents()
+        @isActive = true
 
-    _bindSocketGlobalEvents: ->
+    stop: ->
+        @isActive = false
+        @socketServer.close()  # Stop socket.io
+
+    _bindSocketGlobalEvents: (socketServer) ->
         # Register common websocket events
-        io.sockets.on 'connection', @_handleClientConnect  # Build-in event
+        socketServer.sockets.on 'connection', @_handleClientConnect  # Build-in event
 
     _bindSocketClientEvents: (clientSocket) ->
         # Store callback for disconnect on socket
@@ -40,6 +51,7 @@ class SocketHandler
         clientSocket.on 'join', (channelData) => @_handleClientChannelJoin(clientSocket, channelData)
 
     _handleClientConnect: (clientSocket) =>
+        return unless @isActive
         log.debug 'Client connected...'
         # Add flooding rating object
         floodingCallback = =>
@@ -179,7 +191,7 @@ class SocketHandler
             return if clientSocket.isDisconnected
             log.debug 'Client channel join rejected:', err.message
             # Emit join fail
-            clientSocket.emit 'join_fail', err.message  
+            clientSocket.emit 'join_fail', err.message
 
         # End chain to observe errors (non-validation-errors)
         promise.done()

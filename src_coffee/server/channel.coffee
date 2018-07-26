@@ -1,5 +1,12 @@
 
+## Include libraries
+Q = require 'q'
+
 ## Include app modules
+log = require './logger'
+db = require './database'
+socketServer = require './socketserver'
+
 Config = require './config'
 
 
@@ -50,6 +57,9 @@ class Channel
         unless @_instances[name]?
             @_instances[name] = new Channel(channelData)
         return @_instances[name]
+
+    _getAllSockets: ->
+        return socketServer.getSockets()
 
     _destroy: ->
         log.debug "Destructing channel '#{@name}'"
@@ -252,7 +262,7 @@ class Channel
                 try
                     eventData = JSON.parse(logEntry.event_data)
                     clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
-                catch 
+                catch
                     log.error 'Could not parse history entry!', "Channel '#{@name}'"
                     log.info "Corrupt json string: '#{logEntry.event_data}'"
 
@@ -272,7 +282,8 @@ class Channel
     # @protected
     _sendToRoom: (eventName, eventData, logToDatabase=true) ->
         timestamp = @_getCurrentTimestamp()
-        io.sockets.in(@name).emit(eventName, @name, timestamp, eventData)
+        allSockets = @_getAllSockets()
+        allSockets.in(@name).emit(eventName, @name, timestamp, eventData)
         if logToDatabase
             db.logChannelMessage(@name, timestamp, eventName, eventData)
 
@@ -394,12 +405,13 @@ class Channel
         return userList
 
     _iterateEachJoinedSocket: (iterationCallback) ->
-        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
-        clientMetaList = io.sockets.adapter.rooms[@name]
+        allSockets = @_getAllSockets()
+        #clientSocketList = allSockets.clients(@name)  # Working till v0.9.x
+        clientMetaList = allSockets.adapter.rooms[@name]
         clientMetaList = clientMetaList?.sockets or clientMetaList or {}  # There's no sockets property till v0.3.x
 
         for clientID of clientMetaList
-            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+            clientSocket = allSockets.connected[clientID]  # This is the socket of each client in the room
 
             # Call back on every real socket
             iterationCallback(clientSocket) if clientSocket?
