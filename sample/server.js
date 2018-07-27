@@ -1,13 +1,13 @@
 
-//var createGateway = require('irc-gateway');
-var setupGateway = require('../src_js/server/index');
+//const gateway = require('irc-gateway');
+const gateway = require('../src_js/server/index');
 
-var config = require('./custom_config')
+const config = require('./custom_config');
 
-var gateway = setupGateway(config);
+const gatewayApp = gateway.setup(config, gateway.DefaultDatabase);
 
-gateway.start();
+gatewayApp.start();
 
 // To stop the gateway:
-//gateway.stop();
+//gatewayApp.stop();
 
