@@ -4,7 +4,7 @@ const gateway = require('../src_js/server/index');
 
 const config = require('./custom_config');
 
-const gatewayApp = gateway.setup(config, gateway.DefaultDatabase);
+const gatewayApp = gateway.setup(config, gateway.DefaultDatasource);
 
 gatewayApp.start();
 

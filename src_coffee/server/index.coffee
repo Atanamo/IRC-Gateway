@@ -4,16 +4,22 @@
 
 # Include app modules for setup
 config = require './config'
-loader = require './databaseloader'
+dataloader = require './datasources/loader'
 
-# Include database classes
-DefaultDatabase = require './database.default'
+# Include datasource classes
+AbstractDatasource = require './datasources/ds.abstract'
+DefaultDatasource = require './datasources/ds.default'
+
+# Include database handler classes
+DatabaseHandlerInterface = require './databasehandlers/dbh.interface'
+MysqlDatabaseHandler = require './databasehandlers/dbh.mysql'
+
 
 # Setup mechanism
 #
 gatewayInstance = null
 
-setupGateway = (customConfig, customDatabaseClass) ->
+setupGateway = (customConfig, customDatasourceClass) ->
     # Set up config
     if config._overwriteDefaults?
         if customConfig?
@@ -24,26 +30,29 @@ setupGateway = (customConfig, customDatabaseClass) ->
     else if customConfig?
         console.warn('\nIRC gateway already created, cannot change its config!\n')
 
-    # Set up database class
-    # TODO: Check for instanceof interface class
-    if typeof(customDatabaseClass) is 'function'
-        loader.setClass(customDatabaseClass)
+    # Set up datasource class
+    if customDatasourceClass?.prototype instanceof AbstractDatasource
+        dataloader.setClass(customDatasourceClass)
     else
-        console.error('\nGiven object is no class, it cannot be used as database interface for the IRC gateway!\n')
+        console.error('\nGiven datasource class does not inherit from "AbstractDatasource", it cannot be used for the IRC gateway!\n')
 
     # Get gateway instance
     unless gatewayInstance?
-        Gateway = require('./app')  # Lazy load, so injected config and database will be used
+        Gateway = require('./app')  # Lazy load, so injected config and datasource will be used
         gatewayInstance = new Gateway()
 
     return gatewayInstance
 
 
-# Export setup function and database classes
+# Export setup function and datasource classes
 module.exports = {
 
     setup: setupGateway
 
-    #AbstractDatabase: .. # TODO
-    DefaultDatabase: DefaultDatabase
+    AbstractDatasource: AbstractDatasource
+    DefaultDatasource: DefaultDatasource
+
+    AbstractDatabaseHandler: DatabaseHandlerInterface
+    MysqlDatabaseHandler: MysqlDatabaseHandler
+
 }

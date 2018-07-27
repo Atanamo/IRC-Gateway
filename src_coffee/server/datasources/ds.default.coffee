@@ -5,129 +5,34 @@ mysql = require 'mysql'
 crypto = require 'crypto'
 
 ## Include app modules
-config = require './config'
-log = require './logger'
+config = require '../config'
+log = require '../logger'
+
+## Include data classes
+MysqlDatabaseHandler = require '../databasehandlers/dbh.mysql'
+AbstractDatasource = require './ds.abstract'
 
 
-## Abstraction of database interactions: Wraps the database of choice.
-## Provides ready-to-use methods for all needed read/write operations.
+## Default abstraction of data managing methods.
+## See `AbstractDatasource` for more.
+##
+## Uses the MySQL database handler by default.
 ##
 ## Structure:
-## * Common connect/disconnect
-## * Database query helper routines
 ## * Data value getters
 ## * Interface routines for app queries
 ##
-class Database
+class DefaultDatasource extends AbstractDatasource
     connection: null
 
-    connect: ->
-        deferred = Q.defer()
-
-        ## Open connection to database
-        @connection = mysql.createConnection
-            host: config.SQL_HOST
-            port: config.SQL_PORT
-            user: config.SQL_USER
-            password: config.SQL_PASSWORD
-            database: config.SQL_DATABASE_COMMON
-            charset: 'UTF8MB4_GENERAL_CI'
-            socketPath: config.SQL_SOCKET_PATH
-
-        @connection.connect (err) =>
-            if err
-                log.error(err, 'Database connection')
-                deferred.reject(err)
-            else
-                log.debug 'Established database connection'
-                deferred.resolve()
-
-        return deferred.promise
-
-    disconnect: ->
-        deferred = Q.defer()
-
-        if @connection.state is 'disconnected'
-            @connection.destroy()
-        else
-            @connection.end (err) =>
-                if err
-                    log.error(err, 'Database disconnect')
-                else
-                    log.debug 'Closed database connection'
-                @connection.destroy()
-                deferred.resolve()
-
-        return deferred.promise
-
-    #
-    # Database query helper routines
-    #
-
-    _toQuery: (wildValue) ->
-        return mysql.escape(wildValue)
-
-    _sendQuery: (sqlQuery) ->
-        deferred = Q.defer()
-
-        @connection.query sqlQuery, (err, resultData, fieldsMetaData) ->
-            if err
-                log.error(err, 'Database query')
-                deferred.reject(err)
-            else
-                deferred.resolve(resultData)
-
-        return deferred.promise
-
-    _doTransaction: (transactionRoutineFunc) ->
-        deferred = Q.defer()
-
-        @connection.beginTransaction (err) ->
-            if err
-                log.error(err, 'Database transaction')
-                deferred.reject(err)
-            else
-                routinePromise = transactionRoutineFunc()
-                deferred.resolve(routinePromise)
-
-        promise = deferred.promise
-        promise = promise.then =>
-            innerDeferred = Q.defer()
-            @connection.commit (err) ->
-                if err
-                    log.error(err, 'Database transaction commit')
-                    innerDeferred.reject(err)
-                else
-                    innerDeferred.resolve()
-            return innerDeferred.promise
-        promise.fail =>
-            @connection.rollback()
-
-        return promise
-
-    _readSimpleData: (sqlQuery, rejectIfEmpty=false) ->
-        promise = @_sendQuery(sqlQuery)
-        promise = promise.then (resultRows) =>
-            resultData = resultRows[0]
-            if rejectIfEmpty and not resultData?
-                err = new Error('Result is empty')
-                err.isDatabaseResult = true
-                throw err
-            return resultData
-        return promise
-
-    _readMultipleData: (sqlQuery) ->
-        return @_sendQuery(sqlQuery)
+    # Overwrite
+    _createHandler: ->
+        return new MysqlDatabaseHandler(config, log)
 
 
     #
     # Data value getters
     #
-
-    createValidationError: (error_msg) ->
-        err = new Error(error_msg)
-        err.isValidation = true
-        return err
 
     _getHashValue: (original_val) ->
         hashingStream = crypto.createHash('md5')
@@ -150,33 +55,6 @@ class Database
     # Returns the current security token for the given player. This token must be send on auth request by the client.
     _getSecurityToken: (idUser, playerData) ->
         return @_getHashValue("#{config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
-
-    # Checks the given data for being valid to be passed to `createChannelByData()` and throws an error, if validation fails.
-    # @param channelData [object] A data map with the channel data.
-    # @throws Error if given data is invalid. The error is flagged as validation error.
-    getValidatedChannelDataForCreation: (channelData) ->
-        channelData.title = String(channelData.title or '').trim()
-        channelData.password = String(channelData.password or '').trim()
-        channelData.is_for_irc = !!channelData.is_for_irc
-        channelData.is_public = !!channelData.is_public
-
-        # Replace all (multiple) whitespace chars by space-char
-        channelData.title = channelData.title.replace(/\s/g, ' ').replace(/[ ]+/g, ' ')
-
-        # Do checks
-        if not channelData.game_id or not channelData.title
-            throw @createValidationError('Invalid input')
-
-        unless 4 <= channelData.title.length <= 30
-            throw @createValidationError('Illegal length of channel name')
-
-        if config.REQUIRE_CHANNEL_PW and 2 >= channelData.password.length
-            throw @createValidationError('Channel password too short')
-
-        unless channelData.password.length <= 20
-            throw @createValidationError('Channel password too long')
-
-        return channelData
 
 
     #
@@ -686,5 +564,5 @@ class Database
 
 
 ## Export class
-module.exports = Database
+module.exports = DefaultDatasource
 

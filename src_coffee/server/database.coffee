@@ -1,10 +1,10 @@
 
-# Include database loader
-loader = require './databaseloader'
+# Include datasource loader
+loader = require './datasources/loader'
 
-# Get the last set database class
-DatabaseClass = loader.get()
+# Get the last set datasource class
+DatasourceClass = loader.get()
 
 # Export as singleton
-module.exports = new DatabaseClass()
+module.exports = new DatasourceClass()
 
