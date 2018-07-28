@@ -83,6 +83,12 @@ module.exports = {
     # The port of the webserver started by this app
     WEB_SERVER_PORT: 8050
 
+    # The directory to use for searching for the chat-client files.
+    # Let it empty to use the package directory (default).
+    # Will find following files located in the directory:
+    # "/index.html", "/src_js/webclient.js", "/src_js/webclient/<any file>"
+    WEB_SERVER_DELIVERY_ROOT: ''
+
     # The ssl certificate to use for the https webserver
     SSL_CERT_PATH: './certs/server.crt'
 

@@ -2,6 +2,7 @@
 ## Include libraries
 Q = require 'q'
 fs = require 'fs'
+path = require 'path'
 https = require 'https'
 express = require 'express'
 
@@ -41,18 +42,24 @@ class Gateway
         @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
-        serverRootDir = process.cwd()
+        #serverRootDir = process.cwd()
+        serverRootDir = config.WEB_SERVER_DELIVERY_ROOT or path.join(__dirname, '..', '..')
+        log.info 'Web server root directory:', serverRootDir
 
         ## Register http server events
         app.get '/', (request, response) ->
             response.sendFile "index.html", {root: serverRootDir}
 
-        app.get '/js/:file', (request, response) ->
+        app.get '/chat/webclient.js', (request, response) ->
+            response.sendFile "webclient.js", {root: "#{serverRootDir}/src_js/"}, (err) ->
+                if err? then response.status(404).send 'File not found'
+
+        app.get '/chat/js/:file', (request, response) ->
             filename = request.params.file
             log.info 'Requested script file:', filename
 
             response.sendFile filename, {root: "#{serverRootDir}/src_js/webclient/"}, (err) ->
-                if err? then response.send 'File not found'
+                if err? then response.status(404).send 'File not found'
 
         server.on 'close', ->
             log.info 'Server shut down'
