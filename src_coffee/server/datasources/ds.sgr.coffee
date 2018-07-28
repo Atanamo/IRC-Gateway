@@ -90,6 +90,12 @@ class SgrDatasource extends DefaultDatasource
         shortTitle = shortTitle.replace(/[\*]+/, '')  # Remove special marking chars
         return shortTitle
 
+    _getGameDatabaseName: (gameMetaData) ->
+        return "#{config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
+
+    _getGameTableName: (gameMetaData, tableNameSkeleton) ->
+        return tableNameSkeleton.replace('<id>', gameMetaData.game_id)
+
 
     #
     # Game-specific queries

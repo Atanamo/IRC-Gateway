@@ -57,14 +57,13 @@ class DefaultDatasource extends AbstractDatasource
 
         # Read data of given player in given game
         promise = promise.then (gameData) =>
-            gameDatabase = @_getGameDatabaseName(gameData)
-            playerCharactersTable = @_getGameTableName(gameData, config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
             sql = "
                     SELECT `Ch`.`ID` AS `character_id`,
                            `Ch`.`Name` AS `character_name`,
+                           `Ch`.`Class` AS `class_name`,
                            #{@_toQuery(gameData.game_title)} AS `game_title`
-                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
-                    JOIN `#{gameDatabase}`.`#{playerCharactersTable}` AS `Ch`
+                    FROM `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
+                    JOIN `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.GAME_PLAYER_IDENTITIES}` AS `Ch`
                       ON `Ch`.`ID`=`PG`.`CharacterID`
                     WHERE `PG`.`GameID`=#{@_toQuery(idGame)}
                       AND `PG`.`UserID`=#{@_toQuery(idUser)}
@@ -78,7 +77,7 @@ class DefaultDatasource extends AbstractDatasource
                 idGame: idGame
                 idUser: idUser
                 name: playerData.character_name
-                title: "#{playerData.character_name} - #{playerData.game_title}"
+                title: "#{playerData.character_name} - #{playerData.class_name}"
                 gameTitle: playerData.game_title
                 gameTag: @_getShortenedGameTitle(playerData.game_title)
                 token: @_getSecurityToken(idUser, playerData)
@@ -91,20 +90,15 @@ class DefaultDatasource extends AbstractDatasource
     _getSecurityToken: (idUser, playerData) ->
         return @_getHashValue("#{config.CLIENT_AUTH_SECRET}_#{idUser}")
 
+    # Returns the md5 hash of the given string
     _getHashValue: (original_val) ->
         hashingStream = crypto.createHash('md5')
         hashingStream.update(original_val);
         return hashingStream.digest('hex')
 
-    _getGameDatabaseName: (gameMetaData) ->
-        return "#{config.SQL_DATABASE_PREFIX_GAME}#{gameMetaData.database_id}"
-
-    _getGameTableName: (gameMetaData, tableNameSkeleton) ->
-        return tableNameSkeleton.replace('<id>', gameMetaData.game_id)
-
+    # Returns the first part of the given game title (split by underscore, hyphen or space)
     _getShortenedGameTitle: (fullGameTitle) ->
         shortTitle = String(fullGameTitle)
-        # Remove sub names: Anything after an underscore, hyphen or space
         shortTitle = shortTitle.replace(/[_- ](.+)/, '')
         return shortTitle
 
@@ -127,7 +121,7 @@ class DefaultDatasource extends AbstractDatasource
 
         sql = "
                 SELECT `ID` AS `game_id`, `ServerID` AS `database_id`, `Name` AS `game_title`
-                FROM `#{config.SQL_TABLES.GAMES_LIST}`
+                FROM `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID`=#{@_toQuery(idGame)}
               "
         return @_readSimpleData(sql, true)
@@ -153,7 +147,7 @@ class DefaultDatasource extends AbstractDatasource
         # Read the status values 'current_state' and 'start_time' for each game:
         sql = "
                 SELECT `ID` as `id`, `StateText` AS `current_state`, `StartTime` AS `start_time`
-                FROM `#{config.SQL_TABLES.GAMES_LIST}`
+                FROM `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID` IN (#{idListString})
                 ORDER BY `Status` ASC, `ID` DESC
               "
@@ -175,7 +169,7 @@ class DefaultDatasource extends AbstractDatasource
         if config.MAX_BOTS > 0
             sql = "
                     SELECT `ID` AS `id`, `Name` AS `title`
-                    FROM `#{config.SQL_TABLES.GAMES_LIST}`
+                    FROM `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.GAMES_LIST}`
                     WHERE `Running`=1 AND `Deleted`=0
                     ORDER BY `ID` ASC
                     LIMIT #{config.MAX_BOTS}
@@ -183,7 +177,7 @@ class DefaultDatasource extends AbstractDatasource
         else
             sql = "
                     SELECT `ID` AS `id`, `Name` AS `title`
-                    FROM `#{config.SQL_TABLES.GAMES_LIST}`
+                    FROM `#{config.SQL_DATABASE_GAME}`.`#{config.SQL_TABLES.GAMES_LIST}`
                     WHERE `Deleted`=0
                     ORDER BY `ID` ASC
                 "
