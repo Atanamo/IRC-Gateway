@@ -1,7 +1,6 @@
 
 ## Include libraries
 Q = require 'q'
-mysql = require 'mysql'
 crypto = require 'crypto'
 
 ## Include app modules
@@ -19,20 +18,78 @@ AbstractDatasource = require './ds.abstract'
 ## Uses the MySQL database handler by default.
 ##
 ## Structure:
-## * Data value getters
-## * Interface routines for app queries
+## * Client identity (with example implementations)
+## * Game-specific queries (with example implementations)
+## * Server management
+## * Channel management
 ##
 class DefaultDatasource extends AbstractDatasource
-    connection: null
 
-    # Overwrite
+    # @override
     _createHandler: ->
         return new MysqlDatabaseHandler(config, log)
 
 
     #
-    # Data value getters
+    # Client identity (with example implementations)
     #
+
+    # Returns the saved identification data for the given player in the given game.
+    # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
+    # @param idGame [int] The id of the player's game world as given by a client on logon.
+    # @return [promise] A promise, resolving to a data map with keys
+    #   `id` (The id of the player for the chat),
+    #   `idGame` (Should equal given idGame),
+    #   `idUser` (The id of the player's account),
+    #   `name` (The player's name for the chat),
+    #   `title` (An optional more detail name for the chat, will default to the name),
+    #   `gameTitle` (The full name of the player's game world),
+    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name),
+    #   `token` (The security token for the player).
+    #   If the read data set is empty, the promise is rejected.
+    getClientIdentityData: (idUser, idGame) ->
+        ##
+        # Note: This is an example implementation - overwrite it for your own game API
+        ##
+
+        # Read (meta) data of given game
+        promise = @_getGameData(idGame)
+
+        # Read data of given player in given game
+        promise = promise.then (gameData) =>
+            gameDatabase = @_getGameDatabaseName(gameData)
+            playerCharactersTable = @_getGameTableName(gameData, config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
+            sql = "
+                    SELECT `Ch`.`ID` AS `character_id`,
+                           `Ch`.`Name` AS `character_name`,
+                           #{@_toQuery(gameData.game_title)} AS `game_title`
+                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
+                    JOIN `#{gameDatabase}`.`#{playerCharactersTable}` AS `Ch`
+                      ON `Ch`.`ID`=`PG`.`CharacterID`
+                    WHERE `PG`.`GameID`=#{@_toQuery(idGame)}
+                      AND `PG`.`UserID`=#{@_toQuery(idUser)}
+                  "
+            return @_readSimpleData(sql, true)
+
+        # Build final result
+        promise = promise.then (playerData) =>
+            return {
+                id: playerData.character_id
+                idGame: idGame
+                idUser: idUser
+                name: playerData.character_name
+                title: "#{playerData.character_name} - #{playerData.game_title}"
+                gameTitle: playerData.game_title
+                gameTag: @_getShortenedGameTitle(playerData.game_title)
+                token: @_getSecurityToken(idUser, playerData)
+            }
+
+        return promise
+
+    # Returns the current security token for the given player.
+    # This token must be sent on auth request by the client.
+    _getSecurityToken: (idUser, playerData) ->
+        return @_getHashValue("#{config.CLIENT_AUTH_SECRET}_#{idUser}")
 
     _getHashValue: (original_val) ->
         hashingStream = crypto.createHash('md5')
@@ -47,21 +104,16 @@ class DefaultDatasource extends AbstractDatasource
 
     _getShortenedGameTitle: (fullGameTitle) ->
         shortTitle = String(fullGameTitle)
-        # Remove sub names (like 'Spiral'), but leave anything after a space (mostly numbers)
-        shortTitle = shortTitle.replace(/(-[^- ]+)/, '')
-        shortTitle = shortTitle.replace(/[\*]+/, '')  # Remove special marking chars
+        # Remove sub names: Anything after an underscore, hyphen or space
+        shortTitle = shortTitle.replace(/[_- ](.+)/, '')
         return shortTitle
 
-    # Returns the current security token for the given player. This token must be send on auth request by the client.
-    _getSecurityToken: (idUser, playerData) ->
-        return @_getHashValue("#{config.CLIENT_AUTH_SECRET}_#{idUser}_#{playerData.activity_stamp}")
-
 
     #
-    # Interface routines for app queries
+    # Game-specific queries (with example implementations)
     #
 
-    # Returns the data for the given game world.
+    # Helper query - Returns the data for the given game world.
     # @param idGame [int] The id of the game world.
     # @return [promise] A promise, resolving to a data map with keys
     #   `game_id` (Should equal idGame),
@@ -69,8 +121,12 @@ class DefaultDatasource extends AbstractDatasource
     #   `game_title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   If the read data set is empty, the promise is rejected.
     _getGameData: (idGame) ->
+        ##
+        # Note: This is an example implementation - overwrite it for your own requirements
+        ##
+
         sql = "
-                SELECT `ID` AS `game_id`, `RealityID` AS `database_id`, `Galaxyname` AS `game_title`
+                SELECT `ID` AS `game_id`, `ServerID` AS `database_id`, `Name` AS `game_title`
                 FROM `#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID`=#{@_toQuery(idGame)}
               "
@@ -85,39 +141,23 @@ class DefaultDatasource extends AbstractDatasource
     #   (The key of each of these values is used to label the value on output. Underscores are replaced by spaces.)
     #   The list may be empty, if none of the given games could be found.
     getGameStatuses: (idList=[]) ->
+        ##
+        # Note: This is an example implementation - overwrite it for your own game API
+        ##
+
         # Convert given array to string of comma-separated values
         idListSanitized = idList.map (idGame) =>
             @_toQuery(idGame)
         idListString = idListSanitized.join(',')
 
-        # Read the status values for each game
+        # Read the status values 'current_state' and 'start_time' for each game:
         sql = "
-                SELECT `ID` as `id`, `Status` AS `status`, `Round` AS `rounds`
+                SELECT `ID` as `id`, `StateText` AS `current_state`, `StartTime` AS `start_time`
                 FROM `#{config.SQL_TABLES.GAMES_LIST}`
                 WHERE `ID` IN (#{idListString})
                 ORDER BY `Status` ASC, `ID` DESC
               "
-        promise = @_readMultipleData(sql)
-        promise = promise.then (dataList) =>
-            statusTexts =
-                '-1': 'Not released yet'
-                '0': 'Not started yet'
-                '1': 'Running'
-                '2': 'Paused'
-                '3': 'Finished / Terminated'
-                '4': 'Evaluated and archived'
-                '5': 'Running (aftermath)'
-                '6': 'Paused (aftermath)'
-                '7': 'Terminated and closed'
-
-            # Fetch text for each status
-            resultData = dataList.map (data) ->
-                statusID = String(data?.status)
-                data.status = statusTexts[statusID] or 'Unknown status'
-                return data
-            return resultData
-
-        return promise
+        return @_readMultipleData(sql)
 
     # Returns the list of game worlds, which each have a bot to use for bot-channels.
     # If the mono-bot is configured, returns the list of all game worlds having a chat.
@@ -128,25 +168,31 @@ class DefaultDatasource extends AbstractDatasource
     #   `title` (The display name of the game world - is allowed to contain spaces, etc.).
     #   The list may be empty, if there are no games at all.
     getBotRepresentedGames: ->
+        ##
+        # Note: This is an example implementation - overwrite it for your own game API
+        ##
+
         if config.MAX_BOTS > 0
             sql = "
-                    SELECT `ID` AS `id`, `Galaxyname` AS `title`
+                    SELECT `ID` AS `id`, `Name` AS `title`
                     FROM `#{config.SQL_TABLES.GAMES_LIST}`
-                    WHERE `Status`>=0 AND `Status`<4
-                       OR `Status`=4 AND IFNULL(`FinishDateTime`, NOW()) >= (NOW() - INTERVAL 10 DAY)
-                       OR `Status`>=5 AND `Status`<7
-                    ORDER BY `Status` ASC, `ID` ASC
+                    WHERE `Running`=1 AND `Deleted`=0
+                    ORDER BY `ID` ASC
                     LIMIT #{config.MAX_BOTS}
                 "
         else
             sql = "
-                    SELECT `ID` AS `id`, `Galaxyname` AS `title`
+                    SELECT `ID` AS `id`, `Name` AS `title`
                     FROM `#{config.SQL_TABLES.GAMES_LIST}`
-                    WHERE `Status`>=0 AND `Status`<7
-                       OR `Status`=7 AND IFNULL(`FinishDateTime`, 0) >= (NOW() - INTERVAL 60 DAY)
-                    ORDER BY `Status` ASC, `ID` ASC
+                    WHERE `Deleted`=0
+                    ORDER BY `ID` ASC
                 "
         return @_readMultipleData(sql)
+
+
+    #
+    # Server management
+    #
 
     # Returns a list of channels, which should be mirrored to IRC, but each belong to only one game.
     # This excludes the global channel.
@@ -162,7 +208,7 @@ class DefaultDatasource extends AbstractDatasource
     getGameBoundBotChannels: ->
         sql = "
                 SELECT CONCAT(#{@_toQuery(config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
-                       `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
+                       `GameID` AS `game_id`, `CreatorUserID` AS `creator_id`,
                        `Title` AS `title`, `Password` AS `password`,
                        `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
                 FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
@@ -203,11 +249,11 @@ class DefaultDatasource extends AbstractDatasource
     getChannelDataByTitle: (idGame, channelTitle) ->
         sql = "
                 SELECT CONCAT(#{@_toQuery(config.INTERN_NONGAME_CHANNEL_PREFIX)}, `ID`) AS `name`,
-                       `GalaxyID` AS `game_id`, `CreatorUserID` AS `creator_id`,
+                       `GameID` AS `game_id`, `CreatorUserID` AS `creator_id`,
                        `Title` AS `title`, `Password` AS `password`,
                        `IrcChannel` AS `irc_channel`, `IsPublic` AS `is_public`
                 FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
-                WHERE `GalaxyID`=#{@_toQuery(idGame)}
+                WHERE `GameID`=#{@_toQuery(idGame)}
                   AND `Title` LIKE #{@_toQuery(channelTitle)}
               "
         return @_readSimpleData(sql, true)
@@ -242,7 +288,7 @@ class DefaultDatasource extends AbstractDatasource
                 JOIN `#{config.SQL_TABLES.CHANNEL_JOININGS}` AS `CJ`
                   ON `CJ`.`ChannelID`=`C`.`ID`
                 WHERE `CJ`.`UserID`=#{@_toQuery(idUser)}
-                  AND `C`.`GalaxyID`=#{@_toQuery(idGame)}
+                  AND `C`.`GameID`=#{@_toQuery(idGame)}
                 ORDER BY `CJ`.`ID` ASC
               "
         channelsPromise = @_readMultipleData(sql)
@@ -269,7 +315,7 @@ class DefaultDatasource extends AbstractDatasource
         sql = "
                 SELECT COUNT(`ID`) AS `channels`
                 FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
-                WHERE `GalaxyID`=#{@_toQuery(idGame)}
+                WHERE `GameID`=#{@_toQuery(idGame)}
                   AND `CreatorUserID`=#{@_toQuery(idUser)}
               "
         promise = @_readSimpleData(sql)
@@ -277,76 +323,10 @@ class DefaultDatasource extends AbstractDatasource
             return data?.channels
         return promise
 
-    # Returns the saved identification data for the given player in the given game.
-    # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
-    # @param idGame [int] The id of the player's game world as given by a client on logon.
-    # @return [promise] A promise, resolving to a data map with keys
-    #   `id` (The id of the player for the chat),
-    #   `idGame` (Should equal given idGame),
-    #   `idUser` (The id of the player's account),
-    #   `name` (The player's name for the chat),
-    #   `title` (An optional more detail name for the chat, will default to the name),
-    #   `gameTitle` (The full name of the player's game world),
-    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name),
-    #   `token` (The security token for the player).
-    #   If the read data set is empty, the promise is rejected.
-    getClientIdentityData: (idUser, idGame) ->
-        # Read (meta) data of given game
-        promise = @_getGameData(idGame)
 
-        # Read data of given player in given game
-        promise = promise.then (gameData) =>
-            gameDatabase = @_getGameDatabaseName(gameData)
-            playerIdentitiesTable = @_getGameTableName(gameData, config.SQL_TABLES.GAME_PLAYER_IDENTITIES)
-            sql = "
-                    SELECT `I`.`ID` AS `game_identity_id`,
-                           `I`.`Folkname` AS `game_identity_name`,
-                           `I`.`LastActivityStamp` AS `activity_stamp`,
-                           #{@_toQuery(gameData.game_title)} AS `game_title`
-                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}` AS `PG`
-                    JOIN `#{gameDatabase}`.`#{playerIdentitiesTable}` AS `I`
-                      ON `I`.`ID`=`PG`.`FolkID`
-                    WHERE `PG`.`GalaxyID`=#{@_toQuery(idGame)}
-                      AND `PG`.`UserID`=#{@_toQuery(idUser)}
-                  "
-            return @_readSimpleData(sql, true)
-
-        # Read an identity sub id for cases where the fetched game identity is used by more than one player
-        promise = promise.then (playerData) =>
-            sql = "
-                    SELECT `UserID` AS `user_id`
-                    FROM `#{config.SQL_TABLES.PLAYER_GAMES}`
-                    WHERE `GalaxyID`=#{@_toQuery(idGame)}
-                      AND `FolkID`=#{@_toQuery(playerData.game_identity_id)}
-                    ORDER BY `UserID` ASC
-                  "
-            innerPromise = @_readMultipleData(sql)
-            innerPromise = innerPromise.then (identityPlayersListdata) =>
-                if identityPlayersListdata.length > 1
-                    playerItem = identityPlayersListdata.find (item, idx) ->
-                        return ("#{item.user_id}" is "#{idUser}")
-                    playerIndex = identityPlayersListdata.indexOf(playerItem)
-                    playerData.game_identity_sub_id = playerIndex + 1  # Add sub id to result data
-                return playerData
-            return innerPromise
-
-        # Build final result
-        promise = promise.then (playerData) =>
-            idSub = playerData.game_identity_sub_id or 0
-            nameNumber = if idSub then "\##{idSub}" else ''
-            return {
-                id: "#{playerData.game_identity_id}_#{idSub}"
-                idGame: idGame
-                idUser: idUser
-                name: "#{playerData.game_identity_name} #{nameNumber}".trim()
-                title: "#{playerData.game_identity_name} - Player #{nameNumber}" if nameNumber
-                gameTitle: playerData.game_title
-                gameTag: @_getShortenedGameTitle(playerData.game_title)
-                token: @_getSecurityToken(idUser, playerData)
-            }
-
-        return promise
-
+    #
+    # Channel management
+    #
 
     # Returns a list of messages/channel events, which had been logged for the given channel.
     # @param channelName [string] The internal name of the channel.
@@ -383,7 +363,7 @@ class DefaultDatasource extends AbstractDatasource
         try
             serialEventData = JSON.stringify(eventData)
         catch
-            log.warn 'Could not serializy json string!', 'Database message logging'
+            log.warn 'Could not serializable json string!', 'Database message logging'
             serialEventData = '{}'
 
         @_doTransaction =>
@@ -410,7 +390,6 @@ class DefaultDatasource extends AbstractDatasource
                 return @_sendQuery(sql)
             return promise
 
-
     # Creates a new channel with given data and returns the resulting data of the channel in database.
     # @param clientIdentity [ClientIdentity] The identity of the client to set as channel creator.
     # @param channelData [object] A data map with keys
@@ -430,7 +409,7 @@ class DefaultDatasource extends AbstractDatasource
         channelData.creator_id = userID
         sql = "
                 INSERT INTO `#{config.SQL_TABLES.CHANNEL_LIST}` SET
-                    `GalaxyID`=#{@_toQuery(channelData.game_id)},
+                    `GameID`=#{@_toQuery(channelData.game_id)},
                     `CreatorUserID`=#{@_toQuery(userID)},
                     `Title`=#{@_toQuery(channelData.title)},
                     `Password`=#{@_toQuery(channelData.password)},
@@ -505,7 +484,7 @@ class DefaultDatasource extends AbstractDatasource
                 DELETE FROM `#{config.SQL_TABLES.CHANNEL_LOGS}`
                 WHERE `ChannelID` IN (
                     SELECT `ID` FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
-                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                    WHERE `GameID`=#{@_toQuery(gameID)}
                 )
                 OR `ChannelTextID`=#{@_toQuery(internalGameChannel)}
               "
@@ -516,7 +495,7 @@ class DefaultDatasource extends AbstractDatasource
                 DELETE FROM `#{config.SQL_TABLES.CHANNEL_JOININGS}`
                 WHERE `ChannelID` IN (
                     SELECT `ID` FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
-                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                    WHERE `GameID`=#{@_toQuery(gameID)}
                 )
               "
         joinsPromise = @_sendQuery(sql)
@@ -525,7 +504,7 @@ class DefaultDatasource extends AbstractDatasource
         promise = Q.all([logsPromise, joinsPromise]).then =>
             sql = "
                     DELETE FROM `#{config.SQL_TABLES.CHANNEL_LIST}`
-                    WHERE `GalaxyID`=#{@_toQuery(gameID)}
+                    WHERE `GameID`=#{@_toQuery(gameID)}
                   "
             return @_sendQuery(sql)
 

@@ -103,6 +103,23 @@ class AbstractDatasource
     # Interface routines for app queries
     #
 
+    # Returns the saved identification data for the given player in the given game.
+    # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
+    # @param idGame [int] The id of the player's game world as given by a client on logon.
+    # @return [promise] A promise, resolving to a data map with keys
+    #   `id` (The id of the player for the chat),
+    #   `idGame` (Should equal given idGame),
+    #   `idUser` (The id of the player's account),
+    #   `name` (The player's name for the chat),
+    #   `title` (An optional more detail name for the chat, will default to the name),
+    #   `gameTitle` (The full name of the player's game world),
+    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name),
+    #   `token` (The security token for the player).
+    #   If the read data set is empty, the promise is rejected.
+    getClientIdentityData: (idUser, idGame) ->
+        console.error('Database method "getClientIdentityData" not implemented!')
+        return null
+
     # Returns the status information for each of the given list of game worlds.
     # This is used by a bot on request of one or more game statuses.
     # @param idList [array] An array of integers, each defining the id of a game world.
@@ -194,23 +211,6 @@ class AbstractDatasource
     # @return [promise] A promise, resolving to the number of channels.
     getClientCreatedChannelsCount: (clientIdentity) ->
         console.error('Database method "getClientCreatedChannelsCount" not implemented!')
-        return null
-
-    # Returns the saved identification data for the given player in the given game.
-    # @param idUser [int] The id of the player's account or game identity/character as given by a client on logon.
-    # @param idGame [int] The id of the player's game world as given by a client on logon.
-    # @return [promise] A promise, resolving to a data map with keys
-    #   `id` (The id of the player for the chat),
-    #   `idGame` (Should equal given idGame),
-    #   `idUser` (The id of the player's account),
-    #   `name` (The player's name for the chat),
-    #   `title` (An optional more detail name for the chat, will default to the name),
-    #   `gameTitle` (The full name of the player's game world),
-    #   `gameTag` (An optional shortened version of the name of the player's game world, will default to the full name),
-    #   `token` (The security token for the player).
-    #   If the read data set is empty, the promise is rejected.
-    getClientIdentityData: (idUser, idGame) ->
-        console.error('Database method "getClientIdentityData" not implemented!')
         return null
 
     # Returns a list of messages/channel events, which had been logged for the given channel.
