@@ -70,7 +70,7 @@ class MysqlDatabaseHandler extends HandlerInterface
     sendQuery: (sqlQuery) ->
         deferred = Q.defer()
 
-        @connection.query sqlQuery, (err, resultData, fieldsMetaData) ->
+        @connection.query sqlQuery, (err, resultData, fieldsMetaData) =>
             if err
                 @log.error(err, 'Database query')
                 deferred.reject(err)
@@ -82,7 +82,7 @@ class MysqlDatabaseHandler extends HandlerInterface
     doTransaction: (transactionRoutineFunc) ->
         deferred = Q.defer()
 
-        @connection.beginTransaction (err) ->
+        @connection.beginTransaction (err) =>
             if err
                 @log.error(err, 'Database transaction')
                 deferred.reject(err)
@@ -93,7 +93,7 @@ class MysqlDatabaseHandler extends HandlerInterface
         promise = deferred.promise
         promise = promise.then =>
             innerDeferred = Q.defer()
-            @connection.commit (err) ->
+            @connection.commit (err) =>
                 if err
                     @log.error(err, 'Database transaction commit')
                     innerDeferred.reject(err)
