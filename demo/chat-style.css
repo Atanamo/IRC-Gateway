@@ -1,0 +1,172 @@
+
+div {
+    box-sizing: border-box;
+}
+
+
+#tabsystem {
+    width: 800px;
+}
+
+ul.tabsystemHeaders {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+ul.tabsystemHeaders li {
+    background: #ccc;
+    border: 1px #aaa solid;
+    border-bottom: none;
+    margin-left: 10px;
+    padding: 5px;
+    cursor: pointer;
+}
+
+ul.tabsystemHeaders li.active {
+    background-color: #eee;
+    margin-bottom: -1px;
+    padding-bottom: 6px;
+}
+ul.tabsystemHeaders li.mentioned {
+    font-weight: bold;
+}
+ul.tabsystemHeaders li.addressed {
+    text-decoration: underline;
+}
+
+ul.tabsystemHeaders li .newEntriesCounter {
+    padding-left: 5px;
+}
+
+ul.tabsystemHeaders li .newEntriesCounter:before {
+    content: '[';
+}
+ul.tabsystemHeaders li .newEntriesCounter:after {
+    content: ']';
+}
+
+.tabsystemViewport {
+    border: 1px solid #aaa;
+    height: 250px;
+    overflow: hidden;
+    background: #eee;
+}
+
+.tabsystemViewport > div {
+    display: flex;
+    flex-flow: column nowrap;
+    width: 100%;
+    height: 100%;
+}
+
+.chatOutputContainer {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    min-height: 0;  /* This fixes a bug for FF v34, v35 */
+    padding: 10px;
+}
+
+.chatFormContainer {
+    width: 100%;
+    padding: 10px;
+    border-top: solid 1px #aaa;
+}
+
+.chatMessagesContainer,
+.chatUsersContainer {
+    overflow-y: scroll;
+}
+
+.chatMessagesContainer {
+    flex: 1;
+}
+
+.chatUsersContainer {
+    width: 25%;
+}
+
+.chatMessages .line {
+    display: block;
+}
+.chatMessages .line:first-child {
+    display: inline-block;
+}
+
+.chatMessages li.own {
+    font-weight: bold;
+}
+
+.chatMessages li.historical {
+    font-size: 0.8em;
+}
+
+div[data-channel] .chatMessages li.marker,
+div[data-channel] .chatMessages li.notice {
+    color: gray;
+}
+.chatMessages li.error {
+    color: red;
+}
+
+.chatUsersCount,
+.chatChannelName {
+    padding: 7px 7px;
+    border-bottom: solid 1px #aaa;
+    font-size: 0.9em
+}
+
+.chatUsersCount .title:after,
+.chatChannelName .title:after {
+    content: ':';
+}
+
+.chatUsers {
+    margin: 0;
+    padding: 4px 0;
+}
+
+.chatUsers li {
+    list-style-type: none;
+    white-space: nowrap;
+    padding: 3px 7px;
+    font-size: 0.9em;
+}
+.chatUsers.players li:last-child {
+    border-bottom: solid 1px #aaa;
+}
+
+
+form {
+    width: 100%;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+}
+
+.formSection {
+    width: 50%;
+}
+.formSection:nth-child(n+3) {
+    margin-top: 7px;
+}
+.formSection.right {
+    text-align: right;
+}
+
+.formSection .sectionHeader {
+    font-size: 1em;
+    margin: 5px 0;
+}
+
+.formSection .inputContainer label {
+    display: inline-block;
+    min-width: 130px;
+}
+
+.formSection .inputContainer label:first-child:after {
+    content: ':';
+}
+

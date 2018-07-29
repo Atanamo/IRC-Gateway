@@ -19,4 +19,7 @@ module.exports = {
 
   MAX_BOTS: 0,  // Use mono-bot
 
+  WEB_SERVER_STATICS_DELIVERY_DIR: '<package_dir>/demo', // Use demo index.html file
+  WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist',  // Default
+
 };

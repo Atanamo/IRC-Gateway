@@ -85,8 +85,8 @@ module.exports = {
     # The directory to use for fetching static files (index.html, css file, etc.) from.
     # Set null to disable the feature.
     # Use <package_dir> as placeholder for the package root directory.
-    # Use <working_dir> as placeholder for the process working directory.
-    WEB_SERVER_STATICS_DELIVERY_DIR: '<package_dir>'
+    # Use <working_dir> as placeholder for the process working directory (default).
+    WEB_SERVER_STATICS_DELIVERY_DIR: '<working_dir>'
 
     # The directory to use for fetching the chat's webclient files from.
     # (Can be equal to WEB_SERVER_STATICS_DELIVERY_DIR.)
