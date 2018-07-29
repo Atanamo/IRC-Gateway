@@ -1,13 +1,26 @@
-#
-# Package main file
-#
+##
+## Package main file
+##
 
+# Include app modules for setup
 config = require './config'
+dataloader = require './datasources/loader'
+
+# Include datasource classes
+AbstractDatasource = require './datasources/ds.abstract'
+DefaultDatasource = require './datasources/ds.default'
+SgrDatasource = require './datasources/ds.sgr'
+
+# Include database handler classes
+DatabaseHandlerInterface = require './databasehandlers/dbh.interface'
+MysqlDatabaseHandler = require './databasehandlers/dbh.mysql'
 
 
+# Setup mechanism
+#
 gatewayInstance = null
 
-setupGateway = (customConfig) ->
+setupGateway = (customConfig, customDatasourceClass) ->
     # Set up config
     if config._overwriteDefaults?
         if customConfig?
@@ -18,12 +31,30 @@ setupGateway = (customConfig) ->
     else if customConfig?
         console.warn('\nIRC gateway already created, cannot change its config!\n')
 
+    # Set up datasource class
+    if customDatasourceClass?.prototype instanceof AbstractDatasource
+        dataloader.setClass(customDatasourceClass)
+    else
+        console.error('\nGiven datasource class does not inherit from "AbstractDatasource", it cannot be used for the IRC gateway!\n')
+
     # Get gateway instance
     unless gatewayInstance?
-        Gateway = require './app'  # Lazy load
+        Gateway = require('./app')  # Lazy load, so injected config and datasource will be used
         gatewayInstance = new Gateway()
 
     return gatewayInstance
 
 
-module.exports = setupGateway
+# Export setup function and datasource classes
+module.exports = {
+
+    setup: setupGateway
+
+    AbstractDatabaseHandler: DatabaseHandlerInterface
+    MysqlDatabaseHandler: MysqlDatabaseHandler
+
+    AbstractDatasource: AbstractDatasource
+    DefaultDatasource: DefaultDatasource
+    SgrDatasource: SgrDatasource
+
+}

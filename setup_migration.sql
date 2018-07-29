@@ -1,8 +1,8 @@
 -- ------------------------------------------------------------------------------------------------
--- This example script sets up all database tables needed for the chat system itself, 
+-- This example script sets up all database tables needed for the chat system itself,
 -- but without tables for game world environment.
 -- If you change table names, you have to modify the config (See SQL_TABLES).
--- If you change table structure or similar, you have to modify the queries of the database class.
+-- If you change table structure, you have to modify the related queries of the datasource class.
 -- ------------------------------------------------------------------------------------------------
 -- MySQL server version: 5.6.12
 -- ------------------------------------------------------------------------------------------------
@@ -13,14 +13,14 @@
 
 CREATE TABLE IF NOT EXISTS `chat - channels` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `GalaxyID` tinyint(5) unsigned NOT NULL,
+  `GameID` tinyint(5) unsigned NOT NULL,
   `CreatorUserID` int(10) unsigned NOT NULL,
   `Title` tinytext NOT NULL,
   `Password` tinytext NOT NULL,
   `IrcChannel` tinytext,
   `IsPublic` tinyint(1) unsigned NOT NULL,
   PRIMARY KEY (`ID`),
-  KEY `GalaxyID` (`GalaxyID`),
+  KEY `GameID` (`GameID`),
   KEY `CreatorUserID` (`CreatorUserID`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COMMENT='Stored custom/non-default channels';
 

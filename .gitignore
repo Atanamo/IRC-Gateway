@@ -16,7 +16,13 @@ Desktop.ini
 node_modules/*
 src_js/*
 
-
 *.log
 src_coffee/*.js
 src_coffee/*/*.js
+
+# Old dev batches #
+#########################
+/dev_install.bat
+/dev_start_watcher.bat
+/dev_start_server.bat
+/dev_bundle_client.bat

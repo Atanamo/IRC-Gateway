@@ -19,12 +19,12 @@ module.exports = {
     # Password for connecting to SQL server
     SQL_PASSWORD: 'SECRET'
 
-    # The name of the database in which the app stores its own tables and/or core tables of the game
+    # The name of the database in which the app stores its own tables.
+    # It's also the default database to connect to.
     SQL_DATABASE_COMMON: 'irc_gateway'
 
-    # The name prefix of the database in which tables of a game world can be found
-    # (To be appended with an id from common database - e.g. the game ID)
-    SQL_DATABASE_PREFIX_GAME: 'game_world_'
+    # Example: The name of the database which contains the tables for game-specific data
+    SQL_DATABASE_GAME: 'game_core'
 
     # The socket path of the SQL server. Default is the MySQL socket path.
     # (For MySQL, find out the path using 'mysqladmin variables | grep sock'.)
@@ -33,16 +33,6 @@ module.exports = {
 
     # Tables used by the app (Only used by the database file, so you can set up your own entries too)
     SQL_TABLES: {
-        # The name of the table in common db, which contains the list of game worlds
-        GAMES_LIST: 'game_worlds'
-
-        # The name of the table in common db, which maps a player to a game world (and an identity)
-        PLAYER_GAMES: 'player_games'
-
-        # The name of the table in game db, which contains the player identities of a related game
-        # (Use <id> as a placeholder for the game ID)
-        GAME_PLAYER_IDENTITIES: 'game_<id>_identities'
-
         # The name of the table for storing non-game/custom channels
         # (Must be created once, see database_setup.sql)
         CHANNEL_LIST: 'chat - channels'
@@ -54,6 +44,15 @@ module.exports = {
         # The name of the table for storing chat histories of all channels
         # (Must be created once, see database_setup.sql)
         CHANNEL_LOGS: 'chat - channellogs'
+
+        # Example: The name of the table in common db, which contains the list of game worlds
+        GAMES_LIST: 'game_worlds'
+
+        # Example: The name of the table in common db, which maps a player to a game world (and an identity)
+        PLAYER_GAMES: 'player_games'
+
+        # Example: The name of the table in game db, which contains the player identities of a related game
+        GAME_PLAYER_IDENTITIES: 'game_player_identities'
     }
 
 
@@ -83,11 +82,22 @@ module.exports = {
     # The port of the webserver started by this app
     WEB_SERVER_PORT: 8050
 
-    # The ssl certificate to use for the https webserver
-    SSL_CERT_PATH: './certs/server.crt'
+    # The root directory to use for searching for the chat-client files.
+    # Use <package_dir> as placeholder for the package root directory (default).
+    # Use <working_dir> as placeholder for the process working directory.
+    # The webserver find following files located in the directory:
+    # "/index.html", "/src_js/webclient.js", "/src_js/webclient/<any file>"
+    WEB_SERVER_DELIVERY_ROOT: '<package_dir>'
 
-    # The uncrypted private key file of the ssl certificate
-    SSL_KEY_PATH: './certs/server.key'
+    # The ssl certificate to use for the https webserver.
+    # Use <package_dir> as placeholder for the package root directory.
+    # Use <working_dir> as placeholder for the process working directory.
+    SSL_CERT_PATH: '<package_dir>/certs/server.crt'
+
+    # The uncrypted private key file of the ssl certificate.
+    # Use <package_dir> as placeholder for the package root directory.
+    # Use <working_dir> as placeholder for the process working directory.
+    SSL_KEY_PATH: '<package_dir>/certs/server.key'
 
 
     # Common settings

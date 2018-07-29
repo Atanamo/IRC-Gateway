@@ -2,6 +2,7 @@
 ## Include libraries
 Q = require 'q'
 fs = require 'fs'
+path = require 'path'
 https = require 'https'
 express = require 'express'
 
@@ -15,13 +16,23 @@ socketioWrapper = require './socketserver'
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
+## Helper functions
+resolvePath = (wildPath) ->
+    resultPath = String(wildPath)
+    # Resolve placeholder for package root directory
+    resultPath = resultPath.replace('<package_dir>', path.join(__dirname, '..', '..'))
+    # Resolve placeholder for process working directory
+    resultPath = resultPath.replace('<working_dir>', process.cwd())
+    # Finally normalize
+    return path.normalize(resultPath)
+
 ## Configure global libraries
 Q.longStackSupport = config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
 
 ## Create library API objects
 httpsOptions =
-    cert: fs.readFileSync(config.SSL_CERT_PATH)
-    key: fs.readFileSync(config.SSL_KEY_PATH)
+    cert: fs.readFileSync(resolvePath(config.SSL_CERT_PATH))
+    key: fs.readFileSync(resolvePath(config.SSL_KEY_PATH))
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
@@ -41,18 +52,23 @@ class Gateway
         @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
-        serverRootDir = process.cwd()
+        serverRootDir = resolvePath(config.WEB_SERVER_DELIVERY_ROOT)
+        log.info 'Web server root directory:', serverRootDir
 
         ## Register http server events
         app.get '/', (request, response) ->
             response.sendFile "index.html", {root: serverRootDir}
 
-        app.get '/js/:file', (request, response) ->
+        app.get '/chat/webclient.js', (request, response) ->
+            response.sendFile "webclient.js", {root: "#{serverRootDir}/src_js/"}, (err) ->
+                if err? then response.status(404).send 'File not found'
+
+        app.get '/chat/js/:file', (request, response) ->
             filename = request.params.file
             log.info 'Requested script file:', filename
 
             response.sendFile filename, {root: "#{serverRootDir}/src_js/webclient/"}, (err) ->
-                if err? then response.send 'File not found'
+                if err? then response.status(404).send 'File not found'
 
         server.on 'close', ->
             log.info 'Server shut down'
