@@ -1,7 +1,4 @@
 
-:REM Only for globally installed coffeescript
-
-
-cake watch
+npm run watch
 
 pause

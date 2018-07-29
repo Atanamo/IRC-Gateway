@@ -1,6 +1,3 @@
 
-:REM Only for globally installed coffeescript
-
-
-cake bundle-client
+npm run bundle-client
 
