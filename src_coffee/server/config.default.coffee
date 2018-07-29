@@ -82,17 +82,22 @@ module.exports = {
     # The port of the webserver started by this app
     WEB_SERVER_PORT: 8050
 
-    # The directory to use for searching for the chat-client files.
-    # Let it empty to use the package directory (default).
-    # Will find following files located in the directory:
+    # The root directory to use for searching for the chat-client files.
+    # Use <package_dir> as placeholder for the package root directory (default).
+    # Use <working_dir> as placeholder for the process working directory.
+    # The webserver find following files located in the directory:
     # "/index.html", "/src_js/webclient.js", "/src_js/webclient/<any file>"
-    WEB_SERVER_DELIVERY_ROOT: ''
+    WEB_SERVER_DELIVERY_ROOT: '<package_dir>'
 
-    # The ssl certificate to use for the https webserver
-    SSL_CERT_PATH: './certs/server.crt'
+    # The ssl certificate to use for the https webserver.
+    # Use <package_dir> as placeholder for the package root directory.
+    # Use <working_dir> as placeholder for the process working directory.
+    SSL_CERT_PATH: '<package_dir>/certs/server.crt'
 
-    # The uncrypted private key file of the ssl certificate
-    SSL_KEY_PATH: './certs/server.key'
+    # The uncrypted private key file of the ssl certificate.
+    # Use <package_dir> as placeholder for the package root directory.
+    # Use <working_dir> as placeholder for the process working directory.
+    SSL_KEY_PATH: '<package_dir>/certs/server.key'
 
 
     # Common settings

@@ -16,13 +16,23 @@ socketioWrapper = require './socketserver'
 SocketHandler = require './sockethandler'
 BotManager = require './botmanager'
 
+## Helper functions
+resolvePath = (wildPath) ->
+    resultPath = String(wildPath)
+    # Resolve placeholder for package root directory
+    resultPath = resultPath.replace('<package_dir>', path.join(__dirname, '..', '..'))
+    # Resolve placeholder for process working directory
+    resultPath = resultPath.replace('<working_dir>', process.cwd())
+    # Finally normalize
+    return path.normalize(resultPath)
+
 ## Configure global libraries
 Q.longStackSupport = config.DEBUG_ENABLED  # On debug mode, enable better stack trace support for promises (Performance overhead)
 
 ## Create library API objects
 httpsOptions =
-    cert: fs.readFileSync(config.SSL_CERT_PATH)
-    key: fs.readFileSync(config.SSL_KEY_PATH)
+    cert: fs.readFileSync(resolvePath(config.SSL_CERT_PATH))
+    key: fs.readFileSync(resolvePath(config.SSL_KEY_PATH))
 
 app = express()
 server = https.createServer(httpsOptions, app)  # Create HTTP server instance
@@ -42,8 +52,7 @@ class Gateway
         @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
-        #serverRootDir = process.cwd()
-        serverRootDir = config.WEB_SERVER_DELIVERY_ROOT or path.join(__dirname, '..', '..')
+        serverRootDir = resolvePath(config.WEB_SERVER_DELIVERY_ROOT)
         log.info 'Web server root directory:', serverRootDir
 
         ## Register http server events
