@@ -22,6 +22,7 @@
     "type": "git",
     "url": "https://github.com/atanamo/irc-gateway.git"
   },
+  "license": "BSD-3-Clause",
   "engines": {
     "node": ">= 6.0.0",
     "npm": ">= 3.0.0"
@@ -44,6 +45,5 @@
   "devDependencies": {
     "coffeescript": "1.12.7"
   },
-  "bundleDependencies": [],
-  "private": true
+  "bundleDependencies": []
 }
