@@ -86,7 +86,7 @@ module.exports = {
     # Use <package_dir> as placeholder for the package root directory (default).
     # Use <working_dir> as placeholder for the process working directory.
     # The webserver find following files located in the directory:
-    # "/index.html", "/src_js/webclient.js", "/src_js/webclient/<any file>"
+    # "/index.html", "/dist/webclient.js", "/dist/webclient/<any file>"
     WEB_SERVER_DELIVERY_ROOT: '<package_dir>'
 
     # The ssl certificate to use for the https webserver.

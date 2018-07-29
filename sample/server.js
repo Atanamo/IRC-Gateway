@@ -1,6 +1,6 @@
 
 //const gateway = require('irc-gateway');
-const gateway = require('../src_js/server/index');
+const gateway = require('../dist/server/index');
 
 const config = require('./custom_config');
 

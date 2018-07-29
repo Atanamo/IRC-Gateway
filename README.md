@@ -25,9 +25,9 @@ Installation
 
 * Download the project sources
 * Set up the database on a MySQL server. Sadly, this is tricky and requires code modifications...
-  * All database interaction is done in following file: `./src_coffee/server/database.coffee`
+  * All database interaction is done in following file: `./src/server/database.coffee`
   * Have a look at the file and change the queries (and/or config) to match your environment:
-  * Set up your database configuration by editing the file `./src_coffee/server/config.custom.coffee`
+  * Set up your database configuration by editing the file `./src/server/config.custom.coffee`
   * In the database file, you have to modify at least the method/queries
     containing `config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
   * All additional tables the chat system requires can be set up using the following file: `./setup_migration.sql`
@@ -43,7 +43,7 @@ The project contains a very simple `index.html` as demo page.
 Before running anything, make sure you have set up the project following the installation instructions.
 Then you have to start the chat server (including a web server):
 
-  ``$ node ./src_js/server/main.js``
+  ``$ node ./dist/server/main.js``
 
 Afterwards, you can open your browser and load the page on localhost. But note the server runs on SSL protocol.
 So based on the default settings in the server's config file, you have to browse following address:
@@ -55,12 +55,12 @@ Changing config
 ===============
 
 * Overwrite the default settings:
-  * Add/set your overwrite settings here: `./src_coffee/server/config.custom.coffee`
-  * Look-up documentation of all settings here: `./src_coffee/server/config.default.coffee`
+  * Add/set your overwrite settings here: `./src/server/config.custom.coffee`
+  * Look-up documentation of all settings here: `./src/server/config.default.coffee`
 * Rebuild the JavaScript code (transcompile CoffeeScript code):
  	``$ cake build``
 * Run server:
-	``$ node ./src_js/server/main.js``
+	``$ node ./dist/server/main.js``
 
 
 Special channels

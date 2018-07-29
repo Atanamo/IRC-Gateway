@@ -27,7 +27,7 @@
     "node": ">= 6.0.0",
     "npm": ">= 3.0.0"
   },
-  "main": "src_js/server/index.js",
+  "main": "dist/server/index.js",
   "scripts": {
     "prepublish": "npm run build",
     "build": "./node_modules/.bin/cake build",

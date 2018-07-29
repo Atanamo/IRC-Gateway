@@ -53,21 +53,21 @@ class Gateway
 
     _bindServerEvents: ->
         serverRootDir = resolvePath(config.WEB_SERVER_DELIVERY_ROOT)
-        log.info 'Web server root directory:', serverRootDir
+        log.info "Web server root directory: #{serverRootDir}"
 
         ## Register http server events
         app.get '/', (request, response) ->
             response.sendFile "index.html", {root: serverRootDir}
 
         app.get '/chat/webclient.js', (request, response) ->
-            response.sendFile "webclient.js", {root: "#{serverRootDir}/src_js/"}, (err) ->
+            response.sendFile "webclient.js", {root: "#{serverRootDir}/dist/"}, (err) ->
                 if err? then response.status(404).send 'File not found'
 
         app.get '/chat/js/:file', (request, response) ->
             filename = request.params.file
             log.info 'Requested script file:', filename
 
-            response.sendFile filename, {root: "#{serverRootDir}/src_js/webclient/"}, (err) ->
+            response.sendFile filename, {root: "#{serverRootDir}/dist/webclient/"}, (err) ->
                 if err? then response.status(404).send 'File not found'
 
         server.on 'close', ->
