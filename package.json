@@ -29,7 +29,7 @@
   },
   "main": "dist/server/index.js",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "npm run build & npm run bundle-client",
     "build": "./node_modules/.bin/cake build",
     "watch": "./node_modules/.bin/cake watch",
     "bundle-client": "./node_modules/.bin/cake bundle-client",
