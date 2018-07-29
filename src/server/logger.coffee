@@ -11,11 +11,9 @@ getTimestamp = ->
     return "[#{dateTimeString}]"
 
 
-if config.DEBUG_ENABLED
-    module.exports.debug = (text...) ->
+module.exports.debug = (text...) ->
+    if config.DEBUG_ENABLED
         console.log '=>', getTimestamp(), text...
-else
-    module.exports.debug = ->
 
 module.exports.info = (text...) ->
     console.log '#', getTimestamp(), text...
