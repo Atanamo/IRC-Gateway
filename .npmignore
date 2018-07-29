@@ -9,10 +9,6 @@ Icon?
 Desktop.ini
 */Desktop.ini
 
-# Project dist #
-################
-src_js/*
-
 # Project settings, etc #
 #########################
 .idea/*
@@ -26,4 +22,3 @@ src_coffee/*/*.js
 # Old dev batches #
 #########################
 /*.bat
-
