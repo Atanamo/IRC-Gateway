@@ -82,12 +82,20 @@ module.exports = {
     # The port of the webserver started by this app
     WEB_SERVER_PORT: 8050
 
-    # The root directory to use for searching for the chat-client files.
-    # Use <package_dir> as placeholder for the package root directory (default).
+    # The directory to use for fetching static files (index.html, css file, etc.) from.
+    # Set null to disable the feature.
+    # Use <package_dir> as placeholder for the package root directory.
     # Use <working_dir> as placeholder for the process working directory.
-    # The webserver find following files located in the directory:
-    # "/index.html", "/dist/webclient.js", "/dist/webclient/<any file>"
-    WEB_SERVER_DELIVERY_ROOT: '<package_dir>'
+    WEB_SERVER_STATICS_DELIVERY_DIR: '<package_dir>'
+
+    # The directory to use for fetching the chat's webclient files from.
+    # (Can be equal to WEB_SERVER_STATICS_DELIVERY_DIR.)
+    # Set null to disable the feature.
+    # Use <package_dir> as placeholder for the package root directory.
+    # Use <working_dir> as placeholder for the process working directory.
+    # The webserver delivers following files located in the directory:
+    # "/webclient.js", "/webclient/<any file>"
+    WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist'
 
     # The ssl certificate to use for the https webserver.
     # Use <package_dir> as placeholder for the package root directory.

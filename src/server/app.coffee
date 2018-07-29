@@ -52,35 +52,49 @@ class Gateway
         @socketHandler = new SocketHandler(socketServer, @botManager.addGameBotToChannel)
 
     _bindServerEvents: ->
-        serverRootDir = resolvePath(config.WEB_SERVER_DELIVERY_ROOT)
-        log.info "Web server root directory: #{serverRootDir}"
+        # Listener for static files (index.html, style, etc.)
+        if config.WEB_SERVER_STATICS_DELIVERY_DIR?
+            staticFilesDir = resolvePath(config.WEB_SERVER_STATICS_DELIVERY_DIR)
+            log.info "Webserver directory for index file: #{staticFilesDir}"
 
-        ## Register http server events
-        app.get '/', (request, response) ->
-            response.sendFile "index.html", {root: serverRootDir}
+            app.get '/', (request, response) ->
+                response.sendFile 'index.html', {root: staticFilesDir}, (err) ->
+                    if err? then response.status(404).send 'File not found'
 
-        app.get '/chat/webclient.js', (request, response) ->
-            response.sendFile "webclient.js", {root: "#{serverRootDir}/dist/"}, (err) ->
-                if err? then response.status(404).send 'File not found'
+            app.get '/:file', (request, response) ->
+                filename = request.params.file
+                log.debug 'Requested static file:', filename
 
-        app.get '/chat/js/:file', (request, response) ->
-            filename = request.params.file
-            log.info 'Requested script file:', filename
+                response.sendFile filename, {root: staticFilesDir}, (err) ->
+                    if err? then response.status(404).send 'File not found'
 
-            response.sendFile filename, {root: "#{serverRootDir}/dist/webclient/"}, (err) ->
-                if err? then response.status(404).send 'File not found'
+        # Listener for script files
+        if config.WEB_SERVER_CLIENT_DELIVERY_DIR?
+            clientFilesDir = resolvePath(config.WEB_SERVER_CLIENT_DELIVERY_DIR)
+            log.info "Webserver directory for webclient files: #{clientFilesDir}"
 
+            app.get '/chat/webclient.js', (request, response) ->
+                response.sendFile "webclient.js", {root: "#{clientFilesDir}/"}, (err) ->
+                    if err? then response.status(404).send 'File not found'
+
+            app.get '/chat/webclient/:file', (request, response) ->
+                filename = request.params.file
+                log.debug 'Requested webclient file:', filename
+
+                response.sendFile filename, {root: "#{clientFilesDir}/webclient/"}, (err) ->
+                    if err? then response.status(404).send 'File not found'
+
+        # Listener for server stop
         server.on 'close', ->
             log.info 'Server shut down'
 
-
+    # Starts the chat gateway
     start: ->
         if isStarted
             log.error 'Gateway not stopped yet, cannot restart!', 'gateway main'
             return
         isStarted = true
 
-        ## Start the chat gateway ##
         @_setupProcess()
 
         # Register for socket events (But don't start listening)
@@ -102,6 +116,7 @@ class Gateway
         # End chain to observe errors
         startupPromise.done()
 
+    # Stops the chat gateway
     stop: (callback=null) ->
         return unless isStarted
         shutdownCallback = =>
