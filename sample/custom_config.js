@@ -22,4 +22,7 @@ module.exports = {
   WEB_SERVER_STATICS_DELIVERY_DIR: '<package_dir>/demo', // Use demo index.html file
   WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist',  // Default
 
+  SSL_CERT_PATH: '<package_dir>/sample/certs/server.crt',  // Use dummy ssl certificate
+  SSL_KEY_PATH: '<package_dir>/sample/certs/server.key',   // Use dummy private key file
+
 };

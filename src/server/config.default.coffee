@@ -100,12 +100,12 @@ module.exports = {
     # The ssl certificate to use for the https webserver.
     # Use <package_dir> as placeholder for the package root directory.
     # Use <working_dir> as placeholder for the process working directory.
-    SSL_CERT_PATH: '<package_dir>/certs/server.crt'
+    SSL_CERT_PATH: '<working_dir>/certs/server.crt'
 
     # The uncrypted private key file of the ssl certificate.
     # Use <package_dir> as placeholder for the package root directory.
     # Use <working_dir> as placeholder for the process working directory.
-    SSL_KEY_PATH: '<package_dir>/certs/server.key'
+    SSL_KEY_PATH: '<working_dir>/certs/server.key'
 
 
     # Common settings
