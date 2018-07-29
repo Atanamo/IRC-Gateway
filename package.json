@@ -6,16 +6,16 @@
     "IRC",
     "Chat",
     "Bot",
-    "Node"
+    "Game"
   ],
   "author": {
     "name": "Atanamo",
-    "url": "http://www.sg-realities.de/"
+    "url": "https://github.com/atanamo"
   },
-  "homepage": "https://www.assembla.com/code/irc-gateway/git/nodes",
+  "homepage": "https://github.com/atanamo/irc-gateway",
   "repository": {
     "type": "git",
-    "url": "https://git.assembla.com/irc-gateway.git"
+    "url": "https://github.com/atanamo/irc-gateway.git"
   },
   "engines": {
     "node": ">= 6.0.0",
