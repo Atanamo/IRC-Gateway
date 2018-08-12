@@ -120,9 +120,9 @@
         var chatController, instanceData, options;
 
         instanceData = {
-            userID: 42,     // The id of the player's account or game identity/character - to be passed to Database.getClientIdentityData()
-            gameID: 123,    // The id of the player's game world - to be passed to Database.getClientIdentityData()
-            token: 'z4da9'  // SecurityToken equal to the result of Database._get_security_token()
+            userID: 42,     // The id of the player's account or game identity/character - to be passed to Datasource.getClientIdentityData()
+            gameID: 123,    // The id of the player's game world - to be passed to Datasource.getClientIdentityData()
+            token: 'z4da9'  // SecurityToken equal to the result of Datasource._getSecurityToken()
         };
 
         options = {

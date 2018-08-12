@@ -4,7 +4,7 @@
 
 module.exports = {
 
-    # Datebase access config (MySQL)
+    # Database access config (MySQL)
     #
 
     # IP of the SQL server (mostly localhost)

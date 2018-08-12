@@ -35,37 +35,127 @@ Components and features
   * Customizable design via CSS
 
 
-Installation
-============
+Installation and setup
+======================
 
-* Download the project sources
-* Set up the database on a MySQL server. Sadly, this is tricky and requires code modifications...
-  * All database interaction is done in following file: `./src/server/database.coffee`
-  * Have a look at the file and change the queries (and/or config) to match your environment:
-  * Set up your database configuration by editing the file `./src/server/config.custom.coffee`
-  * In the database file, you have to modify at least the method/queries
-    containing `config.SQL_TABLES.GAMES_LIST` and the method `getClientIdentityData`.
-  * All additional tables the chat system requires can be set up using the following file: `./setup_migration.sql`
-* Navigate to the project directory (on shell), then run:
-* `$ npm install`
+* Install the package into your project:
+
+  `$ npm install irc-gateway`
+
+* Set up your database and data queries - see section "database"
+
+* Set up your config file - see section "[Configuration](#configuration)"
+
+* Set up the main file of your server application.
+
+  See the sample server file for this: [\<package installation directory\>/sample/server.js](./sample/server.js)
+
+  Applied to your application, the main file will look something like this:
+
+  ```javascript
+  const gateway = require('irc-gateway');
+
+  const config = require('<your config file>');
+  const datasource = require('<your datasource file>');
+
+  const gatewayApp = gateway.setup(config, datasource);
+
+  gatewayApp.start();
+
+  // ...
+
+  gatewayApp.stop();  // Stop the gateway (optional)
+  ```
+
+* Set up the html page for your chat client.
+
+  See the demo page for this: [\<package installation directory\>/demo/index.html](./demo/index.html)
 
 
-Changing config
-===============
+Limitation notice
+-----------------
 
-* Overwrite the default settings:
-  * Add/set your overwrite settings here: `./src/server/config.custom.coffee`
-  * Look-up documentation of all settings here: `./src/server/config.default.coffee`
-* Rebuild the JavaScript code (transcompile CoffeeScript code):
- 	``$ cake build``
-* Run server:
-	``$ node ./dist/server/main.js``
+The `setup` function sets up the first instance created as singleton.
+
+It's not possible to create multiple instances of a gateway within a single application, even if using different configurations or datasources.
+Also, the configuration or datasource cannot be changed, once the instance is created.
+
+
+Configuration
+=============
+
+The configuration is a simple JSON-like object containing key-value pairs.
+
+Have a look on the default configuration, to see all possible settings and corresponding descriptions:
+
+[\<package installation directory\>/src/server/config.default.coffee](./src/server/config.default.coffee)
+
+Note that the file is written in CoffeeScript and therefor lacks the use of commas.
+
+You can change any setting by defining and overwriting it in your own configuration.
+
+
+Minimum config
+--------------
+
+Based on your `Datasource` and/or `DatabaseHandler` you have to define at least the settings of section "Database access config".
+
+By default, they refer to the default `MysqlDatabaseHandler`. You may define completely different settings, if you use your own handler.
+
+
+Example config
+--------------
+
+There is an example config file that is used for the demo server:
+
+[\<package&nbsp;installation directory\>/sample/custom_config.js](./sample/custom_config.js)
+
+The following shows a more practical config:
+
+```javascript
+{
+  SQL_HOST: '127.0.0.1',
+  SQL_PORT: 3306,
+  SQL_USER: 'your_username',
+  SQL_PASSWORD: 'your_password',
+  SQL_DATABASE_COMMON: 'chat_database',
+  SQL_DATABASE_GAME: 'game_core',
+  SQL_SOCKET_PATH: '/var/run/mysqld/mysqld.sock'  // For debian
+
+  SQL_TABLES: {
+    GAMES_LIST: 'core_games',
+    PLAYER_GAMES: 'core_users_2_games',
+    GAME_PLAYER_IDENTITIES: 'core_user_identities'
+  },
+
+  WEB_SERVER_STATICS_DELIVERY_DIR: '/home/www/my_chat_gateway',
+  WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist',
+
+  SSL_CERT_PATH: '/etc/letsencrypt/live/myawesomepage/cert.pem',
+  SSL_KEY_PATH: '/etc/letsencrypt/live/myawesomepage/privkey.pem',
+
+  IRC_SERVER_IP: 'portlane.se.quakenet.org',
+
+  DEBUG_ENABLED: false,
+  AUTH_ENABLED: true,
+  CLIENT_AUTH_SECRET: 'super-secret-pepper',
+
+  MAX_BOTS: 0,  // Use mono-bot
+}
+```
+
+The example above delivers the static files (html page, images, css, etc.) from `'/home/www/my_chat_gateway'`. While the webclient script (`webclient.js`) is delivered from the package directory.
+
+Note that the configuration of these webserver directories is completely optional.
+You can also set them to null and use your own webserver instead.
+
+In case you want to deliver the webclient script by your own webserver, simply copy the script from [\<package installation directory\>/dist/webclient.js](./dist/webclient.js) to the appropriate directory.
 
 
 Demo page
 =========
 
-The project contains a very simple `index.html` as demo page as also an example stylesheet.
+The project contains a very simple demo `index.html` as also an example stylesheet.
 You can find it in the project's demo directory: [\<package installation directory\>/demo/](./demo/)
 
 Before running anything, make sure you have set up the project by following the installation instructions.
