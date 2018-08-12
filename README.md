@@ -1,3 +1,6 @@
+IRC Gateway
+===========
+
 "IRC Gateway" is a simple chat server based on Node.js and Socket.io with a sample web interface.
 
 In general, it is meant to be used for browser-based multiplayer web games with various game instances/servers/worlds/maps.
@@ -52,6 +55,7 @@ Components and features
   * Secure communication via HTTPS
   * IRC bot(s) for bidirectional mirroring
   * Replaceable database interface (MySQL used by default)
+  * Chat history managing
   * Simple logging mechanism
 
 * Web client
