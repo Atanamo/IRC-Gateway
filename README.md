@@ -16,12 +16,18 @@ But they can communicate with players on the ingame chat - the bot also mirrors 
 Therefor the chat server and its bot(s) are a kind of gateway between IRC and the in-game chat.
 
 
+
 Contents
 ========
 
 - [Components and features](#components-and-features)
 - [Installation and setup](#installation-and-setup)
   - [Limitation notice](#limitation-notice)
+- [Data queries](#data-queries)
+  - [Datasource class](#datasource-class)
+  - [Database handler class](#database-handler-class)
+  - [Example datasource and database handler](#example-datasource-and-database-handler)
+  - [Default database scheme](#default-database-scheme)
 - [Configuration](#configuration)
   - [Minimum config](#minimum-config)
   - [Example config](#example-config)
@@ -35,6 +41,7 @@ Contents
 - [Bot modes](#bot-modes)
   - [Mono bot](#mono-bot)
   - [Game-specific bot](#game-specific-bot)
+
 
 
 Components and features
@@ -56,6 +63,7 @@ Components and features
   * Customizable design via CSS
 
 
+
 Installation and setup
 ======================
 
@@ -63,13 +71,13 @@ Installation and setup
 
   `$ npm install irc-gateway`
 
-* Set up your database and data queries - see section "database"
+* Set up your database and data queries - see section "[Data queries](#data-queries)"
 
 * Set up your config file - see section "[Configuration](#configuration)"
 
 * Set up the main file of your server application.
 
-  See the sample server file for this: [\<package installation directory\>/sample/server.js](./sample/server.js)
+  See the sample server file for this: [\<gateway\>/sample/server.js](./sample/server.js)
 
   Applied to your application, the main file will look something like this:
 
@@ -90,7 +98,7 @@ Installation and setup
 
 * Set up the html page for your chat client.
 
-  See the demo page for this: [\<package installation directory\>/demo/index.html](./demo/index.html)
+  See the demo page for this: [\<gateway\>/demo/index.html](./demo/index.html)
 
 
 Limitation notice
@@ -102,6 +110,144 @@ It's not possible to create multiple instances of a gateway within a single appl
 Also, the configuration or datasource cannot be changed, once the instance is created.
 
 
+
+Data queries
+============
+
+The gateway handles all data queries and data managing by using a so-called "Datasource".
+It is a singleton proxy to access a database on several points in the application.
+
+A datasource consists of the following elements:
+
+* The methods to read/write data
+* A database handler object
+
+To create an instance of the irc-gateway, you need to provide a datasource class for it.
+It has to be passed to the gateway's `setup` routine.
+
+
+Datasource class
+----------------
+
+The `Datasource` class must be derived from class `AbstractDatasource`.
+
+* For detail documentation of all methods required, see: [\<gateway\>/src/server/datasources/ds.abstract.coffee](./src/server/datasources/ds.abstract.coffee)
+* For the default implementation of the abstract class, see the `DefaultDatasource`: [\<gateway\>/src/server/datasources/ds.default.coffee](./src/server/datasources/ds.default.coffee)
+
+You can import these classes from the gateway package as follows:
+```javascript
+const gateway = require('irc-gateway');
+
+// The abstract class - only required for very custom implementations
+const AbstractDatasource = gateway.AbstractDatasource;
+
+// The default class - use this to override
+const DefaultDatasource = gateway.DefaultDatasource;
+```
+
+In almost all cases it is sufficient to use the `DefaultDatasource` as a basis and override only the methods specific to your game.
+
+If you do so, you usually only have to overwrite the methods located in the following sections of the `DefaultDatasource`:
+
+* Client identity
+* Game-specific queries
+
+The `DefaultDatasource` only contains example implementations for these methods.
+It's very unlikely they will match your game's specific database.
+
+**Note:**<br/>
+The `DefaultDatasource` expects a database scheme as defined by the package's migration script.
+If you modify the tables, you also need to overwrite the corresponding methods of the datasource.
+See [Default database scheme](#default-database-scheme) for details.
+
+
+Database handler class
+----------------------
+
+The database handler is used to abstract a concrete database system like MySQL, PostgreSQL, MongoDB, etc.
+
+The `DefaultDatasource` uses the `MysqlDatabaseHandler` by default to acess a MySQL database.
+
+You can create your own database handler by inheriting from `AbstractDatabaseHandler` or an existing implementation of it.
+
+* For the methods to implement, see `AbstractDatabaseHandler`: [\<gateway\>/src/server/databasehandlers/dbh.abstract.coffee](./src/server/databasehandlers/dbh.abstract.coffee)
+* For a concrete implementation, see the `MysqlDatabaseHandler`: [\<gateway\>/src/server/databasehandlers/dbh.mysql.coffee](./src/server/databasehandlers/dbh.mysql.coffee)
+
+You can import these classes from the gateway package as follows:
+```javascript
+const gateway = require('irc-gateway');
+
+// The abstract class - use this to implement a new database system
+const AbstractDatabaseHandler = gateway.AbstractDatabaseHandler;
+
+// The MySQL class - use this for small customizations with MySQL database
+const MysqlDatabaseHandler = gateway.MysqlDatabaseHandler;
+```
+
+Of course, depending on the database you use, the `Datasource` methods must be modified to comply with concrete SQL dialects or the query API.
+For example, NoSQL systems require a completely different kind of queries, lacking the use of SQL at all...
+
+
+Example datasource and database handler
+---------------------------------------
+
+The following example shows the principle to use the datasource and database handler classes.
+(Note that the shown customizations are pretty useless, they are for demonstration purposes only.)
+
+```javascript
+const gateway = require('irc-gateway');
+
+const MysqlDatabaseHandler = gateway.MysqlDatabaseHandler;
+const DefaultDatasource = gateway.DefaultDatasource;
+
+// Custom database handler
+class VerboseMysqlDatabaseHandler extends MysqlDatabaseHandler {
+
+    // Extend the sending of any query with a logging mechanism
+    sendQuery(sqlQuery) {
+        @log.debug('SQL:', sqlQuery);
+        return super(sqlQuery);
+    }
+}
+
+// Custom datasource
+class MyCustomDatasource extends DefaultDatasource {
+
+    // Use the custom handler
+    _createHandler(config) {
+        return new VerboseMysqlDatabaseHandler(config);
+    }
+
+    // Overwrite the default shortening routine
+    _getShortenedGameTitle(fullGameTitle) {
+        return String(fullGameTitle).replace('world', 'w.');
+    }
+}
+```
+
+
+Default database scheme
+-----------------------
+
+The package provides a simple SQL migration script, which sets up the tables required for the chat system itself:
+
+[\<gateway\>/setup_migration.sql](./setup_migration.sql)
+
+It provides the following essential tables (named by the corresponding config setting):
+
+* Channel list: &nbsp; "`chat - channels`"
+* Channel joinings: &nbsp; "`chat - channeljoins`"
+* Channel logs: &nbsp; "`chat - channellogs`"
+
+Just switch over to your database system and import/execute the script.
+
+The script is designed for a MySQL database and matches the methods of the `DefaultDatasource`.
+You may modify it for your own requirements. Just don't forget to modify the datasource class, too.
+
+If you rename the tables, you only need to change the corresponding config settings (See `SQL_TABLES`).
+
+
+
 Configuration
 =============
 
@@ -109,7 +255,7 @@ The configuration is a simple JSON-like object containing key-value pairs.
 
 Have a look on the default configuration, to see all possible settings and corresponding descriptions:
 
-[\<package installation directory\>/src/server/config.default.coffee](./src/server/config.default.coffee)
+[\<gateway\>/src/server/config.default.coffee](./src/server/config.default.coffee)
 
 Note that the file is written in CoffeeScript and therefor lacks the use of commas.
 
@@ -129,7 +275,7 @@ Example config
 
 There is an example config file that is used for the demo server:
 
-[\<package&nbsp;installation directory\>/sample/custom_config.js](./sample/custom_config.js)
+[\<gateway\>/sample/custom_config.js](./sample/custom_config.js)
 
 The following shows a more practical config:
 
@@ -170,14 +316,15 @@ The example above delivers the static files (html page, images, css, etc.) from 
 Note that the configuration of these webserver directories is completely optional.
 You can also set them to null and use your own webserver instead.
 
-In case you want to deliver the webclient script by your own webserver, simply copy the script from [\<package installation directory\>/dist/webclient.js](./dist/webclient.js) to the appropriate directory.
+In case you want to deliver the webclient script by your own webserver, simply copy the script from [\<gateway\>/dist/webclient.js](./dist/webclient.js) to the appropriate directory.
+
 
 
 Demo page
 =========
 
 The project contains a very simple demo `index.html` as also an example stylesheet.
-You can find it in the project's demo directory: [\<package installation directory\>/demo/](./demo/)
+You can find it in the project's demo directory: [\<gateway\>/demo/](./demo/)
 
 Before running anything, make sure you have set up the project by following the installation instructions.
 
@@ -204,7 +351,7 @@ Alternative server config
 Alternatively, you can use the sample server itself.
 Just switch to the package installation directory and modify the database settings in the sample config:
 
-[\<package installation directory\>/sample/custom_config.js](./sample/custom_config.js)
+[\<gateway\>/sample/custom_config.js](./sample/custom_config.js)
 
 Then run the sample server:
 
@@ -220,6 +367,7 @@ When the server is running, you can open your browser and load the page on local
 Browse following address: ``https://localhost:8050``
 
 (You have to use another port, if you overwrite the default port in the server's config file.)
+
 
 
 Special channels
@@ -246,6 +394,7 @@ This channel is not mirrored to IRC, but also hides the list of joined players.
 This allows players of a specific game to chat about things regarding only the context of their game and without a broadcast to public IRC.
 
 A player can leave the channel temporarily, but is re-joined on every reconnect to the chat.
+
 
 
 Bot modes

@@ -8,7 +8,7 @@
 -- ------------------------------------------------------------------------------------------------
 
 --
--- Scheme for table `chat - channels`
+-- Scheme for table of channel list
 --
 
 CREATE TABLE IF NOT EXISTS `chat - channels` (
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `chat - channels` (
 -- --------------------------------------------------------
 
 --
--- Scheme for table `chat - channeljoins`
+-- Scheme for table of channel joinings
 --
 
 CREATE TABLE IF NOT EXISTS `chat - channeljoins` (
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `chat - channeljoins` (
 -- --------------------------------------------------------
 
 --
--- Scheme for table `chat - channellogs`
+-- Scheme for table of channel logs
 --
 
 CREATE TABLE IF NOT EXISTS `chat - channellogs` (
