@@ -1,23 +1,38 @@
-"IRC Gateway" is a simple chat server based on Node.js and Socket.io with an example web UI.
+"IRC Gateway" is a simple chat server based on Node.js and Socket.io with a sample web interface.
 
-In general it is meant to be used for browser-based multiplayer web games with various game instances/servers/worlds/maps.
-But in specific, the project targets the german browsergame "Stars, Gates & Realities" (http://sg-realities.de), also called SGR.*
+In general, it is meant to be used for browser-based multiplayer web games with various game instances/servers/worlds/maps.
+The project was originally created for the browsergame "Stars, Gates & Realities" (http://sg-realities.de), also called SGR.
 
 For each game world a player can create and join multiple chat channels (chat rooms).
 Each channel saves all sent messages persintantly - at least a maximum number.
-By this, a player can read the channel history after joining. This allows groups of players to use own channels for time-displaced discussions in kind of a forum.
+This allows groups of players to use own channels for time-displaced discussions.
 
-But the core feature of the server is the IRC bridge:
-A channel can be mirrored to IRC by using an IRC bot.
-Players on ingame chat communicate through the bot to IRC.
-Users directly connected to the corresponding IRC channel do only see the bot and what he messages in role of a player in-game.
-And of course they can communicate with players in-game - the bot will also mirror IRC communication to the ingame chat.
+The core feature of the server is the IRC bridge:
+A channel can be mirrored to IRC via an IRC bot.
+Players on ingame chat communicate to IRC through the bot.
+Users directly connected to the corresponding IRC channel do only see the bot and its messages from players in the game.
+But they can communicate with players on the ingame chat - the bot also mirrors the IRC communication to the ingame chat.
 
 Therefor the chat server and its bot(s) are a kind of gateway between IRC and the in-game chat.
 
 
-(*) Note, that for developing purposes game worlds might be called "galaxies" inside the project, due to the terminology of SGR.
+Components and features
+=======================
 
+* Node server
+  * Web server based on Express and Socket.io
+  * Secure communication via HTTPS
+  * IRC bot(s) for bidirectional mirroring
+  * Replaceable database interface (MySQL used by default)
+  * Simple logging mechanism
+
+* Web client
+  * Small javascript lib
+  * Real-time chat via web sockets
+  * Layout based on HTML tab pages
+  * Server status tab
+  * Managing of custom channels/tabs
+  * Customizable design via CSS
 
 
 Installation
@@ -35,22 +50,6 @@ Installation
 * `$ npm install`
 
 
-Demo page
-=========
-
-The project contains a very simple `index.html` as demo page.
-
-Before running anything, make sure you have set up the project following the installation instructions.
-Then you have to start the chat server (including a web server):
-
-  ``$ node ./dist/server/main.js``
-
-Afterwards, you can open your browser and load the page on localhost. But note the server runs on SSL protocol.
-So based on the default settings in the server's config file, you have to browse following address:
-
-  ``https://localhost:8050``
-
-
 Changing config
 ===============
 
@@ -61,6 +60,55 @@ Changing config
  	``$ cake build``
 * Run server:
 	``$ node ./dist/server/main.js``
+
+
+Demo page
+=========
+
+The project contains a very simple `index.html` as demo page as also an example stylesheet.
+You can find it in the project's demo directory: [\<package installation directory\>/demo/](./demo/)
+
+Before running anything, make sure you have set up the project by following the installation instructions.
+
+
+Server config
+-------------
+
+Use following settings in the config:
+
+```javascript
+  WEB_SERVER_STATICS_DELIVERY_DIR: '<package_dir>/demo',  // Use demo index.html file
+  WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist',   // Default
+
+  SSL_CERT_PATH: '<package_dir>/sample/certs/server.crt', // Dummy ssl certificate
+  SSL_KEY_PATH: '<package_dir>/sample/certs/server.key',  // Dummy private key file
+```
+
+Then you have to start the chat server.
+
+
+Alternative server config
+-------------------------
+
+Alternatively, you can use the sample server itself.
+Just switch to the package installation directory and modify the database settings in the sample config:
+
+[\<package installation directory\>/sample/custom_config.js](./sample/custom_config.js)
+
+Then run the sample server:
+
+* ``$ cd <package installation directory>``
+* ``$ npm run demo``
+
+
+Open demo page
+--------------
+
+When the server is running, you can open your browser and load the page on localhost. But note the server runs on HTTPS protocol.
+
+Browse following address: ``https://localhost:8050``
+
+(You have to use another port, if you overwrite the default port in the server's config file.)
 
 
 Special channels
@@ -75,7 +123,7 @@ This channel is called the "global channel" or "community channel".
 The list of players currently connected to this channel is hidden to each other.
 This allows players to join the channel secretly and only chat if they want.
 
-A player can leave the channel temporary, but is re-joined on every reconnect to the chat.
+A player can leave the channel temporarily, but is re-joined on every reconnect to the chat.
 
 
 Public game channel
@@ -86,7 +134,7 @@ This channel is not mirrored to IRC, but also hides the list of joined players.
 
 This allows players of a specific game to chat about things regarding only the context of their game and without a broadcast to public IRC.
 
-A player can leave the channel temporary, but is re-joined on every reconnect to the chat.
+A player can leave the channel temporarily, but is re-joined on every reconnect to the chat.
 
 
 Bot modes
@@ -113,7 +161,8 @@ Game-specific bot
 -----------------
 
 For this mode, set configuration setting `MAX_BOTS` to 1 or more.
-Note that there are limits for connections to IRC - mostly this mode is only practical for up to ca. 5 game worlds.
+Note that most IRC networks limit the number of simultaneous connections to the IRC.
+Therefore, this mode is generally only useful for up to ca. 5 game worlds.
 
 The game-specific bot is created per game world.
 He will only represent players from its assigned game world.
@@ -123,4 +172,5 @@ Instead, the name of the bot should define the game world, so messages from play
 
 Also, the bot does represent a player on the ingame chat, if the channel is mirrored to IRC.
 By this, IRC channels are mirrored to ingame chat in exact same way as they occur on IRC.
+
 
