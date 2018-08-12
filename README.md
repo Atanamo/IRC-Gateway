@@ -16,6 +16,27 @@ But they can communicate with players on the ingame chat - the bot also mirrors 
 Therefor the chat server and its bot(s) are a kind of gateway between IRC and the in-game chat.
 
 
+Contents
+========
+
+- [Components and features](#components-and-features)
+- [Installation and setup](#installation-and-setup)
+  - [Limitation notice](#limitation-notice)
+- [Configuration](#configuration)
+  - [Minimum config](#minimum-config)
+  - [Example config](#example-config)
+- [Demo page](#demo-page)
+  - [Server config](#server-config)
+  - [Alternative server config](#alternative-server-config)
+  - [Open demo page](#open-demo-page)
+- [Special channels](#special-channels)
+  - [Global multi-game channel](#global-multi-game-channel)
+  - [Public game channel](#public-game-channel)
+- [Bot modes](#bot-modes)
+  - [Mono bot](#mono-bot)
+  - [Game-specific bot](#game-specific-bot)
+
+
 Components and features
 =======================
 
