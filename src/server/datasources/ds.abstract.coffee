@@ -5,8 +5,8 @@ Q = require 'q'
 ## Include app modules
 config = require '../config'
 
-## Include handler interface
-HandlerInterface = require '../databasehandlers/dbh.interface'
+## Include abstract handler
+AbstractDatabaseHandler = require '../databasehandlers/dbh.abstract'
 
 
 ## Abstraction of data managing methods:
@@ -24,8 +24,8 @@ class AbstractDatasource
     constructor: ->
         @handler = @_createHandler(config)
 
-        unless @handler instanceof HandlerInterface
-            console.error('Database handler must be an instance of class in file "db.interface"!')
+        unless @handler instanceof AbstractDatabaseHandler
+            console.error('Database handler must be an instance of the AbstractDatabaseHandler class in file "dbh.abstract"!')
 
     _createHandler: (config) ->
         console.error('Database method "_createHandler" not implemented!')

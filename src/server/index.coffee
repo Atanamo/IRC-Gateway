@@ -12,7 +12,7 @@ DefaultDatasource = require './datasources/ds.default'
 SgrDatasource = require './datasources/ds.sgr'
 
 # Include database handler classes
-DatabaseHandlerInterface = require './databasehandlers/dbh.interface'
+AbstractDatabaseHandler = require './databasehandlers/dbh.abstract'
 MysqlDatabaseHandler = require './databasehandlers/dbh.mysql'
 
 
@@ -50,7 +50,7 @@ module.exports = {
 
     setup: setupGateway
 
-    AbstractDatabaseHandler: DatabaseHandlerInterface
+    AbstractDatabaseHandler: AbstractDatabaseHandler
     MysqlDatabaseHandler: MysqlDatabaseHandler
 
     AbstractDatasource: AbstractDatasource

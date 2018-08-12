@@ -5,7 +5,7 @@ Q = require 'q'
 
 ## Interface of handlers interacting with databases
 ##
-class DatabaseHandlerInterface
+class AbstractDatabaseHandler
 
     constructor: (config, logger) ->
         return
@@ -39,5 +39,5 @@ class DatabaseHandlerInterface
 
 
 ## Export class
-module.exports = DatabaseHandlerInterface
+module.exports = AbstractDatabaseHandler
 

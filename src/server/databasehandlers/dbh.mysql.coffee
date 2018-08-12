@@ -6,13 +6,13 @@ mysql = require 'mysql'
 ## Include app logger
 appLogger = require '../logger'
 
-## Include handler interface
-HandlerInterface = require './dbh.interface'
+## Include abstract handler
+AbstractDatabaseHandler = require './dbh.abstract'
 
 
 ## Handler for interacting with MySQL databases
 ##
-class MysqlDatabaseHandler extends HandlerInterface
+class MysqlDatabaseHandler extends AbstractDatabaseHandler
     log: null
     config: null
     connection: null
