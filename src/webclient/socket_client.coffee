@@ -1,4 +1,7 @@
 
+Translation = require './translate_module'
+
+
 # Controller class to handle communication with server
 class SocketClient
 
@@ -255,7 +258,5 @@ class SocketClient
 
 
 
-# Register class in global namespace
-this.GatewayChat ?= {}
-this.GatewayChat.SocketClient = SocketClient
-
+## Export class
+module.exports = SocketClient

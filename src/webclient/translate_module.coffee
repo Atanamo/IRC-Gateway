@@ -177,11 +177,5 @@ class Translation
 
 
 
-# Setup the Translations
-Translation.setup()
-
-
-# Register class in global namespace
-this.GatewayChat ?= {}
-this.GatewayChat.Translation = Translation
-
+## Export class
+module.exports = Translation

@@ -1,4 +1,8 @@
 
+Translation = require './translate_module'
+SocketClient = require './socket_client'
+
+
 $.fn.show ?= (args...) ->
     @css('display', '')
 
@@ -669,7 +673,5 @@ class ChatController
 
 
 
-# Register class in global namespace
-this.GatewayChat ?= {}
-this.GatewayChat.ChatController = ChatController
-
+## Export class
+module.exports = ChatController

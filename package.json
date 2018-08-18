@@ -29,9 +29,10 @@
   },
   "main": "dist/server/index.js",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "npm run build & npm run clean-temps",
     "build": "./node_modules/.bin/cake build",
     "bundle-client": "./node_modules/.bin/cake build-webclient",
+    "clean-temps": "./node_modules/.bin/cake del-temp-files",
     "watch": "./node_modules/.bin/cake watch",
     "demo": "node ./sample/server.js"
   },
@@ -43,7 +44,8 @@
     "mysql": "~2.15.0"
   },
   "devDependencies": {
-    "coffeescript": "1.12.7"
+    "coffeescript": "1.12.7",
+    "browserify": "^16.0.0"
   },
   "bundleDependencies": []
 }
