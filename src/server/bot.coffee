@@ -404,7 +404,7 @@ class SchizoBot
         promise = @getConnectionPromise()
         promise = promise.then =>
             log.info "Joining bot '#{@nickName}' to channel #{ircChannelName} " +
-                     "(As master: #{isMasterBot}, password: #{(ircChannelPassword or '<none>')})..."
+                     "(As master: #{isMasterBot}, password: #{(ircChannelPassword or '<none>')})... "
 
             joinExpression = ircChannelName
             joinExpression += ' ' + ircChannelPassword if ircChannelPassword?

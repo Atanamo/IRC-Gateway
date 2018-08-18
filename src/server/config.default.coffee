@@ -86,15 +86,17 @@ module.exports = {
     # Set null to disable the feature.
     # Use <package_dir> as placeholder for the package root directory.
     # Use <working_dir> as placeholder for the process working directory (default).
+    # The files will be available by URL "https://<Server-IP>/<filename>".
     WEB_SERVER_STATICS_DELIVERY_DIR: '<working_dir>'
 
-    # The directory to use for fetching the chat's webclient files from.
-    # (Can be equal to WEB_SERVER_STATICS_DELIVERY_DIR.)
+    # The directory to use for fetching the chat's webclient files from
+    # (Can be equal to WEB_SERVER_STATICS_DELIVERY_DIR.).
     # Set null to disable the feature.
     # Use <package_dir> as placeholder for the package root directory.
     # Use <working_dir> as placeholder for the process working directory.
     # The webserver delivers following files located in the directory:
     # "/webclient.js", "/webclient/<any file>"
+    # They will likewise be available under URL "https://<Server-IP>/chat/".
     WEB_SERVER_CLIENT_DELIVERY_DIR: '<package_dir>/dist'
 
     # The ssl certificate to use for the https webserver.

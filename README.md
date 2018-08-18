@@ -20,7 +20,7 @@ Therefor the chat server and its bot(s) are a kind of gateway between IRC and th
 
 
 
-Contents
+Table of contents
 ========
 
 - [Components and features](#components-and-features)
