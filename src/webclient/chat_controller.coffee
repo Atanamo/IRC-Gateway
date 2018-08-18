@@ -1,6 +1,6 @@
 
 # Controller class to handle communication with server
-class this.ChatController
+class ChatController
     socketHandler: null
 
     serverIP: ''
@@ -80,6 +80,10 @@ class this.ChatController
         @ui = {}
         for name, selector of @gui
             @ui[name] = $(selector)
+
+            #nodeList = document.querySelectorAll(selector)
+            #@ui[name] = item for item in nodeList
+            #console.log 'UI ELEMENTS', nodeList
 
     _bindGuiEvents: ->
         for expr, handlerName of @events
@@ -385,7 +389,7 @@ class this.ChatController
                     noticeText = Translation.get("msg.user_left_channel.#{data.action}.reasonless", user: userName)
 
             when 'kick'
-                actorName = detailsData.actor 
+                actorName = detailsData.actor
                 actorName = "-#{Translation.get('info.unknown')}-" unless actorName?
                 reasonText = "-#{Translation.get('info.unknown')}-" unless reasonText?
                 noticeText = Translation.get('msg.user_kicked_from_channel', user: userName, actor: actorName, reason: reasonText)
@@ -654,3 +658,10 @@ class this.ChatController
     _getLocalizedDateTime: (timestamp) ->
         date = new Date(timestamp)
         return date.toLocaleString()
+
+
+
+# Register class in global namespace
+this.GatewayChat ?= {}
+this.GatewayChat.ChatController = ChatController
+

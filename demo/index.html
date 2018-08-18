@@ -10,12 +10,6 @@
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/chat/webclient.js"></script>
 
-    <!--
-    <script type="text/javascript" src="/chat/webclient/translate_module.js"></script>
-    <script type="text/javascript" src="/chat/webclient/socket_client.js"></script>
-    <script type="text/javascript" src="/chat/webclient/chat_controller.js"></script>
-    -->
-
 </head>
 
 <body id="chatsystem">
@@ -131,7 +125,7 @@
         };
 
         $(document).ready(function() {
-            chatController = new ChatController('https://localhost', 8050, instanceData, options);
+            chatController = new GatewayChat('https://localhost', 8050, instanceData, options);
             chatController.start();
         });
 

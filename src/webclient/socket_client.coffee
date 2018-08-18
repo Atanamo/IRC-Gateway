@@ -1,6 +1,6 @@
 
 # Controller class to handle communication with server
-class this.SocketClient
+class SocketClient
 
     chatController: null
     socket: null
@@ -196,7 +196,7 @@ class this.SocketClient
         @socket.emit 'delete#' + channel
 
     sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->
-        channelData = 
+        channelData =
             title: channelName or ''
             password: channelPassword or ''
             isPublic: isPublic or false
@@ -254,4 +254,8 @@ class this.SocketClient
         return ((addressText.match(searchRegex)?.length or 0) isnt 0)
 
 
+
+# Register class in global namespace
+this.GatewayChat ?= {}
+this.GatewayChat.SocketClient = SocketClient
 

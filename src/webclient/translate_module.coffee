@@ -1,5 +1,5 @@
 
-class this.Translation
+class Translation
 
     # English translated texts
     TEXTS_EN = {
@@ -176,5 +176,12 @@ class this.Translation
             localTexts = TEXTS_EN
 
 
+
 # Setup the Translations
 Translation.setup()
+
+
+# Register class in global namespace
+this.GatewayChat ?= {}
+this.GatewayChat.Translation = Translation
+
