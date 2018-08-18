@@ -29,10 +29,10 @@
   },
   "main": "dist/server/index.js",
   "scripts": {
-    "prepublish": "npm run build & npm run bundle-client",
+    "prepublish": "npm run build",
     "build": "./node_modules/.bin/cake build",
+    "bundle-client": "./node_modules/.bin/cake build-webclient",
     "watch": "./node_modules/.bin/cake watch",
-    "bundle-client": "./node_modules/.bin/cake bundle-client",
     "demo": "node ./sample/server.js"
   },
   "dependencies": {
