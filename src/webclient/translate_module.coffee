@@ -139,12 +139,12 @@ class Translation
     localTexts = TEXTS_EN
 
     # Helper textarea, to decode html entities to result text
-    converterTextArea = $('<textarea/>')
+    converterTextArea = document.createElement('textarea')
 
     # Returns the plaintext output for the given text, having all html entities to be resolved to real characters
     @_toDecoded: (textWithEscapes) ->
-        converterTextArea.html(textWithEscapes)  # Write/fill as html
-        return converterTextArea.val()           # Read as value - this is the browser interpreted result of the html
+        converterTextArea.innerHTML = textWithEscapes  # Write/fill as html
+        return converterTextArea.value  # Read as value - this is the browser interpreted result of the html
 
     # Returns the translations for a text with given key and replaces placeholders by given data
     @get: (key, data) ->
