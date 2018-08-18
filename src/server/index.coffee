@@ -9,7 +9,6 @@ dataloader = require './datasources/loader'
 # Include datasource classes
 AbstractDatasource = require './datasources/ds.abstract'
 DefaultDatasource = require './datasources/ds.default'
-SgrDatasource = require './datasources/ds.sgr'
 
 # Include database handler classes
 AbstractDatabaseHandler = require './databasehandlers/dbh.abstract'
@@ -55,6 +54,5 @@ module.exports = {
 
     AbstractDatasource: AbstractDatasource
     DefaultDatasource: DefaultDatasource
-    SgrDatasource: SgrDatasource
 
 }
