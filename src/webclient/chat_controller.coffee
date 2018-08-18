@@ -1,4 +1,12 @@
 
+$.fn.show ?= (args...) ->
+    @css('display', '')
+
+$.fn.hide ?= (args...) ->
+    @css('display', 'none')
+
+
+
 # Controller class to handle communication with server
 class ChatController
     socketHandler: null
@@ -171,7 +179,7 @@ class ChatController
         @activeTabPage.show()
 
         # Focus input field
-        @activeTabPage.find(@gui.chatInput).focus()
+        @activeTabPage.find(@gui.chatInput)[0]?.focus()
 
         # Reset marker for unread messages
         @_resetNewEntryMarkOfTab(@activeTabPage)
@@ -565,7 +573,7 @@ class ChatController
         messagesElem = tabPage.find(@gui.tabPagesMessages)
 
         # Find entries before history marker
-        entriesElems = messagesElem.find('> *')
+        entriesElems = messagesElem.children()
         entriesElems = entriesElems.not('li[data-item="marker"] ~li').not('[data-item="marker"]')
 
         # Remove entries from DOM
@@ -649,7 +657,7 @@ class ChatController
     _scrollToBottomOfTab: (tabPage) ->
         pageElem = tabPage.find(@gui.tabPagesMessagesPage)
         scrollOffset = pageElem.prop('scrollHeight')
-        pageElem.scrollTop(scrollOffset)
+        pageElem[0]?.scrollTop = scrollOffset
 
     _getLocalizedTime: (timestamp) ->
         date = new Date(timestamp)
