@@ -126,9 +126,9 @@ class ChatController
 
     _translateMultilangContents: ($elem) ->
         $elem.find('*[data-content]').each (idx, element) =>
-            textElem = $(element)
-            translatedText = Translation.get(textElem.data('content'))
-            textElem.text(translatedText) if translatedText
+            $textElem = $(element)
+            translatedText = Translation.get($textElem.data('content'))
+            $textElem.text(translatedText) if translatedText
         return $elem
 
 
@@ -179,8 +179,8 @@ class ChatController
             @socketHandler.sendMessage(channel, messageText)
 
     _handleGuiTabClick: (event) =>
-        tabHeader = $(event.currentTarget)
-        tabID = tabHeader.data('id')
+        $tabHeader = $(event.currentTarget)
+        tabID = $tabHeader.data('id')
 
         # Hide last active tab
         @activeTabPage.hide()
@@ -190,7 +190,7 @@ class ChatController
 
         # Highlight tab header
         @ui.tabsystemHeaders.removeClass('active')
-        tabHeader.addClass('active')
+        $tabHeader.addClass('active')
 
         # Show new active tab
         @activeTabPage.show()
@@ -213,37 +213,37 @@ class ChatController
     #
 
     isHistoryReceivingChannel: (channel) ->
-        tabPage = @_getChannelTabPage(channel)
-        return @_isHistoryReceivingTab(tabPage)
+        $tabPage = @_getChannelTabPage(channel)
+        return @_isHistoryReceivingTab($tabPage)
 
     handleServerDisconnect: ->
         # Inform all channel tabs and clear user lists
         informText = Translation.get('msg.server_connection_lost')
         @ui.tabPagesOfChannels.each (idx, domNode) =>
-            tabPage = $(domNode)
-            @_appendNoticeToTab(tabPage, null, 'error', informText)
-            @_clearUserListOfTab(tabPage)
-            @_addNewEntryMarkToTab(tabPage, {force: true}, informText) if idx is 0
+            $tabPage = $(domNode)
+            @_appendNoticeToTab($tabPage, null, 'error', informText)
+            @_clearUserListOfTab($tabPage)
+            @_addNewEntryMarkToTab($tabPage, {force: true}, informText) if idx is 0
 
     handleServerMessage: (msg, isError=false) ->
         messageType = 'log'
         messageType = 'error' if isError
-        tabPage = @ui.tabPageServer
-        @_appendNoticeToTab(tabPage, null, messageType, msg)
-        @_addNewEntryMarkToTab(tabPage)
+        $tabPage = @ui.tabPageServer
+        @_appendNoticeToTab($tabPage, null, messageType, msg)
+        @_addNewEntryMarkToTab($tabPage)
 
     handleChannelMessage: (channel, timestamp, data) ->
-        tabPage = @_getChannelTabPage(channel)
-        @_appendMessageToTab(tabPage, timestamp, data)
-        @_addNewEntryMarkToTab(tabPage, data, data.text)
+        $tabPage = @_getChannelTabPage(channel)
+        @_appendMessageToTab($tabPage, timestamp, data)
+        @_addNewEntryMarkToTab($tabPage, data, data.text)
 
     handleChannelNotice: (channel, timestamp, data) ->
-        tabPage = @_getChannelTabPage(channel)
-        @_appendNoticeToTab(tabPage, timestamp, 'notice', data.text, isSentByUser: true)
-        @_addNewEntryMarkToTab(tabPage, data, data.text)
+        $tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab($tabPage, timestamp, 'notice', data.text, isSentByUser: true)
+        @_addNewEntryMarkToTab($tabPage, data, data.text)
 
     handleChannelHistoryMark: (channel, timestamp, data) ->
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
         startTime = @_getLocalizedDateTime(data.start)
         endTime = @_getLocalizedDateTime(data.end)
 
@@ -252,67 +252,65 @@ class ChatController
         else
             infoText = Translation.get('info.end_of_chat_history', start: startTime, end: endTime)
 
-        tabPage.toggleClass('receiving-history', data.isStart)     # Set class while adding history entries
-        @_appendHistoryMarkerToTab(tabPage, timestamp, infoText)
-        @_movePreHistoryEntriesOfTab(tabPage) unless data.isStart  # Move entries sent before history to position after history
+        $tabPage.toggleClass('receiving-history', data.isStart)     # Set class while adding history entries
+        @_appendHistoryMarkerToTab($tabPage, timestamp, infoText)
+        @_movePreHistoryEntriesOfTab($tabPage) unless data.isStart  # Move entries sent before history to position after history
 
     handleChannelJoined: (channel, timestamp, data) ->
         tabID = @_getChannelTabID(channel)
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
         channelTitle = data?.title or channel
         ircChannelName = data.ircChannelName or null
         isGlobalChannel = data.isGlobal or false
-        isNewTab = (tabPage?.length is 0)
+        isNewTab = ($tabPage?.length is 0)
 
         if isNewTab
             # Build tab header
-            tabHeaderTitle = $("<span/>")
-            tabHeaderTitle.addClass('title')
-            tabHeaderTitle.text(channelTitle)
-            tabHeader = $("<li/>")
-            tabHeader.attr('data-id', tabID)
-            tabHeader.attr('title', channelTitle)
-            tabHeader.append(tabHeaderTitle)
+            $tabHeaderTitle = $("<span/>")
+            $tabHeaderTitle.addClass('title')
+            $tabHeaderTitle.text(channelTitle)
+            $tabHeader = $("<li/>")
+            $tabHeader.attr('data-id', tabID)
+            $tabHeader.attr('title', channelTitle)
+            $tabHeader.append($tabHeaderTitle)
 
             # Build tab body
-            #tabSkeleton = @ui.tabPageSkeleton.clone()
-
             tabTemplate = TAB_PAGE
-            tabSkeleton = $(tabTemplate)
-            tabSkeleton = @_translateMultilangContents(tabSkeleton)
-            tabSkeleton.attr('id', tabID)
-            tabSkeleton.attr('data-channel', channel)
-            tabSkeleton.attr('data-global', isGlobalChannel) if isGlobalChannel
+            $tabSkeleton = $(tabTemplate)
+            $tabSkeleton = @_translateMultilangContents($tabSkeleton)
+            $tabSkeleton.attr('id', tabID)
+            $tabSkeleton.attr('data-channel', channel)
+            $tabSkeleton.attr('data-global', isGlobalChannel) if isGlobalChannel
 
             # Add tab to DOM
-            @ui.tabsystemViewport.append(tabSkeleton)
-            @ui.tabsystemHeaderList.append(tabHeader)
+            @ui.tabsystemViewport.append($tabSkeleton)
+            @ui.tabsystemHeaderList.append($tabHeader)
             @_updateGuiBindings()
 
             # Get new tab
-            tabPage = @_getChannelTabPage(channel)
-            tabPage.hide()
+            $tabPage = @_getChannelTabPage(channel)
+            $tabPage.hide()
 
             # Hide non-default boxes
-            tabPage.find(@gui.tabPagesUsersNumberBox).hide()
-            tabPage.find(@gui.tabPagesChannelNameBox).hide()
-            tabPage.find(@gui.tabPagesUsersIngame).hide()
+            $tabPage.find(@gui.tabPagesUsersNumberBox).hide()
+            $tabPage.find(@gui.tabPagesChannelNameBox).hide()
+            $tabPage.find(@gui.tabPagesUsersIngame).hide()
 
             # Remove invalid buttons
             unless data.isCustom
-                tabPage.find(@gui.channelLeaveButton).remove()
+                $tabPage.find(@gui.channelLeaveButton).remove()
             if data.creatorID is @instanceData?.userID
-                tabPage.find(@gui.channelLeaveButton).remove()
+                $tabPage.find(@gui.channelLeaveButton).remove()
             else
-                tabPage.find(@gui.channelDeleteButton).remove()
+                $tabPage.find(@gui.channelDeleteButton).remove()
 
         # Print join message to new tab and server tab
         noticeText = Translation.get('msg.channel_joined', channel: channelTitle)
-        @_appendNoticeToTab(tabPage, timestamp, 'initial_join', noticeText)
+        @_appendNoticeToTab($tabPage, timestamp, 'initial_join', noticeText)
         @handleServerMessage(noticeText)
 
         # Set IRC channel name
-        @_setIrcChannelNameToTab(tabPage, ircChannelName) if ircChannelName?
+        @_setIrcChannelNameToTab($tabPage, ircChannelName) if ircChannelName?
 
         # Reset the form for channel creation/joining
         @ui.channelCreateForm[0]?.reset?()
@@ -345,12 +343,12 @@ class ChatController
         @handleServerMessage(noticeText)
 
     handleChannelError: (channel, timestamp, errorMsg) ->
-        tabPage = @_getChannelTabPage(channel)
-        @_appendNoticeToTab(tabPage, timestamp, 'error', errorMsg)
-        @_addNewEntryMarkToTab(tabPage)
+        $tabPage = @_getChannelTabPage(channel)
+        @_appendNoticeToTab($tabPage, timestamp, 'error', errorMsg)
+        @_addNewEntryMarkToTab($tabPage)
 
     handleChannelUserList: (channel, clientList) ->
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
 
         # Sort users by name
         sortedClientList = clientList.sort (firstData, secondData) ->
@@ -358,48 +356,48 @@ class ChatController
             return 1
 
         # Add user list(s) to GUI list
-        @_clearUserListOfTab(tabPage)
+        @_clearUserListOfTab($tabPage)
         clientsNumber = 0
         for identityData in sortedClientList
-            @_appendUserEntryToTab(tabPage, identityData.name, identityData.title, identityData.isIrcClient)
+            @_appendUserEntryToTab($tabPage, identityData.name, identityData.title, identityData.isIrcClient)
             clientsNumber++ unless identityData.isIrcClient
 
         # Show list and number of players, if joined players are not hidden (number not zero)
         if clientsNumber isnt 0
-            tabPage.find(@gui.tabPagesUsersIngame).show()
-            tabPage.find(@gui.tabPagesUsersIngame).removeClass('secret')
-            @_setUserNumberToTab(tabPage, clientsNumber)
+            $tabPage.find(@gui.tabPagesUsersIngame).show()
+            $tabPage.find(@gui.tabPagesUsersIngame).removeClass('secret')
+            @_setUserNumberToTab($tabPage, clientsNumber)
         else
-            tabPage.find(@gui.tabPagesUsersIngame).addClass('secret')
+            $tabPage.find(@gui.tabPagesUsersIngame).addClass('secret')
 
     handleChannelUserNumber: (channel, clientsNumber) ->
-        tabPage = @_getChannelTabPage(channel)
-        @_setUserNumberToTab(tabPage, clientsNumber)
+        $tabPage = @_getChannelTabPage(channel)
+        @_setUserNumberToTab($tabPage, clientsNumber)
 
 
     handleChannelTopic: (channel, timestamp, {topic, author, isFromIrc, isInitial}) ->
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
 
         if isInitial
             noticeText = Translation.get('msg.initial_channel_topic', topic: topic)
-            @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
+            @_appendNoticeToTab($tabPage, timestamp, 'topic', noticeText)
         else
             if author?
-                author = @_getUserLabeledForIRC(tabPage, author, isFromIrc)
+                author = @_getUserLabeledForIRC($tabPage, author, isFromIrc)
                 noticeText = Translation.get('msg.new_channel_topic.authored', topic: topic, author: author)
             else
                 noticeText = Translation.get('msg.new_channel_topic.authorless', topic: topic)
 
-            @_appendNoticeToTab(tabPage, timestamp, 'topic', noticeText)
+            @_appendNoticeToTab($tabPage, timestamp, 'topic', noticeText)
 
-        @_addNewEntryMarkToTab(tabPage)
+        @_addNewEntryMarkToTab($tabPage)
 
     handleChannelUserChange: (channel, timestamp, data) ->
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
 
         noticeText = ''
         detailsData = data.details or {}
-        userName = @_getUserLabeledForIRC(tabPage, data.user, data.isFromIrc)
+        userName = @_getUserLabeledForIRC($tabPage, data.user, data.isFromIrc)
         reasonText = detailsData.reason
 
         switch data.action
@@ -431,21 +429,21 @@ class ChatController
                 userName = "-#{Translation.get('info.unknown')}-" unless userName?
                 noticeText = Translation.get('msg.user_list_changed', user: userName)
 
-        @_appendNoticeToTab(tabPage, timestamp, 'user_change', noticeText, data)
-        @_addNewEntryMarkToTab(tabPage, data, noticeText)
+        @_appendNoticeToTab($tabPage, timestamp, 'user_change', noticeText, data)
+        @_addNewEntryMarkToTab($tabPage, data, noticeText)
 
     handleChannelModeChange: (channel, timestamp, {actor, isFromIrc, mode, enabled, argument}) ->
-        tabPage = @_getChannelTabPage(channel)
+        $tabPage = @_getChannelTabPage(channel)
 
         actor = "-#{Translation.get('info.unknown')}-" unless actor?
-        actor = @_getUserLabeledForIRC(tabPage, actor, isFromIrc)
+        actor = @_getUserLabeledForIRC($tabPage, actor, isFromIrc)
 
         modeText = if enabled then "+#{mode}" else "-#{mode}"
         modeEvent = if argument? then "#{modeText} #{argument}" else modeText
         noticeText = Translation.get('msg.actor_changed_a_mode', actor: actor, mode_event: modeEvent)
 
-        @_appendNoticeToTab(tabPage, timestamp, 'mode_change', noticeText)
-        @_addNewEntryMarkToTab(tabPage)
+        @_appendNoticeToTab($tabPage, timestamp, 'mode_change', noticeText)
+        @_addNewEntryMarkToTab($tabPage)
 
 
     #
@@ -471,39 +469,39 @@ class ChatController
     _getTabPage: (tabID) ->
         return $('#' + tabID)
 
-    _setUserNumberToTab: (tabPage, userNumber) ->
-        tabPage.find(@gui.tabPagesUsersNumberBox).show()
-        tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
+    _setUserNumberToTab: ($tabPage, userNumber) ->
+        $tabPage.find(@gui.tabPagesUsersNumberBox).show()
+        $tabPage.find(@gui.tabPagesUsersNumberValue).html(userNumber)
 
-    _setIrcChannelNameToTab: (tabPage, ircChannelName) ->
-        tabPage.find(@gui.tabPagesChannelNameBox).show()
-        tabPage.find(@gui.tabPagesChannelNameValue).html(ircChannelName)
+    _setIrcChannelNameToTab: ($tabPage, ircChannelName) ->
+        $tabPage.find(@gui.tabPagesChannelNameBox).show()
+        $tabPage.find(@gui.tabPagesChannelNameValue).html(ircChannelName)
 
-    _clearUserListOfTab: (tabPage) ->
-        tabPage.find(@gui.tabPagesUsersIngame).empty()
-        tabPage.find(@gui.tabPagesUsersIrc).empty()
+    _clearUserListOfTab: ($tabPage) ->
+        $tabPage.find(@gui.tabPagesUsersIngame).empty()
+        $tabPage.find(@gui.tabPagesUsersIrc).empty()
 
-    _appendUserEntryToTab: (tabPage, shortName, fullName, isIrcUser) ->
+    _appendUserEntryToTab: ($tabPage, shortName, fullName, isIrcUser) ->
         # Build new list item
-        itemElem = $('<li/>')
-        itemElem.attr('title', fullName)
-        itemElem.text(shortName)
+        $itemElem = $('<li/>')
+        $itemElem.attr('title', fullName)
+        $itemElem.text(shortName)
 
         # Append item to list
         if isIrcUser
-            messagesElem = tabPage.find(@gui.tabPagesUsersIrc)
+            $messagesElem = $tabPage.find(@gui.tabPagesUsersIrc)
         else
-            messagesElem = tabPage.find(@gui.tabPagesUsersIngame)
-        messagesElem.append(itemElem)
+            $messagesElem = $tabPage.find(@gui.tabPagesUsersIngame)
+        $messagesElem.append($itemElem)
 
-    _appendMessageToTab: (tabPage, timestamp, {text, gameID, gameTag, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn, isFromIrc}) ->
+    _appendMessageToTab: ($tabPage, timestamp, {text, gameID, gameTag, sender, inlineAuthor, isOwn, isMentioningOwn, isAddressingOwn, isFromIrc}) ->
         # May append sender name by a tag
         if isFromIrc
             # Append irc tag, but only if not a game bot
-            sender = @_getUserLabeledForIRC(tabPage, sender, not gameID)
+            sender = @_getUserLabeledForIRC($tabPage, sender, not gameID)
         else
             # On global channel (multi-game channel): Append game tag to name of ingame-sender
-            isGlobalChannel = (tabPage.get?(0) is @ui.tabPageGlobalChannel.get?(0))
+            isGlobalChannel = ($tabPage.get?(0) is @ui.tabPageGlobalChannel.get?(0))
             if isGlobalChannel and gameTag
                 sender = @_getUserLabeled(sender, gameTag)
 
@@ -512,7 +510,7 @@ class ChatController
 
         if isOwn
             styleClasses += ' own'
-            tabPage.find(@gui.chatInput).val('')
+            $tabPage.find(@gui.chatInput).val('')
         else
             styleClasses += ' external'
 
@@ -527,86 +525,86 @@ class ChatController
             mainAuthor: sender
             inlineAuthor: inlineAuthor
 
-        @_appendEntryToTab(tabPage, timestamp, 'message', text, options)
-        @_scrollToBottomOfTab(tabPage)
+        @_appendEntryToTab($tabPage, timestamp, 'message', text, options)
+        @_scrollToBottomOfTab($tabPage)
 
-    _appendNoticeToTab: (tabPage, timestamp, noticeType, noticeText, {isOwn, isSentByUser}={}) ->
-        noticeText = "** #{noticeText}" unless tabPage.get?(0) is @ui.tabPageServer.get?(0)  # Prefix notices except for server tab
+    _appendNoticeToTab: ($tabPage, timestamp, noticeType, noticeText, {isOwn, isSentByUser}={}) ->
+        noticeText = "** #{noticeText}" unless $tabPage.get?(0) is @ui.tabPageServer.get?(0)  # Prefix notices except for server tab
         timestamp = (new Date()).getTime() unless timestamp?
         styleClasses = 'notice'
         styleClasses += ' own' if isOwn
         styleClasses += ' fromUser' if isSentByUser
         styleClasses += ' error' if noticeType is 'error'
 
-        @_appendEntryToTab(tabPage, timestamp, 'server', noticeText, styleClasses: styleClasses)
-        @_scrollToBottomOfTab(tabPage)
+        @_appendEntryToTab($tabPage, timestamp, 'server', noticeText, styleClasses: styleClasses)
+        @_scrollToBottomOfTab($tabPage)
 
-    _appendHistoryMarkerToTab: (tabPage, timestamp, markerNoticeText) ->
+    _appendHistoryMarkerToTab: ($tabPage, timestamp, markerNoticeText) ->
         markerText = "----- #{markerNoticeText} -----"
-        @_appendEntryToTab(tabPage, null, 'marker', markerText, styleClasses: 'marker')
-        @_scrollToBottomOfTab(tabPage)
+        @_appendEntryToTab($tabPage, null, 'marker', markerText, styleClasses: 'marker')
+        @_scrollToBottomOfTab($tabPage)
 
-    _appendEntryToTab: (tabPage, entryTimestamp, entryType, entryText, options) ->
+    _appendEntryToTab: ($tabPage, entryTimestamp, entryType, entryText, options) ->
         # Regard line-breaks in text (e.g. because of command-responses of mono-bot)
         textLines = String(entryText).replace('\r', '').split('\n')
 
         # Build new list item
-        itemElem = $('<li/>')
-        itemElem.attr('data-item', entryType)
-        itemElem.addClass(options.styleClasses)
-        itemElem.addClass('historical') if entryType isnt 'marker' and @_isHistoryReceivingTab(tabPage)
+        $itemElem = $('<li/>')
+        $itemElem.attr('data-item', entryType)
+        $itemElem.addClass(options.styleClasses)
+        $itemElem.addClass('historical') if entryType isnt 'marker' and @_isHistoryReceivingTab($tabPage)
 
         if entryTimestamp?
-            spanElem = $('<span/>').addClass('time')
-            spanElem.text("[#{@_getLocalizedTime(entryTimestamp)}]")
-            spanElem.attr('title', @_getLocalizedDateTime(entryTimestamp))
-            itemElem.append(spanElem)
-            itemElem.append(' ')
+            $spanElem = $('<span/>').addClass('time')
+            $spanElem.text("[#{@_getLocalizedTime(entryTimestamp)}]")
+            $spanElem.attr('title', @_getLocalizedDateTime(entryTimestamp))
+            $itemElem.append($spanElem)
+            $itemElem.append(' ')
 
         if options.mainAuthor?
-            spanElem = $('<span/>').addClass('name')
-            spanElem.text(options.mainAuthor)
-            itemElem.append(spanElem)
+            $spanElem = $('<span/>').addClass('name')
+            $spanElem.text(options.mainAuthor)
+            $itemElem.append($spanElem)
 
             if options.inlineAuthor?
-                inlineSpanElem = $('<span/>').addClass('virtualName')
-                inlineSpanElem.text("<#{options.inlineAuthor}>")
-                spanElem.append(' ')
-                spanElem.append(inlineSpanElem)
+                $inlineSpanElem = $('<span/>').addClass('virtualName')
+                $inlineSpanElem.text("<#{options.inlineAuthor}>")
+                $spanElem.append(' ')
+                $spanElem.append($inlineSpanElem)
 
-            spanElem.append(': ')
+            $spanElem.append(': ')
 
-        contentElem = $('<span/>').addClass('content')
+        $contentElem = $('<span/>').addClass('content')
         if textLines.length > 1
             textLines.forEach (line) ->
                 lineElem = $('<div/>').addClass('line')
                 lineElem.text(line)
-                contentElem.append(lineElem)
+                $contentElem.append(lineElem)
         else
-            contentElem.text(textLines[0])
-        itemElem.append(contentElem)
+            $contentElem.text(textLines[0])
+        $itemElem.append($contentElem)
 
         # Append item to list
-        messagesElem = tabPage.find(@gui.tabPagesMessages)
-        messagesElem.append(itemElem)
+        $messagesElem = $tabPage.find(@gui.tabPagesMessages)
+        $messagesElem.append($itemElem)
 
-    _movePreHistoryEntriesOfTab: (tabPage) ->
-        messagesElem = tabPage.find(@gui.tabPagesMessages)
+    _movePreHistoryEntriesOfTab: ($tabPage) ->
+        $messagesElem = $tabPage.find(@gui.tabPagesMessages)
 
         # Find entries before history marker
-        entriesElems = messagesElem.children()
-        entriesElems = entriesElems.not('li[data-item="marker"] ~li').not('[data-item="marker"]')
+        $entriesElems = $messagesElem.children()
+        $entriesElems = $entriesElems.not('li[data-item="marker"] ~li').not('[data-item="marker"]')
 
         # Remove entries from DOM
-        entriesElems.remove()
+        $entriesElems.remove()
 
         # Append entries to end of messages list
-        messagesElem.append(entriesElems)
+        $messagesElem.append($entriesElems)
 
 
-    _addNewEntryMarkToTab: (tabPage, notifyData={}, notifyText=null) ->
-        tabID = tabPage.attr('id')
-        isReceivingHistory = @_isHistoryReceivingTab(tabPage)
+    _addNewEntryMarkToTab: ($tabPage, notifyData={}, notifyText=null) ->
+        tabID = $tabPage.attr('id')
+        isReceivingHistory = @_isHistoryReceivingTab($tabPage)
 
         # Ignore historical messages
         return if isReceivingHistory
@@ -614,38 +612,37 @@ class ChatController
         # Mark tab for new message
         if document.hidden or not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')
             # Add/increment marker for unread messages
-            tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
-            spanElem = tabHeader.find(@gui.unreadTabMarker)
+            $tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+            $spanElem = $tabHeader.find(@gui.unreadTabMarker)
 
-            if spanElem.length is 0
-                spanElem = $('<span/>').addClass(@gui.unreadTabMarker.replace(/\./g, ''))
-                tabHeader.append(spanElem)
+            if $spanElem.length is 0
+                $spanElem = $('<span/>').addClass(@gui.unreadTabMarker.replace(/\./g, ''))
+                $tabHeader.append($spanElem)
 
-            lastText = spanElem.text()
+            lastText = $spanElem.text()
             lastCount = lastText.replace(/[^0-9]/g, '')
             lastCount++
-            spanElem.text(lastCount)
+            $spanElem.text(lastCount)
 
             # Add markers for mentioning and addressing
             if notifyData.force or notifyData.isMentioningOwn
-                tabHeader.addClass(@gui.mentionTabMarker.replace(/\./g, ''))
+                $tabHeader.addClass(@gui.mentionTabMarker.replace(/\./g, ''))
             if notifyData.isAddressingOwn
-                tabHeader.addClass(@gui.addressTabMarker.replace(/\./g, ''))
+                $tabHeader.addClass(@gui.addressTabMarker.replace(/\./g, ''))
 
         # May signalize message in window title
         @_checkForSignalizingMessageToWindow(notifyData, notifyText)
 
-    _resetNewEntryMarkOfTab: (tabPage) ->
-        tabID = tabPage.attr('id')
-        tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+    _resetNewEntryMarkOfTab: ($tabPage) ->
+        tabID = $tabPage.attr('id')
+        $tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
 
         # Remove unread marker
-        spanElem = tabHeader.find(@gui.unreadTabMarker)
-        spanElem.remove()
+        $tabHeader.find(@gui.unreadTabMarker).remove()
 
         # Remove mention markers
-        tabHeader.removeClass(@gui.mentionTabMarker.replace(/\./g, ''))
-        tabHeader.removeClass(@gui.addressTabMarker.replace(/\./g, ''))
+        $tabHeader.removeClass(@gui.mentionTabMarker.replace(/\./g, ''))
+        $tabHeader.removeClass(@gui.addressTabMarker.replace(/\./g, ''))
 
     _checkForSignalizingMessageToWindow: (notifyData={}, notifyText='') ->
         return unless @isSignalizingMessagesToWindow
@@ -654,13 +651,13 @@ class ChatController
 
         # Calculate sum of unread messages
         unreadMessagesCount = 0
-        markerElems = @ui.tabsystemHeaderList.find(@gui.unreadTabMarker)
-        markerElems.each (idx, item) ->
+        $markerElems = @ui.tabsystemHeaderList.find(@gui.unreadTabMarker)
+        $markerElems.each (idx, item) ->
             unreadMessagesCount += +($(item).text().replace(/[^0-9]/g, ''))
 
         # Set window title
-        addressMarksExists = @ui.tabsystemHeaderList.find(@gui.addressTabMarker).length > 0
-        addressMark = if notifyData.isAddressingOwn or addressMarksExists then '*' else ''
+        $addressMarksExists = @ui.tabsystemHeaderList.find(@gui.addressTabMarker).length > 0
+        addressMark = if notifyData.isAddressingOwn or $addressMarksExists then '*' else ''
         @windowTitleOverwrite = "[#{addressMark}#{unreadMessagesCount}#{addressMark}] #{@windowTitleBackup}"
         top.document.title = @windowTitleOverwrite
 
@@ -672,13 +669,13 @@ class ChatController
             clearInterval(@windowSignalTimer) if @windowSignalTimer?
             @windowSignalTimer = setInterval(blinkFunc, 800)
 
-    _isHistoryReceivingTab: (tabPage) ->
-        return tabPage.hasClass('receiving-history')
+    _isHistoryReceivingTab: ($tabPage) ->
+        return $tabPage.hasClass('receiving-history')
 
-    _scrollToBottomOfTab: (tabPage) ->
-        pageElem = tabPage.find(@gui.tabPagesMessagesPage)
-        scrollOffset = pageElem.prop('scrollHeight')
-        pageElem[0]?.scrollTop = scrollOffset
+    _scrollToBottomOfTab: ($tabPage) ->
+        $pageElem = $tabPage.find(@gui.tabPagesMessagesPage)
+        scrollOffset = $pageElem.prop('scrollHeight')
+        $pageElem[0]?.scrollTop = scrollOffset
 
     _getLocalizedTime: (timestamp) ->
         date = new Date(timestamp)
