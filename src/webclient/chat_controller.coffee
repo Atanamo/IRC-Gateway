@@ -70,7 +70,7 @@ class ChatController
         @_updateGuiBindings()
         @$activeTabPage = @ui.tabPageServer
         @tabClickCallback = options.tabClickCallback
-        @isSignalizingMessagesToWindow = options.signalizeMessagesToWindow
+        @isSignalizingMessagesToWindow = !!options.signalizeMessagesToWindow
 
         @windowTitleBackup = top.document.title
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
@@ -78,6 +78,7 @@ class ChatController
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
         @socketHandler.start()
+        return
 
     # Sets a flag to inform the tab system, that its content is currently (not) visible because of environment constraints.
     # This info is used to show or reset markers for unread messages.
@@ -85,6 +86,7 @@ class ChatController
         return if @isInVisibleContext is isVisible
         @isInVisibleContext = isVisible
         @_resetNewEntryMarkOfTab(@$activeTabPage) if isVisible  # Reset marker for unread messages
+        return
 
     _customize_selector_lib: ->
         $.fn.show ?= (args...) ->
@@ -209,7 +211,7 @@ class ChatController
         @_scrollToBottomOfTab(@$activeTabPage)
 
         # Invoke callback, if existing
-        @tabClickCallback?(@$activeTabPage)
+        @tabClickCallback?(@$activeTabPage?[0])
 
 
     #

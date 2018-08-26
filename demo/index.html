@@ -21,22 +21,22 @@
 
 
     <script type="text/javascript">
-        var chatController, instanceData, options;
+        var chatController, authData, options;
 
-        instanceData = {
             userID: 42,     // The id of the player's account or game identity/character - to be passed to Datasource.getClientIdentityData()
             gameID: 123,    // The id of the player's game world - to be passed to Datasource.getClientIdentityData()
+        authData = {
             token: 'z4da9'  // SecurityToken equal to the result of Datasource._getSecurityToken()
         };
 
         options = {
             parentElement: '#chatsystem',
             signalizeMessagesToWindow: true,
-            tabClickCallback: function(clickedTab) { console.log("Selected tab " + clickedTab.attr('id')); }
+            tabClickCallback: function(clickedTab) { console.log("Selected tab:", clickedTab.getAttribute('data-id')); }
         };
 
         document.addEventListener('DOMContentLoaded', function() {
-            chatController = new GatewayChat('https://localhost', 8050, instanceData, options);
+            chatController = new GatewayChat('https://localhost', 8050, authData, options);
             chatController.start();
         });
 

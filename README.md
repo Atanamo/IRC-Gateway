@@ -34,6 +34,9 @@ Table of contents
 - [Configuration](#configuration)
   - [Minimum config](#minimum-config)
   - [Example config](#example-config)
+- [Webclient API](#webclient-api)
+  - [Client initialization](#client-initialization)
+  - [Client methods](#client-methods)
 - [Demo page](#demo-page)
   - [Server config](#server-config)
   - [Alternative server config](#alternative-server-config)
@@ -103,6 +106,26 @@ Installation and setup
 * Set up the html page for your chat client.
 
   See the demo page for this: [\<gateway\>/demo/index.html](./demo/index.html)
+
+  The following is the basic set-up:
+
+  ```html
+  <script type="text/javascript" src="/chat/webclient.js"></script>
+
+  <script type="text/javascript">
+      const authData = {
+          userID: 42,
+          gameID: 123
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+          const chat = new GatewayChat('https://localhost', 8050, authData);
+          chat.start();
+      });
+  </script>
+  ```
+
+  For options see section "[Webclient API](#webclient-api)".
 
 
 Limitation notice
@@ -321,6 +344,73 @@ Note that the configuration of these webserver directories is completely optiona
 You can also set them to null and use your own webserver instead.
 
 In case you want to deliver the webclient script by your own webserver, simply copy the script from [\<gateway\>/dist/webclient.js](./dist/webclient.js) to the appropriate directory.
+
+
+
+Webclient API
+=============
+
+The most easy way to include the webclient is via a script tag in your web page:
+```html
+<script type="text/javascript" src="/chat/webclient.js"></script>
+```
+It will provide the global class `GatewayChat` via the `window` object.
+
+Alternatively, the client supports to be bundled by Browserify or Webpack as common-js module.
+```javascript
+const GatewayChat = require('node_modules/irc-gateway/dist/webclient.js');
+```
+
+
+Client initialization
+---------------------
+
+The client is fully represented by the `GatewayChat` class.
+It allows following arguments on instantiation (in specified order):
+
+* `serverIP [string]`:
+  The URL of the irc-gateway server, without port.
+
+* `serverPort [int]`:
+  The port the irc-gateway server runs on. Set in the server config.
+
+* `authData [object]`:
+  An object containing the authentication data for the client and user.
+  It expects following properties:
+
+  * `userID`: The id of the player's account or game identity/character.
+  * `gameID`: The id of the player's game world.
+  * `token`: [Optional] The server's security token, if enabled. See `AUTH_ENABLED` and `CLIENT_AUTH_SECRET` in server config and `getClientIdentityData` of the `Datasource`.
+
+* `options [object]`:
+  An optional object containing settings for the webclient UI.
+  Following properties can be passed as settings:
+
+  * `parentElement [string|Node]`:
+    Selector string or DOM node of the element the webclient should be appended to.
+    The selector string supports jQuery syntax. Defaults to body tag.
+  * `signalizeMessagesToWindow [bool]`:
+    Flag to signalize unread messages on the web page.
+    If enabled, new messages will cause the page's title to be prepended with the number of unread messages.
+    The title may also "blink" with certain notification on some chat events.
+  * `tabClickCallback [function]`:
+    A function to be called each time a tab of the chat UI was clicked/selected.
+    The selected tab page is passed to the callback as a DOM node.
+
+
+Client methods
+--------------
+
+* **`start(): void`**
+
+    Establishes the web socket connection to the server, tries to authenticate the client on server
+    and starts up the chat.
+
+* **`setTabContentVisibilityInfo(isVisible): void`**
+
+    Sets a boolean flag to inform the webclient whether or not its content is currently visible because of environment constraints.
+    This flag forces to show or reset markers for unread messages on the tabs of the chat client, independently of the focus of the web page and the selected tab.
+    The method can be useful if the webclient UI is forced to a minimum height, for example.
 
 
 
