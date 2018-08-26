@@ -355,6 +355,8 @@ The most easy way to include the webclient is via a script tag in your web page:
 <script type="text/javascript" src="/chat/webclient.js"></script>
 ```
 It will provide the global class `GatewayChat` via the `window` object.
+The script is served by the gateway's integrated webserver here (see `WEB_SERVER_CLIENT_DELIVERY_DIR` in server config).
+You may copy the script from the package to your own webserver.
 
 Alternatively, the client supports to be bundled by Browserify or Webpack as common-js module.
 ```javascript
