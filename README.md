@@ -125,13 +125,13 @@ Installation and setup
   </script>
   ```
 
-  For options see section "[Webclient API](#webclient-api)".
+  For options and further details, see section "[Webclient API](#webclient-api)".
 
 
 Limitation notice
 -----------------
 
-The `setup` function sets up the first instance created as singleton.
+The server's `setup` function sets up the first instance created as singleton.
 
 It's not possible to create multiple instances of a gateway within a single application, even if using different configurations or datasources.
 Also, the configuration or datasource cannot be changed, once the instance is created.
