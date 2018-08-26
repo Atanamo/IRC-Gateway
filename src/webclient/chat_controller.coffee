@@ -25,7 +25,6 @@ class ChatController
     $activeTabPage: null
 
     gui:
-        multilangContents: '*[data-content]'
         channelCreateForm: '#channelCreateForm'
         channelNameInput: '#channelNameInput'
         channelPasswordInput: '#channelPasswordInput'
@@ -49,7 +48,7 @@ class ChatController
         tabPagesChannelNameValue: '.chatChannelName .value'
         tabPagesOfChannels: '.tabsystemViewport > div[data-channel]'
         tabPageGlobalChannel: '.tabsystemViewport > div[data-global]'
-        tabPageServer: '#tabPageServer'
+        tabPageServer: '.tabsystemViewport [data-id=tabPageServer]'
         unreadTabMarker: '.newEntriesCounter'
         mentionTabMarker: '.mentioned'
         addressTabMarker: '.addressed'
@@ -185,7 +184,7 @@ class ChatController
 
     _handleGuiTabClick: (event) =>
         $tabHeader = $(event.currentTarget)
-        tabID = $tabHeader.data('id')
+        tabID = $tabHeader.data('tab')
 
         # Hide last active tab
         @$activeTabPage.hide()
@@ -275,7 +274,7 @@ class ChatController
             $tabHeaderTitle.addClass('title')
             $tabHeaderTitle.text(channelTitle)
             $tabHeader = $("<li/>")
-            $tabHeader.attr('data-id', tabID)
+            $tabHeader.attr('data-tab', tabID)
             $tabHeader.attr('title', channelTitle)
             $tabHeader.append($tabHeaderTitle)
 
@@ -283,7 +282,7 @@ class ChatController
             tabTemplate = TAB_PAGE
             $tabSkeleton = $(tabTemplate)
             $tabSkeleton = @_translateMultilangContents($tabSkeleton)
-            $tabSkeleton.attr('id', tabID)
+            $tabSkeleton.attr('data-id', tabID)
             $tabSkeleton.attr('data-channel', channel)
             $tabSkeleton.attr('data-global', isGlobalChannel) if isGlobalChannel
 
@@ -327,8 +326,8 @@ class ChatController
         channelTitle = title or channel
 
         # Remove tab from DOM
-        @ui.tabsystemViewport.find("##{tabID}").remove()
-        @ui.tabsystemHeaderList.find("[data-id=#{tabID}]").remove()
+        @ui.tabsystemViewport.find("[data-id=#{tabID}]").remove()
+        @ui.tabsystemHeaderList.find("[data-tab=#{tabID}]").remove()
         @_updateGuiBindings()
 
         # Show server tab
@@ -472,7 +471,7 @@ class ChatController
         return @_getTabPage(tabID)
 
     _getTabPage: (tabID) ->
-        return $('#' + tabID)
+        return @ui.tabsystemViewport.find("[data-id=#{tabID}]")
 
     _setUserNumberToTab: ($tabPage, userNumber) ->
         $tabPage.find(@gui.tabPagesUsersNumberBox).show()
@@ -608,16 +607,16 @@ class ChatController
 
 
     _addNewEntryMarkToTab: ($tabPage, notifyData={}, notifyText=null) ->
-        tabID = $tabPage.attr('id')
+        tabID = $tabPage.attr('data-id')
         isReceivingHistory = @_isHistoryReceivingTab($tabPage)
 
         # Ignore historical messages
         return if isReceivingHistory
 
         # Mark tab for new message
-        if document.hidden or not @isInVisibleContext or tabID isnt @$activeTabPage.attr('id')
+        if document.hidden or not @isInVisibleContext or tabID isnt @$activeTabPage.attr('data-id')
             # Add/increment marker for unread messages
-            $tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+            $tabHeader = @ui.tabsystemHeaderList.find("[data-tab=#{tabID}]")
             $spanElem = $tabHeader.find(@gui.unreadTabMarker)
 
             if $spanElem.length is 0
@@ -639,8 +638,8 @@ class ChatController
         @_checkForSignalizingMessageToWindow(notifyData, notifyText)
 
     _resetNewEntryMarkOfTab: ($tabPage) ->
-        tabID = $tabPage.attr('id')
-        $tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
+        tabID = $tabPage.attr('data-id')
+        $tabHeader = @ui.tabsystemHeaderList.find("[data-tab=#{tabID}]")
 
         # Remove unread marker
         $tabHeader.find(@gui.unreadTabMarker).remove()

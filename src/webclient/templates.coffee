@@ -2,12 +2,12 @@
 TAB_SYSTEM = '
     <div class="tabsystem">
         <ul class="tabsystemHeaders">
-            <li data-id="tabPageServer" title="Server" class="active">
+            <li data-tab="tabPageServer" title="Server" class="active">
                 <span data-content="label.server_tab" class="title">Server<span>
             </li>
         </ul>
         <div class="tabsystemViewport">
-            <div id="tabPageServer" class="tabPage">
+            <div data-id="tabPageServer" class="tabPage">
                 <div class="chatOutputContainer">
                     <div class="chatMessagesContainer">
                         <ul class="chatMessages">
