@@ -1,13 +1,8 @@
 
+{ $ } = require './cash'
+
 Translation = require './translate_module'
 SocketClient = require './socket_client'
-
-
-$.fn.show ?= (args...) ->
-    @css('display', '')
-
-$.fn.hide ?= (args...) ->
-    @css('display', 'none')
 
 
 
@@ -67,6 +62,8 @@ class ChatController
 
 
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
+        @_customize_selector_lib()
+
         @_updateGuiBindings()
         @activeTabPage = @ui.tabPageServer
         @tabClickCallback = options.tabClickCallback
@@ -88,14 +85,17 @@ class ChatController
         @isInVisibleContext = isVisible
         @_resetNewEntryMarkOfTab(@activeTabPage) if isVisible  # Reset marker for unread messages
 
+    _customize_selector_lib: ->
+        $.fn.show ?= (args...) ->
+            @css('display', '')
+
+        $.fn.hide ?= (args...) ->
+            @css('display', 'none')
+
     _bindGuiElements: ->
         @ui = {}
         for name, selector of @gui
             @ui[name] = $(selector)
-
-            #nodeList = document.querySelectorAll(selector)
-            #@ui[name] = item for item in nodeList
-            #console.log 'UI ELEMENTS', nodeList
 
     _bindGuiEvents: ->
         for expr, handlerName of @events
