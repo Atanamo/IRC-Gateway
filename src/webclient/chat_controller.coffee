@@ -22,6 +22,8 @@ class ChatController
     isInVisibleContext: true
     isSignalizingMessagesToWindow: false
 
+    $root: null
+
     gui:
         multilangContents: '*[data-content]'
         channelCreateForm: '#channelCreateForm'
@@ -34,8 +36,8 @@ class ChatController
         channelDeleteButton: '.channelDeleteButton'
         chatForm: '.chatForm'
         chatInput: '.chatForm .chatInput'
-        tabsystemViewport: '#tabsystem .tabsystemViewport'
-        tabsystemHeaderList: '#tabsystem .tabsystemHeaders'
+        tabsystemViewport: '.tabsystemViewport'
+        tabsystemHeaderList: '.tabsystemHeaders'
         tabsystemHeaders: '.tabsystemHeaders li'
         tabPagesMessagesPage: '.chatMessagesContainer'
         tabPagesMessages: '.chatMessages'
@@ -45,8 +47,8 @@ class ChatController
         tabPagesUsersNumberValue: '.chatUsersCount .value'
         tabPagesChannelNameBox: '.chatChannelName'
         tabPagesChannelNameValue: '.chatChannelName .value'
-        tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
-        tabPageGlobalChannel: '#tabsystem .tabsystemViewport > div[data-global]'
+        tabPagesOfChannels: '.tabsystemViewport > div[data-channel]'
+        tabPageGlobalChannel: '.tabsystemViewport > div[data-global]'
         tabPageServer: '#tabPageServer'
         unreadTabMarker: '.newEntriesCounter'
         mentionTabMarker: '.mentioned'
@@ -101,13 +103,16 @@ class ChatController
             $systemNode = @_translateMultilangContents($systemNode)
 
             $parent.append($systemNode)
+
+            @$root = $systemNode
         else
             console.error('Could not find parent element for chat client UI! Given selector:', parentSelector)
+            @$root = $parent
 
     _bindGuiElements: ->
         @ui = {}
         for name, selector of @gui
-            @ui[name] = $(selector)
+            @ui[name] = @$root.find(selector)
 
     _bindGuiEvents: ->
         for expr, handlerName of @events

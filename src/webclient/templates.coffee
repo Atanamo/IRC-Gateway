@@ -1,7 +1,6 @@
 
-
 TAB_SYSTEM = '
-    <div id="tabsystem">
+    <div class="tabsystem">
         <ul class="tabsystemHeaders">
             <li data-id="tabPageServer" title="Server" class="active">
                 <span data-content="label.server_tab" class="title">Server<span>
