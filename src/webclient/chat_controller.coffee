@@ -25,11 +25,11 @@ class ChatController
     $activeTabPage: null
 
     gui:
-        channelCreateForm: '#channelCreateForm'
-        channelNameInput: '#channelNameInput'
-        channelPasswordInput: '#channelPasswordInput'
-        channelFlagPublic: '#channelFlagPublic'
-        channelFlagIRC: '#channelFlagIRC'
+        channelCreateForm: '.channelCreateForm'
+        channelNameInput: '.channelCreateForm .channelNameInput'
+        channelPasswordInput: '.channelCreateForm .channelPasswordInput'
+        channelFlagPublic: '.channelCreateForm .channelFlagPublic'
+        channelFlagIRC: '.channelCreateForm .channelFlagIRC'
         channelCloseButton: '.channelCloseButton'
         channelLeaveButton: '.channelLeaveButton'
         channelDeleteButton: '.channelDeleteButton'

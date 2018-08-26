@@ -166,7 +166,7 @@ form {
     min-width: 130px;
 }
 
-.formSection .inputContainer label:first-child:after {
+.formSection .inputContainer.field label:after {
     content: ':';
 }
 

@@ -16,31 +16,31 @@ TAB_SYSTEM = '
                     </div>
                 </div>
                 <div class="chatFormContainer">
-                    <form id="channelCreateForm" action="#">
+                    <form class="channelCreateForm" action="#">
                         <div class="formSection">
                             <h2 class="sectionHeader" data-content="label.channel_join_options"></h2>
-                            <div class="inputContainer">
-                                <label for="channelNameInput" data-content="label.channel_name">Channel name</label>
-                                <input type="text" id="channelNameInput" required maxlength="30">
+                            <div class="inputContainer field">
+                                <label for="ircGatewayUI_channelNameInput" data-content="label.channel_name">Channel name</label>
+                                <input type="text" id="ircGatewayUI_channelNameInput" class="channelNameInput" required maxlength="30">
                             </div>
-                            <div class="inputContainer">
-                                <label for="channelPasswordInput" data-content="label.channel_password">Channel password</label>
-                                <input type="text" id="channelPasswordInput" maxlength="20">
+                            <div class="inputContainer field">
+                                <label for="ircGatewayUI_channelPasswordInput" data-content="label.channel_password">Channel password</label>
+                                <input type="text" id="ircGatewayUI_channelPasswordInput" class="channelPasswordInput" maxlength="20">
                             </div>
                         </div>
                         <div class="formSection">
                             <h2 class="sectionHeader" data-content="label.channel_creation_options"></h2>
-                            <div class="inputContainer">
-                                <input type="checkbox" id="channelFlagPublic">
-                                <label for="channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
+                            <div class="inputContainer option">
+                                <input type="checkbox" id="ircGatewayUI_channelFlagPublic" class="channelFlagPublic">
+                                <label for="ircGatewayUI_channelFlagPublic" data-content="label.channel_flag_public">Hide joined users</label>
                             </div>
-                            <div class="inputContainer">
-                                <input type="checkbox" id="channelFlagIRC">
-                                <label for="channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
+                            <div class="inputContainer option">
+                                <input type="checkbox" id="ircGatewayUI_channelFlagIRC" class="channelFlagIRC">
+                                <label for="ircGatewayUI_channelFlagIRC" data-content="label.channel_flag_irc">Mirror channel to IRC</label>
                             </div>
                         </div>
                         <div class="formSection">
-                            <input type="submit" id="channelCreateSubmitButton">
+                            <input type="submit" class="channelCreateSubmitButton">
                         </div>
                         <div class="formSection">
                         </div>
@@ -61,14 +61,14 @@ TAB_PAGE = '
             </div>
             <div class="chatUsersContainer">
                 <div class="chatUsersCount">
-                    <span class="title" data-content="label.current_number_of_players"></span>
+                    <span class="title" data-content="label.current_number_of_players">Players</span>
                     <span class="value"></span>
                 </div>
                 <ul class="chatUsers players">
 
                 </ul>
                 <div class="chatChannelName">
-                    <span class="title" data-content="label.irc_channel_name"></span>
+                    <span class="title" data-content="label.irc_channel_name">Name</span>
                     <span class="value"></span>
                 </div>
                 <ul class="chatUsers irc">
