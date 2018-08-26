@@ -14,7 +14,6 @@ class ChatController
     serverIP: ''
     serverPort: 0
     instanceData: {}
-    activeTabPage: null
     windowSignalTimer: null
     windowTitleBackup: ''
     windowTitleOverwrite: ''
@@ -23,6 +22,7 @@ class ChatController
     isSignalizingMessagesToWindow: false
 
     $root: null
+    $activeTabPage: null
 
     gui:
         multilangContents: '*[data-content]'
@@ -69,7 +69,7 @@ class ChatController
         @_setupDOM(options.parentElement or 'body')
 
         @_updateGuiBindings()
-        @activeTabPage = @ui.tabPageServer
+        @$activeTabPage = @ui.tabPageServer
         @tabClickCallback = options.tabClickCallback
         @isSignalizingMessagesToWindow = options.signalizeMessagesToWindow
 
@@ -85,7 +85,7 @@ class ChatController
     setTabContentVisibilityInfo: (isVisible) ->
         return if @isInVisibleContext is isVisible
         @isInVisibleContext = isVisible
-        @_resetNewEntryMarkOfTab(@activeTabPage) if isVisible  # Reset marker for unread messages
+        @_resetNewEntryMarkOfTab(@$activeTabPage) if isVisible  # Reset marker for unread messages
 
     _customize_selector_lib: ->
         $.fn.show ?= (args...) ->
@@ -116,14 +116,14 @@ class ChatController
 
     _bindGuiEvents: ->
         for expr, handlerName of @events
-            [elemName, eventName] = expr.split(" ")
-            elem = @ui[elemName]
+            [elemName, eventName] = expr.split(' ')
+            $elem = @ui[elemName]
             handler = @[handlerName]
 
-            if elem? and handler?
+            if $elem? and handler?
                 handler.bind(this)
-                elem.off(eventName, handler)
-                elem.on(eventName, handler)
+                $elem.off(eventName, handler)
+                $elem.on(eventName, handler)
 
     _updateGuiBindings: ->
         @_bindGuiElements()
@@ -144,7 +144,7 @@ class ChatController
     _handleWindowVisibilityChange: ->
         clearInterval(@windowSignalTimer) if @windowSignalTimer?
         top.document.title = @windowTitleBackup  # Reset window title
-        @_resetNewEntryMarkOfTab(@activeTabPage)  # Reset marker for unread messages
+        @_resetNewEntryMarkOfTab(@$activeTabPage)  # Reset marker for unread messages
 
     _handleGuiChannelCreateSubmit: (event) =>
         event.preventDefault()
@@ -159,27 +159,27 @@ class ChatController
 
     _handleGuiChannelClose: (event) =>
         event.preventDefault()
-        channel = @activeTabPage?.data('channel') or ''
+        channel = @$activeTabPage?.data('channel') or ''
         @socketHandler.sendChannelLeaveRequest(channel, true)
 
     _handleGuiChannelLeave: (event) =>
         event.preventDefault()
-        channel = @activeTabPage?.data('channel') or ''
+        channel = @$activeTabPage?.data('channel') or ''
 
         if confirm(Translation.get('confirm_dialog.leave_channel'))
             @socketHandler.sendChannelLeaveRequest(channel, false)
 
     _handleGuiChannelDelete: (event) =>
         event.preventDefault()
-        channel = @activeTabPage?.data('channel') or ''
+        channel = @$activeTabPage?.data('channel') or ''
 
         if confirm(Translation.get('confirm_dialog.delete_channel'))
             @socketHandler.sendChannelDeleteRequest(channel)
 
     _handleGuiMessageSubmit: (event) =>
         event.preventDefault()
-        channel = @activeTabPage?.data('channel') or ''
-        messageText = @activeTabPage?.find(@gui.chatInput).val().trim()
+        channel = @$activeTabPage?.data('channel') or ''
+        messageText = @$activeTabPage?.find(@gui.chatInput).val().trim()
         if messageText isnt '' and channel isnt ''
             @socketHandler.sendMessage(channel, messageText)
 
@@ -188,29 +188,29 @@ class ChatController
         tabID = $tabHeader.data('id')
 
         # Hide last active tab
-        @activeTabPage.hide()
+        @$activeTabPage.hide()
 
         # Remember active tab
-        @activeTabPage = @_getTabPage(tabID)
+        @$activeTabPage = @_getTabPage(tabID)
 
         # Highlight tab header
         @ui.tabsystemHeaders.removeClass('active')
         $tabHeader.addClass('active')
 
         # Show new active tab
-        @activeTabPage.show()
+        @$activeTabPage.show()
 
         # Focus input field
-        @activeTabPage.find(@gui.chatInput)[0]?.focus()
+        @$activeTabPage.find(@gui.chatInput)[0]?.focus()
 
         # Reset marker for unread messages
-        @_resetNewEntryMarkOfTab(@activeTabPage)
+        @_resetNewEntryMarkOfTab(@$activeTabPage)
 
         # Scroll to bottom (Hidden tabs cannot be scrolled)
-        @_scrollToBottomOfTab(@activeTabPage)
+        @_scrollToBottomOfTab(@$activeTabPage)
 
         # Invoke callback, if existing
-        @tabClickCallback?(@activeTabPage)
+        @tabClickCallback?(@$activeTabPage)
 
 
     #
@@ -615,7 +615,7 @@ class ChatController
         return if isReceivingHistory
 
         # Mark tab for new message
-        if document.hidden or not @isInVisibleContext or tabID isnt @activeTabPage.attr('id')
+        if document.hidden or not @isInVisibleContext or tabID isnt @$activeTabPage.attr('id')
             # Add/increment marker for unread messages
             $tabHeader = @ui.tabsystemHeaderList.find("[data-id=#{tabID}]")
             $spanElem = $tabHeader.find(@gui.unreadTabMarker)
