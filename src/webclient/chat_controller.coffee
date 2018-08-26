@@ -76,6 +76,7 @@ class ChatController
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
 
     start: ->
+        return if @socketHandler?
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
         @socketHandler.start()
         return
