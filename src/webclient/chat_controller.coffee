@@ -4,6 +4,7 @@
 Translation = require './translate_module'
 SocketClient = require './socket_client'
 
+{ TAB_SYSTEM, TAB_PAGE } = require './templates'
 
 
 # Controller class to handle communication with server
@@ -47,7 +48,6 @@ class ChatController
         tabPagesOfChannels: '#tabsystem .tabsystemViewport > div[data-channel]'
         tabPageGlobalChannel: '#tabsystem .tabsystemViewport > div[data-global]'
         tabPageServer: '#tabPageServer'
-        tabPageSkeleton: '#tabPageSkeleton'
         unreadTabMarker: '.newEntriesCounter'
         mentionTabMarker: '.mentioned'
         addressTabMarker: '.addressed'
@@ -64,6 +64,8 @@ class ChatController
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
         @_customize_selector_lib()
 
+        @_setupDOM(options.parentElement or 'body')
+
         @_updateGuiBindings()
         @activeTabPage = @ui.tabPageServer
         @tabClickCallback = options.tabClickCallback
@@ -71,8 +73,6 @@ class ChatController
 
         @windowTitleBackup = top.document.title
         document.addEventListener('visibilitychange', => @_handleWindowVisibilityChange())
-
-        @_translateMultilangContents()
 
     start: ->
         @socketHandler = new SocketClient(this, @serverIP, @serverPort, @instanceData)
@@ -91,6 +91,18 @@ class ChatController
 
         $.fn.hide ?= (args...) ->
             @css('display', 'none')
+
+    _setupDOM: (parentSelector) ->
+        $parent = $(parentSelector)
+
+        if $parent.length > 0
+            systemTemplate = TAB_SYSTEM
+            $systemNode = $(systemTemplate)
+            $systemNode = @_translateMultilangContents($systemNode)
+
+            $parent.append($systemNode)
+        else
+            console.error('Could not find parent element for chat client UI! Given selector:', parentSelector)
 
     _bindGuiElements: ->
         @ui = {}
@@ -112,11 +124,12 @@ class ChatController
         @_bindGuiElements()
         @_bindGuiEvents()
 
-    _translateMultilangContents: ->
-        @ui.multilangContents.each (idx, element) =>
+    _translateMultilangContents: ($elem) ->
+        $elem.find('*[data-content]').each (idx, element) =>
             textElem = $(element)
             translatedText = Translation.get(textElem.data('content'))
             textElem.text(translatedText) if translatedText
+        return $elem
 
 
     #
@@ -262,7 +275,11 @@ class ChatController
             tabHeader.append(tabHeaderTitle)
 
             # Build tab body
-            tabSkeleton = @ui.tabPageSkeleton.clone()
+            #tabSkeleton = @ui.tabPageSkeleton.clone()
+
+            tabTemplate = TAB_PAGE
+            tabSkeleton = $(tabTemplate)
+            tabSkeleton = @_translateMultilangContents(tabSkeleton)
             tabSkeleton.attr('id', tabID)
             tabSkeleton.attr('data-channel', channel)
             tabSkeleton.attr('data-global', isGlobalChannel) if isGlobalChannel
