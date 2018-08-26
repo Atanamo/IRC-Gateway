@@ -73,7 +73,8 @@ task 'bundle-webclient', 'Bundle compiled sources of webclient', ->
     # Bundle via browserify
     bundler = browserify CLIENT_BUNDLE_MAIN,
         standalone: 'GatewayChat'  # Name of global main class in window object
-
+    bundler.transform 'uglifyify',
+        global: true
     bundler = bundler.bundle (error, result) ->
         throw error if error?
     bundler.pipe(outFileStream)

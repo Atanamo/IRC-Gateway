@@ -46,6 +46,7 @@
   "devDependencies": {
     "coffeescript": "1.12.7",
     "browserify": "^16.0.0",
+    "uglifyify": "^5.0.1",
     "cash-dom": "^2.3.3"
   },
   "bundleDependencies": []
