@@ -1,4 +1,6 @@
 
+socketio = require 'socket.io-client'
+
 Translation = require './translate_module'
 
 
@@ -20,7 +22,7 @@ class SocketClient
     start: ->
         console.debug "Connecting to: #{@serverIP}:#{@serverPort}"
 
-        @socket = io.connect("#{@serverIP}:#{@serverPort}", reconnectionDelay: 5000)
+        @socket = socketio.connect("#{@serverIP}:#{@serverPort}", reconnectionDelay: 5000)
 
         @socket.on 'connect', @_handleServerConnect         # Build-in event
         @socket.on 'connect_error', @_handleServerConnectError      # Build-in event
