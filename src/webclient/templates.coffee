@@ -7,7 +7,7 @@ TAB_SYSTEM = '
             </li>
         </ul>
         <div class="tabsystemViewport">
-            <div data-id="tabPageServer" class="tabPage">
+            <div data-id="tabPageServer" class="tabPage server">
                 <div class="chatOutputContainer">
                     <div class="chatMessagesContainer">
                         <ul class="chatMessages">

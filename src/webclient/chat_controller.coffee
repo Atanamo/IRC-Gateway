@@ -48,7 +48,7 @@ class ChatController
         tabPagesChannelNameValue: '.chatChannelName .value'
         tabPagesOfChannels: '.tabsystemViewport > div[data-channel]'
         tabPageGlobalChannel: '.tabsystemViewport > div[data-global]'
-        tabPageServer: '.tabsystemViewport [data-id=tabPageServer]'
+        tabPageServer: '.tabsystemViewport > .tabPage.server'
         unreadTabMarker: '.newEntriesCounter'
         mentionTabMarker: '.mentioned'
         addressTabMarker: '.addressed'
