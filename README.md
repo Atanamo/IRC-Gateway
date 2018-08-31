@@ -391,6 +391,9 @@ It allows following arguments on instantiation (in specified order):
   * `parentElement [string|Node]`:
     Selector string or DOM node of the element the webclient should be appended to.
     The selector string supports jQuery syntax. Defaults to body tag.
+  * `styleClass [string]`:
+    A CSS class to set on the main node of the webclient (the node is always a child of `parentElement`).
+    Defaults to `"tabsystem"`.
   * `signalizeMessagesToWindow [bool]`:
     Flag to signalize unread messages on the web page.
     If enabled, new messages will cause the page's title to be prepended with the number of unread messages.

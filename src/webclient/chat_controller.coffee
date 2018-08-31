@@ -65,7 +65,7 @@ class ChatController
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
         @_customize_selector_lib()
 
-        @_setupDOM(options.parentElement or 'body')
+        @_setupDOM(options.parentElement or 'body', options.styleClass or 'tabsystem')
 
         @_updateGuiBindings()
         @$activeTabPage = @ui.tabPageServer
@@ -97,12 +97,14 @@ class ChatController
             @css('display', 'none')
 
     _setupDOM: (parentSelector) ->
+    _setupDOM: (parentSelector, tabsystemStyleClass) ->
         $parent = $(parentSelector)
 
         if $parent.length > 0
             systemTemplate = TAB_SYSTEM
             $systemNode = $(systemTemplate)
             $systemNode = @_translateMultilangContents($systemNode)
+            $systemNode.addClass(tabsystemStyleClass)
 
             $parent.append($systemNode)
 
