@@ -1,6 +1,12 @@
 
+## Include libraries
+Q = require 'q'
+
 ## Include app modules
-Config = require './config'
+config = require './config'
+log = require './logger'
+db = require './database'
+socketServer = require './socketserver'
 
 
 ## Basic abstraction of a socket.io room.
@@ -35,7 +41,7 @@ class Channel
         @creatorID = data.creator_id or @creatorID
         @title = String(data.title or @name)
         @isPublic = data.is_public or @isPublic
-        @isCustom = @name.indexOf(Config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
+        @isCustom = @name.indexOf(config.INTERN_NONGAME_CHANNEL_PREFIX) is 0
 
         log.debug "Creating new channel '#{@name}'"
 
@@ -50,6 +56,9 @@ class Channel
         unless @_instances[name]?
             @_instances[name] = new Channel(channelData)
         return @_instances[name]
+
+    _getAllSockets: ->
+        return socketServer.getSockets()
 
     _destroy: ->
         log.debug "Destructing channel '#{@name}'"
@@ -96,7 +105,7 @@ class Channel
         clientSocket.removeAllListeners @eventNameHistory
         clientSocket.removeListener 'disconnect', clientSocket[@listenerNameDisconnect]
 
-    addClient: (clientSocket, isRejoin=false) ->
+    addClient: (clientSocket, isRejoin=false, additionalChannelInfo={}) ->
         return false if @_hasJoinedSocket(clientSocket)  # Cancel, if socket is already joined to channel
 
         log.debug "Adding client '#{clientSocket.identity.getName()}' to channel '#{@name}'"
@@ -108,7 +117,8 @@ class Channel
             creatorID: @creatorID
             isPublic: @isPublic
             isCustom: @isCustom
-            ircChannelName: @ircChannelName  # Only available, when called from sub class BotChannel
+            isGlobal: additionalChannelInfo.isGlobalChannel or false
+            ircChannelName: additionalChannelInfo.ircChannelName or null
 
         @_sendToSocket(clientSocket, 'joined', channelInfo)  # Notice client for channel join
         clientSocket.join(@name)                             # Join client to room of channel
@@ -251,7 +261,7 @@ class Channel
                 try
                     eventData = JSON.parse(logEntry.event_data)
                     clientSocket.emit(logEntry.event_name, @name, logEntry.timestamp, eventData)  # Emit logged event as if it just occured
-                catch 
+                catch
                     log.error 'Could not parse history entry!', "Channel '#{@name}'"
                     log.info "Corrupt json string: '#{logEntry.event_data}'"
 
@@ -271,7 +281,8 @@ class Channel
     # @protected
     _sendToRoom: (eventName, eventData, logToDatabase=true) ->
         timestamp = @_getCurrentTimestamp()
-        io.sockets.in(@name).emit(eventName, @name, timestamp, eventData)
+        allSockets = @_getAllSockets()
+        allSockets.in(@name).emit(eventName, @name, timestamp, eventData)
         if logToDatabase
             db.logChannelMessage(@name, timestamp, eventName, eventData)
 
@@ -334,7 +345,7 @@ class Channel
         # Immediately unregister listeners
         @_unregisterListeners(clientSocket)
         # Delay disconnect for configured time - This will allow to rejoin before disconnect is executed
-        delay_promise = Q.delay(Config.CLIENTS_DISCONNECT_DELAY)
+        delay_promise = Q.delay(config.CLIENTS_DISCONNECT_DELAY)
         delay_promise = delay_promise.then =>
             @removeClient(clientSocket, true, true)
         delay_promise.done()
@@ -393,12 +404,13 @@ class Channel
         return userList
 
     _iterateEachJoinedSocket: (iterationCallback) ->
-        #clientSocketList = io.sockets.clients(@name)  # Working till v0.9.x
-        clientMetaList = io.sockets.adapter.rooms[@name]
+        allSockets = @_getAllSockets()
+        #clientSocketList = allSockets.clients(@name)  # Working till v0.9.x
+        clientMetaList = allSockets.adapter.rooms[@name]
         clientMetaList = clientMetaList?.sockets or clientMetaList or {}  # There's no sockets property till v0.3.x
 
         for clientID of clientMetaList
-            clientSocket = io.sockets.connected[clientID]  # This is the socket of each client in the room
+            clientSocket = allSockets.connected[clientID]  # This is the socket of each client in the room
 
             # Call back on every real socket
             iterationCallback(clientSocket) if clientSocket?

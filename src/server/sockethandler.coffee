@@ -1,9 +1,13 @@
 
-# Include libraries
-socketio = require 'socket.io'
+## Include libraries
+Q = require 'q'
 
 ## Include app modules
-Config = require './config'
+config = require './config'
+log = require './logger'
+db = require './database'
+
+## Include app classes
 Channel = require './channel'
 BotChannel = require './botchannel'
 ClientIdentity = require './clientidentity'
@@ -16,16 +20,24 @@ ClientFloodingRating = require './clientrating'
 ## To be used as singleton.
 ##
 class SocketHandler
+    socketServer: null
+    isActive: false
 
-    constructor: (addGameBotToChannelCallback) ->
+    constructor: (socketServer, addGameBotToChannelCallback) ->
+        @socketServer = socketServer
         @_addGameBotToChannel = addGameBotToChannelCallback
+        @_bindSocketGlobalEvents(@socketServer)
 
     start: ->
-        @_bindSocketGlobalEvents()
+        @isActive = true
 
-    _bindSocketGlobalEvents: ->
+    stop: ->
+        @isActive = false
+        @socketServer.close()  # Stop socket.io
+
+    _bindSocketGlobalEvents: (socketServer) ->
         # Register common websocket events
-        io.sockets.on 'connection', @_handleClientConnect  # Build-in event
+        socketServer.sockets.on 'connection', @_handleClientConnect  # Build-in event
 
     _bindSocketClientEvents: (clientSocket) ->
         # Store callback for disconnect on socket
@@ -40,6 +52,7 @@ class SocketHandler
         clientSocket.on 'join', (channelData) => @_handleClientChannelJoin(clientSocket, channelData)
 
     _handleClientConnect: (clientSocket) =>
+        return unless @isActive
         log.debug 'Client connected...'
         # Add flooding rating object
         floodingCallback = =>
@@ -86,7 +99,7 @@ class SocketHandler
             authPromise = authPromise.fail (err) =>
                 throw db.createValidationError('Unknown user')  # Overwrite error
             authPromise = authPromise.then (clientIdentity) =>
-                if Config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
+                if config.AUTH_ENABLED and securityToken isnt clientIdentity.securityToken
                     throw db.createValidationError('Invalid token')
                 return clientIdentity
         else
@@ -179,7 +192,7 @@ class SocketHandler
             return if clientSocket.isDisconnected
             log.debug 'Client channel join rejected:', err.message
             # Emit join fail
-            clientSocket.emit 'join_fail', err.message  
+            clientSocket.emit 'join_fail', err.message
 
         # End chain to observe errors (non-validation-errors)
         promise.done()
@@ -188,7 +201,7 @@ class SocketHandler
         # Check limit of created channels
         countPromise = db.getClientCreatedChannelsCount(clientIdentity)
         countPromise = countPromise.then (channelsCount) =>
-            if channelsCount >= Config.MAX_CHANNELS_PER_CLIENT
+            if channelsCount >= config.MAX_CHANNELS_PER_CLIENT
                 throw db.createValidationError('Reached channel limit')
             return true
 

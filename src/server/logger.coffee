@@ -1,6 +1,6 @@
 
 ## Include app modules
-Config = require './config'
+config = require './config'
 
 
 ## Logger functions
@@ -11,11 +11,9 @@ getTimestamp = ->
     return "[#{dateTimeString}]"
 
 
-if Config.DEBUG_ENABLED
-    module.exports.debug = (text...) ->
+module.exports.debug = (text...) ->
+    if config.DEBUG_ENABLED
         console.log '=>', getTimestamp(), text...
-else
-    module.exports.debug = ->
 
 module.exports.info = (text...) ->
     console.log '#', getTimestamp(), text...
@@ -32,3 +30,4 @@ module.exports.error = (textOrError, sender='General') ->
         console.error ''
         console.error(errObject.stack)
         console.error ''
+

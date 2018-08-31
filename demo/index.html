@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Welcome to the Gateway!</title>
+
+    <link rel="stylesheet" type="text/css" href="./chat-style.css">
+    <script type="text/javascript" src="/chat/webclient.js"></script>
+
+</head>
+
+<body>
+
+    <h1>
+        Welcome to the Test Gateway!
+    </h1>
+
+    <div id="chatsystem">
+        <!-- Main div of chat client UI will be appended here -->
+    </div>
+
+
+    <script type="text/javascript">
+        var chatController, authData, options;
+
+        authData = {
+            userID: 42,     // The id of the player's account or game identity/character - to be passed to Datasource.getClientIdentityData()
+            gameID: 123,    // The id of the player's game world - to be passed to Datasource.getClientIdentityData()
+            token: 'z4da9'  // SecurityToken equal to the result of Datasource._getSecurityToken()
+        };
+
+        options = {
+            parentElement: '#chatsystem',
+            signalizeMessagesToWindow: true,
+            tabClickCallback: function(clickedTab) {
+                console.log("Selected tab:", clickedTab.getAttribute('data-id'));
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            chatController = new GatewayChat('https://localhost', 8050, authData, options);
+            chatController.start();
+        });
+
+    </script>
+
+</body>
+</html>

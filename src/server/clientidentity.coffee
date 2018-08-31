@@ -1,4 +1,8 @@
 
+## Include app modules
+db = require './database'
+
+
 ## Abstraction of a client's identity.
 ## Used to identify clients and to store information to be sent to other clients.
 ## Instances have to be created by appropriate factory methods of the class.
@@ -9,6 +13,8 @@ class ClientIdentity
     idUser: 0
     name: 'Unknown'
     title: null
+    gameTitle: ''
+    gameTag: null
     isIrcClient: false
     securityToken: ''
 
@@ -16,6 +22,7 @@ class ClientIdentity
         for key, val of data
             @[key] = val
         @title = @name unless @title?
+        @gameTag = @gameTitle unless @gameTag?
 
     @createFromIrcNick: (nickName, idGame=null) ->
         identObj = new ClientIdentity
@@ -30,10 +37,12 @@ class ClientIdentity
         promise = promise.then (data) =>
             return new ClientIdentity
                 id: data.id
-                name: data.name
-                title: data.title
                 idGame: data.idGame
                 idUser: data.idUser
+                name: data.name
+                title: data.title
+                gameTitle: data.gameTitle
+                gameTag: data.gameTag
                 securityToken: data.token
         return promise
 
@@ -43,14 +52,20 @@ class ClientIdentity
     getID: ->
         return @id
 
-    getGameID: ->
-        return @idGame
+    getGlobalID: ->
+        return "#{@idGame}_#{@id}"
 
     getUserID: ->
         return @idUser
 
-    getGlobalID: ->
-        return "#{@idGame}_#{@id}"
+    getGameID: ->
+        return @idGame
+
+    getGameTitle: ->
+        return @gameTitle
+
+    getGameTag: ->
+        return @gameTag
 
     toData: ->
         # Filter idUser and securityToken, because these must be secret to clients
@@ -59,6 +74,8 @@ class ClientIdentity
             @idGame
             @name
             @title
+            @gameTitle
+            @gameTag
             @isIrcClient
         }
 

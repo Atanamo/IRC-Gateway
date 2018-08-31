@@ -1,6 +1,11 @@
+## Include libraries
+Q = require 'q'
 
 ## Include app modules
-Config = require './config'
+config = require './config'
+log = require './logger'
+
+## Include app classes
 Channel = require './channel'
 ClientIdentity = require './clientidentity'
 
@@ -48,7 +53,10 @@ class BotChannel extends Channel
 
     # @override
     addClient: (clientSocket, isRejoin=false) ->
-        super(clientSocket, isRejoin)
+        additionalChannelInfo =
+            isGlobalChannel: @isGlobalChannel()
+            ircChannelName: @ircChannelName
+        super(clientSocket, isRejoin, additionalChannelInfo)
         @_sendChannelTopic(clientSocket, @ircChannelTopic) if @ircChannelTopic?
         # Send list of irc users (if not already sent by super method)
         if @isPublic
@@ -109,7 +117,7 @@ class BotChannel extends Channel
         clientsMap = @_getUniqueClientsMap()
         clientsNum = 0
         for key, clientIdentity of clientsMap
-            clientsNum++ if clientIdentity.getGameID() is botGameID
+            clientsNum++ if "#{clientIdentity.getGameID()}" is "#{botGameID}"
         return clientsNum
 
     _getNumberOfBots: ->
@@ -155,12 +163,25 @@ class BotChannel extends Channel
     _handleClientMessage: (clientSocket, messageText) =>
         return unless clientSocket.rating.checkForFlooding(8)
         log.debug "Client message to IRC (#{@ircChannelName}):", messageText
-        botID = clientSocket.identity.getGameID() or -1
-        targetBot = @botList[botID]
-        return unless targetBot?
+
+        hasMonoBot = (Object.keys(@botList).length is 1 and @botList['MONO_BOT']?)
+        sendToRoom = hasMonoBot
+
+        # May send directly to room
+        if sendToRoom
+            messageText = messageText?.trim() or ''
+            @_sendMessageToRoom(clientSocket.identity, messageText)
 
         # Send to IRC channel
-        targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText)
+        targetBot =
+            if hasMonoBot
+                @botList['MONO_BOT']
+            else
+                targetBotID = clientSocket.identity.getGameID() or -1
+                @botList[targetBotID]
+
+        if targetBot?
+            targetBot.handleWebClientMessage(@ircChannelName, clientSocket.identity, messageText, not sendToRoom)
 
 
     #
@@ -171,8 +192,9 @@ class BotChannel extends Channel
         # Try to find bot (if message has been sent by one) and set its game id for additional information to clients
         botGameID = null
         for botID, bot of @botList
-            if bot.getNickName() is senderNickName.replace(/^[@+]/, '')
-                botGameID = botID
+            if botID isnt 'MONO_BOT'  # The mono-bot does not represent a single game, so handle it as normal nick
+                if bot.getNickName() is senderNickName.replace(/^[@+]/, '')
+                    botGameID = botID
         # Create sender identity and distribute message
         senderIdentity = ClientIdentity.createFromIrcNick(senderNickName, botGameID)
         @_sendMessageToRoom(senderIdentity, messageText)
@@ -238,20 +260,21 @@ class BotChannel extends Channel
     # @override
     _getUserList: ->
         userList = super
-        botGameNames = {}
+        botDetailNames = {}
 
-        # Get game titles of bots
+        # Get filled detail names of bots (Mostly the game titles)
         for botID, bot of @botList
-            botGameNames[bot.getNickName()] = bot.getGameTitle()
+            detailName = bot.getDetailName()
+            botDetailNames[bot.getNickName()] = detailName if detailName
 
         # Append irc users to list
         for nickName, userFlag of @ircUserList
             clientIdentity = ClientIdentity.createFromIrcNick("#{userFlag}#{nickName}")
             identityData = clientIdentity.toData()
 
-            if botGameNames[nickName]?  
-                # Append game title to full name, if user is a bot
-                identityData.title += ' - ' + botGameNames[nickName]
+            if botDetailNames[nickName]?
+                # Append detail name to full name, if user is a corresponding bot
+                identityData.title += ' - ' + botDetailNames[nickName]
 
             userList.push(identityData)
 

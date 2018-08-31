@@ -1,6 +1,11 @@
 
+socketio = require 'socket.io-client'
+
+Translation = require './translate_module'
+
+
 # Controller class to handle communication with server
-class this.SocketClient
+class SocketClient
 
     chatController: null
     socket: null
@@ -17,7 +22,7 @@ class this.SocketClient
     start: ->
         console.debug "Connecting to: #{@serverIP}:#{@serverPort}"
 
-        @socket = io.connect("#{@serverIP}:#{@serverPort}", reconnectionDelay: 5000)
+        @socket = socketio.connect("#{@serverIP}:#{@serverPort}", reconnectionDelay: 5000)
 
         @socket.on 'connect', @_handleServerConnect         # Build-in event
         @socket.on 'connect_error', @_handleServerConnectError      # Build-in event
@@ -196,7 +201,7 @@ class this.SocketClient
         @socket.emit 'delete#' + channel
 
     sendChannelJoinRequest: (channelName, channelPassword, isPublic, isForIrc) ->
-        channelData = 
+        channelData =
             title: channelName or ''
             password: channelPassword or ''
             isPublic: isPublic or false
@@ -224,6 +229,9 @@ class this.SocketClient
 
     _simplifyUserIdentityData: (data, nameProperty='sender', extractInlineAuthor=false) ->
         data.isOwn = @_isOwnUser(data, nameProperty)
+        data.isFromIrc = data[nameProperty]?.isIrcClient or false
+        data.gameTag = data[nameProperty]?.gameTag or ''
+        data.gameID = data[nameProperty]?.idGame or 0
         data[nameProperty] = data[nameProperty]?.name or data[nameProperty]?.id  # Extract nick name from sender data
 
     _addContentMetaInfo: (data, addressTextProperty='text') ->
@@ -252,3 +260,5 @@ class this.SocketClient
 
 
 
+## Export class
+module.exports = SocketClient
