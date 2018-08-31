@@ -23,16 +23,18 @@
     <script type="text/javascript">
         var chatController, authData, options;
 
+        authData = {
             userID: 42,     // The id of the player's account or game identity/character - to be passed to Datasource.getClientIdentityData()
             gameID: 123,    // The id of the player's game world - to be passed to Datasource.getClientIdentityData()
-        authData = {
             token: 'z4da9'  // SecurityToken equal to the result of Datasource._getSecurityToken()
         };
 
         options = {
             parentElement: '#chatsystem',
             signalizeMessagesToWindow: true,
-            tabClickCallback: function(clickedTab) { console.log("Selected tab:", clickedTab.getAttribute('data-id')); }
+            tabClickCallback: function(clickedTab) {
+                console.log("Selected tab:", clickedTab.getAttribute('data-id'));
+            }
         };
 
         document.addEventListener('DOMContentLoaded', function() {
