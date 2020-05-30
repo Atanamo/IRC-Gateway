@@ -40,11 +40,11 @@
     "demo": "node ./sample/server.js"
   },
   "dependencies": {
-    "q": "~1.5.1",
     "express": "~4.16.2",
-    "socket.io": "~1.7.4",
     "irc": "~0.5.2",
-    "mysql": "~2.15.0"
+    "mysql": "~2.15.0",
+    "q": "^1.5.1",
+    "socket.io": "~1.7.4"
   },
   "devDependencies": {
     "coffeescript": "1.12.7",
