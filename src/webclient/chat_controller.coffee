@@ -1,5 +1,5 @@
 
-$ = require './cash'
+$ = require 'cash-dom'
 
 Translation = require './translate_module'
 SocketClient = require './socket_client'
