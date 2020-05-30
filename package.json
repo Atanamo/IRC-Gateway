@@ -1,6 +1,6 @@
 {
   "name": "irc-gateway",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "A chat system for online games, which allows mirroring into IRC",
   "keywords": [
     "irc",
