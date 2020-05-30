@@ -21,6 +21,7 @@ class GatewayChat
         controller.start(args...)
 
 
-# Export webclient and translation module
+# Export webclient, translation module and selector lib
 module.exports = GatewayChat
 module.exports.Translation = Translation
+module.exports.$ = ChatController.$

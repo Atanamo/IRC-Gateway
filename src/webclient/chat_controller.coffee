@@ -7,8 +7,18 @@ SocketClient = require './socket_client'
 { TAB_SYSTEM, TAB_PAGE } = require './templates'
 
 
+do ->
+    $.fn.show ?= (args...) ->
+        @css('display', '')
+
+    $.fn.hide ?= (args...) ->
+        @css('display', 'none')
+
+
 # Controller class to handle communication with server
 class ChatController
+    @$: $
+
     socketHandler: null
 
     serverIP: ''
@@ -63,9 +73,7 @@ class ChatController
 
 
     constructor: (@serverIP, @serverPort, @instanceData, options={}) ->
-        @_customize_selector_lib()
-
-        @_setupDOM(options.parentElement or 'body')
+        @_setupDOM(options.parentElement or 'body', options.styleClass or 'tabsystem')
 
         @_updateGuiBindings()
         @$activeTabPage = @ui.tabPageServer
@@ -89,20 +97,14 @@ class ChatController
         @_resetNewEntryMarkOfTab(@$activeTabPage) if isVisible  # Reset marker for unread messages
         return
 
-    _customize_selector_lib: ->
-        $.fn.show ?= (args...) ->
-            @css('display', '')
-
-        $.fn.hide ?= (args...) ->
-            @css('display', 'none')
-
-    _setupDOM: (parentSelector) ->
+    _setupDOM: (parentSelector, tabsystemStyleClass) ->
         $parent = $(parentSelector)
 
         if $parent.length > 0
             systemTemplate = TAB_SYSTEM
             $systemNode = $(systemTemplate)
             $systemNode = @_translateMultilangContents($systemNode)
+            $systemNode.addClass(tabsystemStyleClass)
 
             $parent.append($systemNode)
 
