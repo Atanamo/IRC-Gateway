@@ -47,10 +47,10 @@
     "socket.io": "~1.7.4"
   },
   "devDependencies": {
-    "coffeescript": "1.12.7",
     "browserify": "^16.0.0",
-    "uglifyify": "^5.0.1",
-    "cash-dom": "^2.3.3"
+    "cash-dom": "^2.3.3",
+    "coffeescript": "1.12.7",
+    "uglifyify": "^5.0.2"
   },
   "bundleDependencies": []
 }
