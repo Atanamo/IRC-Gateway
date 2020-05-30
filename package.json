@@ -1,6 +1,6 @@
 {
   "name": "irc-gateway",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "A chat system for online games, which allows mirroring into IRC",
   "keywords": [
     "irc",
@@ -32,7 +32,7 @@
   },
   "main": "dist/server/index.js",
   "scripts": {
-    "prepublish": "npm run build & npm run clean-temps",
+    "prepare": "npm run build & npm run clean-temps",
     "build": "./node_modules/.bin/cake build",
     "bundle-client": "./node_modules/.bin/cake build-webclient",
     "clean-temps": "./node_modules/.bin/cake del-temp-files",
@@ -40,17 +40,17 @@
     "demo": "node ./sample/server.js"
   },
   "dependencies": {
-    "q": "~1.5.1",
-    "express": "~4.16.2",
-    "socket.io": "~1.7.4",
+    "express": "^4.17.1",
     "irc": "~0.5.2",
-    "mysql": "~2.15.0"
+    "mysql": "^2.18.1",
+    "q": "^1.5.1",
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "browserify": "^16.5.1",
+    "cash-dom": "^7.0.1",
     "coffeescript": "1.12.7",
-    "browserify": "^16.0.0",
-    "uglifyify": "^5.0.1",
-    "cash-dom": "^2.3.3"
+    "uglifyify": "^5.0.2"
   },
   "bundleDependencies": []
 }

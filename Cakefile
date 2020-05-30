@@ -62,9 +62,6 @@ task 'watch-webclient', 'Build webclient and watch its sources for changes', ->
 
 
 task 'bundle-webclient', 'Bundle compiled sources of webclient', ->
-    # Copy the cash lib as node module
-    copy_cash_library()
-
     # Stream for output file
     outFileStream = fs.createWriteStream(DIST_CLIENT_BUNDLE)
     outFileStream.on 'finish', ->
@@ -84,23 +81,4 @@ task 'del-temp-files', 'Delete temporary files', ->
     deleteFolder(DIST_DIR_CLIENT)
     console.log('Removed temporary files:', DIST_DIR_CLIENT)
 
-
-copy_cash_library = ->
-    try
-        data = fs.readFileSync(SRC_CASH_LIB, 'utf8')
-
-        result = data
-
-        # Replace statements like "xy.$=", expecting "xy" to be "window"
-        result = result.replace(/([^a-z_A-Z])([a-z_A-Z]+)\.(\$)([ ]*)=/g, '$1module.exports.$=')
-
-        # Replace statements like "xy.cash=", expecting "xy" to be "window"
-        result = result.replace(/([^a-z_A-Z])([a-z_A-Z]+)\.(cash)([ ]*)=/g, '$1module.exports.cash=')
-
-        fs.writeFileSync(DIST_CASH_LIB, result, 'utf8')
-
-        console.log('Wrote file for cash library')
-
-    catch err
-        console.log(err)
 

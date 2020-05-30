@@ -1,5 +1,5 @@
 
-{ $ } = require './cash'
+$ = require 'cash-dom'
 
 Translation = require './translate_module'
 SocketClient = require './socket_client'
@@ -568,7 +568,7 @@ class ChatController
             $spanElem.text("[#{@_getLocalizedTime(entryTimestamp)}]")
             $spanElem.attr('title', @_getLocalizedDateTime(entryTimestamp))
             $itemElem.append($spanElem)
-            $itemElem.append(' ')
+            $itemElem.append(document.createTextNode(' '))
 
         if options.mainAuthor?
             $spanElem = $('<span/>').addClass('name')
@@ -578,10 +578,10 @@ class ChatController
             if options.inlineAuthor?
                 $inlineSpanElem = $('<span/>').addClass('virtualName')
                 $inlineSpanElem.text("<#{options.inlineAuthor}>")
-                $spanElem.append(' ')
+                $spanElem.append(document.createTextNode(' '))
                 $spanElem.append($inlineSpanElem)
 
-            $spanElem.append(': ')
+            $spanElem.append(document.createTextNode(': '))
 
         $contentElem = $('<span/>').addClass('content')
         if textLines.length > 1
